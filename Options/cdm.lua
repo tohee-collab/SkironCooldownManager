@@ -51,7 +51,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 			local cooldownID = item.cooldownID
 			local info = item.info
 			info.cooldownID = item.cooldownID
-			info.disabled = data.category < 0
+			info.isDisabled = data.category < 0
 
 			local activeColor = (data.category < 0 and colorDisabled) or (info.isKnown and colorKnown) or colorUnknown
 			parentButton:CreateButton(string.format("|T%d:0|t |cff%s%s (%d)|r", C_Spell.GetSpellTexture(info.spellID), activeColor, C_Spell.GetSpellName(info.spellID), cooldownID), function(info)
@@ -68,7 +68,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 		local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
 		local data = cooldownInfoByID[cooldownID]
 
-		if info and data and data.category >= 0 then
+		if info and data then
 			if not SCM:IsSpellInData(data.spellID, data.category) then
 				table.insert(essentialItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 0 })
 			end
@@ -84,9 +84,9 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 		local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
 		local data = cooldownInfoByID[cooldownID]
 
-		if info and data and data.category > 0 then
+		if info and data then
 			if not SCM:IsSpellInData(data.spellID, data.category) then
-				table.insert(utilityItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 0 })
+				table.insert(utilityItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 1 })
 			end
 		end
 	end
@@ -116,7 +116,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 		if info and data and data.category < 3 then
 			if not SCM:IsSpellInData(data.spellID, data.category) then
-				table.insert(buffItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 2 })
+				table.insert(buffItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 3 })
 			end
 		end
 	end
@@ -212,10 +212,12 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 	if options.showAnchorHighlight then
 		for group, anchorFrame in pairs(SCM.anchorFrames) do
 			if group == anchorIndex then
+				anchorFrame.isGlowActive = true
 				LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
 				LibCustomGlow.PixelGlow_Start(anchorFrame, { 0.34, 0.70, 0.91, 1 }, nil, nil, nil, nil, nil, nil, nil, "SCM")
 				anchorFrame.debugText:SetTextColor(0.34, 0.70, 0.91, 1)
 			else
+				anchorFrame.isGlowActive = false
 				LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
 				LibCustomGlow.PixelGlow_Start(anchorFrame, nil, nil, nil, nil, nil, nil, nil, nil, "SCM")
 				anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
@@ -362,7 +364,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 	label:SetHeight(24)
 	label:SetJustifyH("CENTER")
 	label:SetJustifyV("MIDDLE")
-	label:SetText("|TInterface\\common\\help-i:40:40:0:0|tOnly spells added to visible cooldown manager categories will show up in the menu.")
+	label:SetText("|TInterface\\common\\help-i:40:40:0:0|tOnly spells added to visible cooldown manager categories will show up.")
 	label:SetFontObject("Game12Font")
 	scrollFrame:AddChild(label)
 
@@ -383,21 +385,28 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 	horizontalScrollFrame:SetSortComparator(SortByIndex)
 
 	if SCM.spellConfig then
+		local defaultCooldownViewerConfig = SCM.defaultCooldownViewerConfig
 		local spells = {}
 		for spellID, info in pairs(SCM.spellConfig) do
-			if info.anchorGroup[anchorIndex] and SCM.defaultCooldownViewerConfig.spellIDs[spellID] then
-				info.spellID = spellID
-				info.disabled = SCM.defaultCooldownViewerConfig.spellIDs[spellID].category < 0
-				tinsert(spells, info)
+			if info.anchorGroup[anchorIndex] then
+				for sourceIndex, spellAnchorIndex in pairs(info.source) do
+					if anchorIndex == spellAnchorIndex then
+						local data = defaultCooldownViewerConfig[sourceIndex]
+						if data and data.spellIDs[spellID] then
+							tinsert(spells, {info = info, data = data.spellIDs[spellID], isBuffIcon = sourceIndex >= 2})
+							break
+						end
+					end
+				end
 			end
 		end
 
 		table.sort(spells, function(a, b)
-			return a.anchorGroup[anchorIndex].order < b.anchorGroup[anchorIndex].order
+			return a.info.anchorGroup[anchorIndex].order < b.info.anchorGroup[anchorIndex].order
 		end)
 
-		for i, info in ipairs(spells) do
-			horizontalScrollFrame:AddSpellBySpellID(SCM.defaultCooldownViewerConfig.spellIDs[info.spellID], info.anchorGroup[anchorIndex].order, (info.source[2] or info.source[3]) ~= nil)
+		for _, spellInfo in ipairs(spells) do
+			horizontalScrollFrame:AddSpellBySpellID(spellInfo.data, spellInfo.info.anchorGroup[anchorIndex].order, spellInfo.isBuffIcon)
 		end
 	end
 	horizontalScrollFrame:AddAddButton()
@@ -468,8 +477,9 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 						alwaysShow:SetDisabled(not options.hideBuffsWhenInactive)
 						customSpellSettings:AddChild(alwaysShow)
 
+						local desaturate
 						if not options.testSetting[buttonFrame.data.spellID] then
-							local desaturate = AceGUI:Create("CheckBox")
+							desaturate = AceGUI:Create("CheckBox")
 							desaturate:SetLabel("Desaturate While Inactive")
 							desaturate:SetRelativeWidth(0.5)
 							desaturate:SetValue(spellConfig.desaturate)
@@ -478,14 +488,16 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 								spellConfig.desaturate = value or nil
 								SCM:ApplyAllCDManagerConfigs()
 							end)
+							customSpellSettings:AddChild(desaturate)
 						end
 						alwaysShow:SetCallback("OnValueChanged", function(self, event, value)
 							spellConfig.alwaysShow = value or nil
 							SCM:ApplyAllCDManagerConfigs()
 
-							desaturate:SetDisabled(not value)
+							if desaturate then
+								desaturate:SetDisabled(not value)
+							end
 						end)
-						customSpellSettings:AddChild(desaturate)
 					end
 
 					local label = AceGUI:Create("Label")

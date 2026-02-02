@@ -202,6 +202,7 @@ local methods = {
 			texture = C_Spell.GetSpellTexture(info.spellID),
 			spellID = info.spellID,
 			isKnown = info.isKnown,
+			isDisabled = info.isDisabled or (info.category and info.category < 0),
 			isBuffIcon = isBuffIcon or info.category >= 2,
 			cooldownID = info.cooldownID,
 		})
@@ -251,6 +252,9 @@ local methods = {
 		else
 			button.Icon:SetTexture(data.texture)
 			button.Icon:SetDesaturated(not data.isKnown)
+			if data.isDisabled then
+				button.Icon:SetVertexColor(1, 0, 0, 1)
+			end
 			button:RegisterForDrag("LeftButton")
 			button:SetMovable(true)
 			button:SetScript("OnDragStart", Button_OnDragStart)

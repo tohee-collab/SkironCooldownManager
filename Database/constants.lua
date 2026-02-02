@@ -36,6 +36,7 @@ SCM.Constants.SourcePairs = {
 	[0] = 1,
 	[1] = 0,
 	[2] = 2,
+	[3] = 2,
 }
 
 SCM.Constants.SpecIDs = {

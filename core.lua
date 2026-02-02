@@ -171,7 +171,7 @@ local function ProcessSingleChild(child, validChildren, spellConfig, categoryInd
 	end
 
 	local childData = spellConfig[spellID]
-	local group = childData.source[categoryIndex] or (not isBuffIcon and childData.source[categoryIndex + 1])
+	local group = childData.source[categoryIndex] or childData.source[SCM.Constants.SourcePairs[categoryIndex]]
 
 	if not group then
 		HideChild(child)
@@ -466,6 +466,7 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 		end)
 
 		anchorFrame.debugTexture:HookScript("OnHide", function(self)
+			self.isGlowActive = false
 			LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
 		end)
 
@@ -523,7 +524,7 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 	anchorFrame:ClearAllPoints()
 	anchorFrame:SetPoint(pivot, target, relativePoint, xOffset + ((iconSize or 0) * xMod), yOffset)
 
-	if self.OptionsFrame ~= nil then
+	if self.OptionsFrame ~= nil and self.OptionsFrame:IsShown() and not anchorFrame.isGlowActive then
 		anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
 		LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
 		LibCustomGlow.PixelGlow_Start(anchorFrame, nil, nil, nil, nil, nil, nil, nil, nil, "SCM")
@@ -687,7 +688,10 @@ function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)
 
 	local displayData = dataProvider and dataProvider.displayData.cooldownInfoByID
 	for _, cooldownCategory in pairs(CooldownViewerSettingsDataProvider_GetCategories()) do
-		self.defaultCooldownViewerConfig[cooldownCategory] = {}
+		self.defaultCooldownViewerConfig[cooldownCategory] = {
+			spellIDs = {},
+			cooldownIDs = {},
+		}
 
 		local cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(cooldownCategory, true)
 		local order = 0
@@ -698,6 +702,8 @@ function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)
 				local data = displayData[cooldownID]
 				if data then
 					self.defaultCooldownViewerConfig[cooldownCategory][data.cooldownID] = data
+					self.defaultCooldownViewerConfig[cooldownCategory].spellIDs[data.spellID] = data
+					self.defaultCooldownViewerConfig[cooldownCategory].cooldownIDs[data.cooldownID] = data
 					self.defaultCooldownViewerConfig.cooldownIDs[data.cooldownID] = data
 					self.defaultCooldownViewerConfig.spellIDs[data.spellID] = data
 

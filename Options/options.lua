@@ -162,6 +162,9 @@ local function OpenOptions()
 	local frame = AceGUI:Create("SCMFrame")
 	frame:SetTitle(addonName)
 	frame:SetLayout("flow")
+	frame:SetCallback("OnClose", function()
+		SCM.OptionsFrame = nil
+	end)
 	SCM.OptionsFrame = frame
 
 	local tabsTbl = {}
@@ -181,7 +184,8 @@ local function OpenOptions()
 		self:ReleaseChildren()
 
 		if group ~= "CDM" and options.showAnchorHighlight then
-			for group, anchorFrame in pairs(SCM.anchorFrames) do
+			for _, anchorFrame in pairs(SCM.anchorFrames) do
+				anchorFrame.isGlowActive = false
 				LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
 				LibCustomGlow.PixelGlow_Start(anchorFrame, nil, nil, nil, nil, nil, nil, nil, nil, "SCM")
 				anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)

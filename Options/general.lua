@@ -24,7 +24,7 @@ local function AddInfoText(widget, text)
 	widget:AddChild(label)
 end
 
-local AddCustomGlowOptions, ReleaseCustomGlowSettings
+local AddCustomGlowOptions
 do
 	function AddCustomGlowOptions(dynamicGlowSettingsGroup)
 		local options = SCM.db.global.options
