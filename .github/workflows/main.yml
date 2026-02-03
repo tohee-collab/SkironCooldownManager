@@ -14,7 +14,7 @@ jobs:
 
   # "release" is a job, you can name it anything you want
   release:
-
+    permissions: write-all
     # we can run our steps on pretty much anything, but the "ubuntu-latest" image is a safe bet
     runs-on: ubuntu-latest
 
