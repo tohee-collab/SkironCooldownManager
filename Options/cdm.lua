@@ -138,19 +138,41 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl)
 		return
 	end
 
-	local iconSize = AceGUI:Create("Slider")
-	iconSize:SetRelativeWidth(0.5)
-	iconSize:SetSliderValues(10, 100, 0.1)
-	iconSize:SetLabel("Size")
-	iconSize:SetValue(data.rowConfig[rowIndex].size)
-	iconSize:SetCallback("OnValueChanged", function(self, event, value)
-		data.rowConfig[rowIndex].size = value
+	--local iconSize = AceGUI:Create("Slider")
+	--iconSize:SetRelativeWidth(0.5)
+	--iconSize:SetSliderValues(10, 100, 0.1)
+	--iconSize:SetLabel("Size")
+	--iconSize:SetValue(data.rowConfig[rowIndex].size)
+	--iconSize:SetCallback("OnValueChanged", function(self, event, value)
+	--	data.rowConfig[rowIndex].size = value
+	--	SCM:ApplyAllCDManagerConfigs()
+	--end)
+	--self:AddChild(iconSize)
+
+	local iconWidth = AceGUI:Create("Slider")
+	iconWidth:SetRelativeWidth(0.33)
+	iconWidth:SetSliderValues(10, 200, 0.1)
+	iconWidth:SetLabel("Icon Width")
+	iconWidth:SetValue(data.rowConfig[rowIndex].iconWidth or data.rowConfig[rowIndex].size)
+	iconWidth:SetCallback("OnValueChanged", function(self, event, value)
+		data.rowConfig[rowIndex].iconWidth = value
 		SCM:ApplyAllCDManagerConfigs()
 	end)
-	self:AddChild(iconSize)
+	self:AddChild(iconWidth)
+
+	local iconHeight = AceGUI:Create("Slider")
+	iconHeight:SetRelativeWidth(0.33)
+	iconHeight:SetSliderValues(10, 200, 0.1)
+	iconHeight:SetLabel("Icon Height")
+	iconHeight:SetValue(data.rowConfig[rowIndex].iconHeight or data.rowConfig[rowIndex].size)
+	iconHeight:SetCallback("OnValueChanged", function(self, event, value)
+		data.rowConfig[rowIndex].iconHeight = value
+		SCM:ApplyAllCDManagerConfigs()
+	end)
+	self:AddChild(iconHeight)
 
 	local limit = AceGUI:Create("Slider")
-	limit:SetRelativeWidth(0.5)
+	limit:SetRelativeWidth(0.33)
 	limit:SetSliderValues(1, 20, 1)
 	limit:SetLabel("Limit")
 	limit:SetValue(data.rowConfig[rowIndex].limit)
@@ -399,7 +421,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 					if anchorIndex == spellAnchorIndex then
 						local data = defaultCooldownViewerConfig[sourceIndex]
 						if data and data.spellIDs[spellID] then
-							tinsert(spells, {info = info, data = data.spellIDs[spellID], isBuffIcon = sourceIndex >= 2})
+							tinsert(spells, { info = info, data = data.spellIDs[spellID], isBuffIcon = sourceIndex >= 2 })
 							break
 						end
 					end

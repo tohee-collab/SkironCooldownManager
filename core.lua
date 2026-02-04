@@ -297,7 +297,7 @@ local function OrderCDManagerSpells_Actual()
 
 	for group, visibleChildren in pairs(cachedCooldownFrameTbl) do
 		local anchorConfig = config and config.anchorConfig and config.anchorConfig[group]
-		local rowConfig = (anchorConfig and anchorConfig.rowConfig and #anchorConfig.rowConfig > 0) and anchorConfig.rowConfig or { { limit = 8 } }
+		local rowConfig = (anchorConfig and anchorConfig.rowConfig and #anchorConfig.rowConfig > 0) and anchorConfig.rowConfig or { { limit = 8, iconWidth = 47, iconHeight = 47 } }
 		local lastRowConfig = rowConfig[#rowConfig]
 		local growDir = anchorConfig and anchorConfig.grow or "CENTER"
 		local baseSpacing = anchorConfig and anchorConfig.spacing or 0
@@ -305,7 +305,9 @@ local function OrderCDManagerSpells_Actual()
 		table.sort(visibleChildren, SortBySCMOrder)
 
 		local p, a, r, x, y = unpack(anchorConfig and anchorConfig.anchor or { "CENTER", UIParent, "CENTER", 0, 0 })
-		local groupAnchor = SCM:GetAnchor(group, p, a, r, x, y, growDir, rowConfig[1].size)
+		local initialWidth = rowConfig[1].iconWidth or rowConfig[1].size or 47
+		local initialHeight = rowConfig[1].iconHeight or rowConfig[1].size or 47
+		local groupAnchor = SCM:GetAnchor(group, p, a, r, x, y, growDir, initialWidth)
 
 		local childIndex = 1
 		local rowIndex = 1
@@ -316,36 +318,39 @@ local function OrderCDManagerSpells_Actual()
 		while childIndex <= #visibleChildren do
 			local currentRowConfig = rowConfig[rowIndex] or lastRowConfig
 			local rowLimit = currentRowConfig.limit or 8
-			local rowIconSize = currentRowConfig.size or (anchorConfig and anchorConfig.size) or 47
+			local rowIconWidth = currentRowConfig.iconWidth or currentRowConfig.size or 47
+			local rowIconHeight = currentRowConfig.iconHeight or currentRowConfig.size or 47
 
 			local scaleData = anchorConfig and anchorConfig.advancedScale
 			if scaleData then
 				local targetViewer = cachedCooldownFrameTbl[scaleData.viewer]
 				local targetGroup = targetViewer and targetViewer[scaleData.anchorGroup]
 				if targetGroup and #targetGroup <= scaleData.numChildren then
-					rowIconSize = scaleData.size
+					rowIconWidth = scaleData.iconWidth or scaleData.size or rowIconWidth
+					rowIconHeight = scaleData.iconHeight or scaleData.size or rowIconHeight
 				end
 			end
 
 			local endIndex = math.min(childIndex + rowLimit - 1, #visibleChildren)
 			local numInRow = endIndex - childIndex + 1
 
-			local rowWidth = (numInRow * rowIconSize) + ((numInRow - 1) * baseSpacing)
+			local rowWidth = (numInRow * rowIconWidth) + ((numInRow - 1) * baseSpacing)
 			maxGroupWidth = math.max(maxGroupWidth, rowWidth)
 
 			for i = 0, numInRow - 1 do
 				local child = visibleChildren[childIndex + i]
-				child.width = rowIconSize
+				child.width = rowIconWidth
+				child.height = rowIconHeight
 				child:SetScale(cachedViewerScale)
-				child:SetSize(rowIconSize, rowIconSize)
+				child:SetSize(rowIconWidth, rowIconHeight)
 
 				local offsetX = 0
 				if growDir == "CENTER" then
-					offsetX = (i * (rowIconSize + baseSpacing)) - (rowWidth / 2) + (rowIconSize / 2)
+					offsetX = (i * (rowIconWidth + baseSpacing)) - (rowWidth / 2) + (rowIconWidth / 2)
 				elseif growDir == "LEFT" then
-					offsetX = -(i * (rowIconSize + baseSpacing))
+					offsetX = -(i * (rowIconWidth + baseSpacing))
 				else -- RIGHT
-					offsetX = i * (rowIconSize + baseSpacing)
+					offsetX = i * (rowIconWidth + baseSpacing)
 				end
 
 				local offsetY = -accumulatedY
@@ -353,13 +358,13 @@ local function OrderCDManagerSpells_Actual()
 				if not child.SCMSizeHook then
 					child.SCMSizeHook = true
 					hooksecurefunc(child, "SetSize", function(s)
-						groupAnchor.SetSize(s, s.width, s.width)
+						groupAnchor.SetSize(s, s.width, s.height)
 					end)
 					hooksecurefunc(child, "SetWidth", function(s)
 						groupAnchor.SetWidth(s, s.width)
 					end)
 					hooksecurefunc(child, "SetHeight", function(s)
-						groupAnchor.SetHeight(s, s.width)
+						groupAnchor.SetHeight(s, s.height)
 					end)
 				end
 
@@ -379,13 +384,13 @@ local function OrderCDManagerSpells_Actual()
 				groupAnchor.SetPoint(child, unpack(child.SCMAnchorData))
 			end
 
-			accumulatedY = accumulatedY + rowIconSize + baseSpacing
+			accumulatedY = accumulatedY + rowIconHeight + baseSpacing
 			childIndex = endIndex + 1
 			rowIndex = rowIndex + 1
 		end
 
 		if not InCombatLockdown() then
-			groupAnchor:SetSize(max(rowConfig[1].size, maxGroupWidth, 1), max(rowConfig[1].size, accumulatedY - baseSpacing, 1))
+			groupAnchor:SetSize(max(initialWidth, maxGroupWidth, 1), max(initialHeight, accumulatedY - baseSpacing, 1))
 
 			if group == 1 then
 				if SCM.db.global.options.adjustResourceWidth then
@@ -408,18 +413,19 @@ local function OrderCDManagerSpells_Actual()
 			local rowConfig = anchorConfig.rowConfig
 
 			local p, a, r, x, y = unpack(anchorConfig and anchorConfig.anchor or { "CENTER", UIParent, "CENTER", 0, 0 })
-			SCM:GetAnchor(group, p, a, r, x, y, anchorConfig.growDir, rowConfig[1].size, not cachedCooldownFrameTbl[group])
+			local initialIconWidth = rowConfig[1].iconWidth or rowConfig[1].size or 47
+			SCM:GetAnchor(group, p, a, r, x, y, anchorConfig.growDir, initialIconWidth, not cachedCooldownFrameTbl[group])
 
 			if group == 1 then
 				if not SCM.registeredCustomFrame and SCRB and SCRB.registeredCustomFrame then
 					SCM.registeredCustomFrame = true
 					SCRB.registerCustomFrame(anchorConfig)
 				else
-					SCM:UpdateResourceBarWidth(rowConfig[1].size)
+					SCM:UpdateResourceBarWidth(initialIconWidth)
 				end
 
 				if not InCombatLockdown() then
-					SCM:UpdateUUFValues(SCM.db.global.options, rowConfig[1].size, rowConfig)
+					SCM:UpdateUUFValues(SCM.db.global.options, initialIconWidth, rowConfig)
 				end
 			end
 		end
@@ -467,7 +473,6 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 		anchorFrame.debugText:SetFontHeight(35)
 		anchorFrame.debugText:SetShown(self.OptionsFrame ~= nil)
 		anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
-		--anchorFrame.debugText:SetTextColor(0.94, 0.89, 0.25, 1)
 
 		anchorFrame.debugTexture:HookScript("OnShow", function(self)
 			anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
