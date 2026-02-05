@@ -50,10 +50,6 @@ function SCM:SkinChild(child, childConfig)
 			child.Applications.Applications:ClearAllPoints()
 			child.Applications.Applications:SetPoint("CENTER", child.Icon, options.chargeRelativePoint, options.chargeXOffset, options.chargeYOffset)
 		end
-
-		for _, customSkin in ipairs(SCM.Skins) do
-			customSkin(child)
-		end
 	elseif not child.SCMSkinned then
 		child.SCMSkinned = true
 
@@ -145,9 +141,8 @@ function SCM:SkinChild(child, childConfig)
 			child.Applications.Applications:ClearAllPoints()
 			child.Applications.Applications:SetPoint("CENTER", child.Icon, options.chargeRelativePoint, options.chargeXOffset, options.chargeYOffset)
 		end
-
-		for _, customSkin in ipairs(SCM.Skins) do
-			customSkin(child)
-		end
+	end
+	for _, customSkin in ipairs(SCM.Skins) do
+		customSkin(child)
 	end
 end
