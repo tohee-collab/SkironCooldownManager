@@ -773,6 +773,8 @@ function SCM:SetHooks()
 	end)
 
 	hooksecurefunc(CooldownViewerSettings, "RefreshLayout", function(self)
+		wipe(cachedChildrenTbl)
+
 		SCM:UpdateCooldownInfo(true, self:GetDataProvider())
 		SCM:UpdateDB()
 		SCM:ApplyAllCDManagerConfigs()
