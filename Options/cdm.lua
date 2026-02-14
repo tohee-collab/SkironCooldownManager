@@ -506,9 +506,21 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 					end)
 					customSpellSettings:AddChild(customGlowColor)
 
+					if not buttonFrame.data.isBuffIcon then
+						local hideWhileReady = AceGUI:Create("CheckBox")
+						hideWhileReady:SetLabel("Show On Cooldown")
+						hideWhileReady:SetRelativeWidth(0.5)
+						hideWhileReady:SetValue(spellConfig.hideWhenNotOnCooldown)
+						hideWhileReady:SetCallback("OnValueChanged", function(self, event, value)
+							spellConfig.hideWhenNotOnCooldown = value or nil
+							SCM:ApplyAllCDManagerConfigs()
+						end)
+						customSpellSettings:AddChild(hideWhileReady)
+					end
+
 					if buttonFrame.data.isBuffIcon then
 						local alwaysShow = AceGUI:Create("CheckBox")
-						alwaysShow:SetLabel("Always Show")
+						alwaysShow:SetLabel("Show Always")
 						alwaysShow:SetRelativeWidth(0.5)
 						alwaysShow:SetValue(spellConfig.alwaysShow)
 						alwaysShow:SetDisabled(not options.hideBuffsWhenInactive)

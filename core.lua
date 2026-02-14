@@ -147,12 +147,51 @@ local function ProcessBuffIcon(child, childData, validChildren, group, options)
 	UpdateChildDesaturation(child, isInactive)
 end
 
-local function ProcessRegularIcon(child, validChildren, group)
-	if not tContains(validChildren[group], child) then
-		HideChild(child)
-	else
-		ShowChild(child)
+local function IsChildOnCooldown(child)
+	if not child or not child.Cooldown then
+		return
 	end
+
+	local spellCooldownInfo = C_Spell.GetSpellCooldown(child.SCMSpellID)
+	if spellCooldownInfo and spellCooldownInfo.isOnGCD then
+		return
+	end
+
+	local hasCooldown = child.Cooldown:IsShown()
+	if hasCooldown then
+		return true
+	end
+end
+
+local function SetupRegularIconHooks(child)
+	if child.SCMRegularCooldownHook or not child.Cooldown then
+		return
+	end
+
+	child.SCMRegularCooldownHook = true
+	SetupChildHooks(child)
+
+	local function HandleRegularCooldownChange(self)
+		local parent = self:GetParent()
+		if parent and parent.SCMConfig and parent.SCMConfig.hideWhenNotOnCooldown then
+			RunNextFrame(function() SCM:ApplyAllCDManagerConfigs() end)
+		end
+	end
+
+	hooksecurefunc(child.Cooldown, "SetCooldown", HandleRegularCooldownChange)
+	hooksecurefunc(child.Cooldown, "Clear", HandleRegularCooldownChange)
+	child.Cooldown:HookScript("OnCooldownDone", HandleRegularCooldownChange)
+end
+
+local function ProcessRegularIcon(child, childData)
+	SetupRegularIconHooks(child)
+
+	if childData.hideWhenNotOnCooldown and not IsChildOnCooldown(child) then
+		HideChild(child)
+		return
+	end
+
+	ShowChild(child)
 end
 
 local function GetOrCacheChildren(viewer, isBuffIcon)
