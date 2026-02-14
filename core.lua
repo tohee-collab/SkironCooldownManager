@@ -275,8 +275,13 @@ local function ProcessSingleChild(child, validChildren, spellConfig, categoryInd
 	end
 
 	local cooldownID = child:GetCooldownID()
-	local info = SCM.defaultCooldownViewerConfig[categoryIndex][cooldownID] or SCM.defaultCooldownViewerConfig.cooldownIDs[cooldownID]
+	local categoryConfig = categoryIndex and SCM.defaultCooldownViewerConfig[categoryIndex]
+	local info = categoryConfig and (categoryConfig[cooldownID] or SCM.defaultCooldownViewerConfig.cooldownIDs[cooldownID])
 	local spellID = info and info.spellID
+	child.SCMSpellID = spellID
+	child.SCMConfig = nil
+	child.SCMOrder = nil
+	child.SCMCooldownID = nil
 
 	if not (cooldownID and spellID and spellConfig[spellID]) then
 		HideChild(child)
