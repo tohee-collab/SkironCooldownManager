@@ -237,7 +237,9 @@ local function SetupRegularIconHooks(child)
 	local function HandleRegularCooldownChange(self)
 		local parent = self:GetParent()
 		if parent and parent.SCMConfig and parent.SCMConfig.hideWhenNotOnCooldown then
-			RunNextFrame(function() SCM:ApplyAllCDManagerConfigs() end)
+			RunNextFrame(function()
+				SCM:ApplyAllCDManagerConfigs()
+			end)
 		end
 	end
 
@@ -250,11 +252,10 @@ local function ProcessRegularIcon(child, childData)
 	SetupRegularIconHooks(child)
 
 	if childData.hideWhenNotOnCooldown and not IsChildOnCooldown(child) then
-		HideChild(child)
-		return
+		child.SCMShouldBeVisible = false
+	else
+		child.SCMShouldBeVisible = true
 	end
-
-	ShowChild(child)
 end
 
 local function GetOrCacheChildren(viewer, isBuffIcon)
@@ -284,6 +285,7 @@ local function ProcessSingleChild(child, validChildren, spellConfig, categoryInd
 	child.SCMCooldownID = nil
 
 	if not (cooldownID and spellID and spellConfig[spellID]) then
+		child.SCMShouldBeVisible = false
 		HideChild(child)
 		return
 	end
@@ -292,6 +294,7 @@ local function ProcessSingleChild(child, validChildren, spellConfig, categoryInd
 	local group = childData.source[categoryIndex] or childData.source[SCM.Constants.SourcePairs[categoryIndex]]
 
 	if not group then
+		child.SCMShouldBeVisible = false
 		HideChild(child)
 		return
 	end
@@ -524,6 +527,16 @@ local function OrderCDManagerSpells_Actual()
 
 				SCM:UpdateUUFValues(SCM.db.global.options, maxGroupWidth, rowConfig)
 				SCM:ApplyCustomAnchors(maxGroupWidth, rowConfig)
+			end
+		end
+	end
+
+	for _, children in pairs(cachedChildrenTbl) do
+		for _, child in ipairs(children) do
+			if not child.SCMShouldBeVisible then
+				HideChild(child)
+			else
+				ShowChild(child)
 			end
 		end
 	end
