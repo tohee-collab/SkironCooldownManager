@@ -194,9 +194,9 @@ local function ProcessBuffIcon(child, childData, validChildren, group, options)
 
 	local isActive = child:IsActive()
 	local isInactive = not child.Cooldown:IsShown()
-	if not issecretvalue(isActive) then
-		isInactive = not isActive
-	end
+	--if not issecretvalue(child.Icon:GetTexture()) then
+	--	--isInactive = false
+	--end
 	local forceShow = SCM.simulateBuffs or childData.alwaysShow
 
 	local shouldHide = options.hideBuffsWhenInactive and isInactive and not forceShow
