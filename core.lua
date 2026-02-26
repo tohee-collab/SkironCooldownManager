@@ -771,12 +771,82 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 			end
 		end
 	end
+
+	if options.anchorElvUI then
+		local offset = min((maxGroupWidth - 150), 0)
+		local mainAnchor = SCM:GetAnchor(1)
+		if ElvUF_Player then
+			ElvUF_Player:ClearAllPoints()
+			mainAnchor.SetPoint(ElvUF_Player, "TOPRIGHT", mainAnchor, "TOPLEFT", offset, 0)
+
+			ElvUF_Player.SCMOffset = offset
+			ElvUF_Player.SCMHeight = rowConfig[1].size
+			ElvUF_Player.SCMAnchor = mainAnchor
+
+			ElvUF_Player:SetHeight(rowConfig[1].size)
+			ElvUF_Player_HealthBar:SetHeight(rowConfig[1].size - 2)
+			--ElvUF_Player_HealthBackground:SetHeight(rowConfig[1].size - 2)
+
+			if not ElvUF_Player.SCMHook then
+				ElvUF_Player.SCMHook = true
+				hooksecurefunc(ElvUF_Player, "SetPoint", function(self)
+					if options.anchorElvUF then
+						self.SCMAnchor.SetPoint(self, "TOPRIGHT", self.SCMAnchor, "TOPLEFT", self.SCMOffset, 0)
+						self.SCMAnchor.SetHeight(self, self.SCMHeight)
+						self.SCMAnchor.SetHeight(ElvUF_Player_HealthBar, self.SCMHeight - 2)
+						--self.SCMAnchor.SetHeight(ElvUF_Player_HealthBackground, self.SCMHeight - 2)
+					end
+				end)
+
+				hooksecurefunc(ElvUF_Player, "SetSize", function(self)
+					if options.anchorElvUF then
+						self.SCMAnchor.SetHeight(self, self.SCMHeight)
+						self.SCMAnchor.SetHeight(ElvUF_Player_HealthBar, self.SCMHeight - 2)
+						--self.SCMAnchor.SetHeight(ElvUF_Player_HealthBackground, self.SCMHeight - 2)
+					end
+				end)
+			end
+		end
+
+		if ElvUF_Target then
+			ElvUF_Target:ClearAllPoints()
+			mainAnchor.SetPoint(ElvUF_Target, "TOPLEFT", mainAnchor, "TOPRIGHT", -offset, 0)
+
+			ElvUF_Target.SCMOffset = -offset
+			ElvUF_Target.SCMHeight = rowConfig[1].size
+			ElvUF_Target.SCMAnchor = mainAnchor
+
+			ElvUF_Target:SetHeight(rowConfig[1].size)
+			ElvUF_Target_HealthBar:SetHeight(rowConfig[1].size - 2)
+			--ElvUF_Target_HealthBackground:SetHeight(rowConfig[1].size - 2)
+
+			if not ElvUF_Target.SCMHook then
+				ElvUF_Target.SCMHook = true
+				hooksecurefunc(ElvUF_Target, "SetPoint", function(self)
+					if options.anchorElvUF then
+						self.SCMAnchor.SetPoint(self, "TOPLEFT", self.SCMAnchor, "TOPRIGHT", self.SCMOffset, 0)
+						self.SCMAnchor.SetHeight(self, self.SCMHeight)
+						self.SCMAnchor.SetHeight(ElvUF_Target_HealthBar, self.SCMHeight - 2)
+						--self.SCMAnchor.SetHeight(ElvUF_Target_HealthBackground, self.SCMHeight - 2)
+					end
+				end)
+
+				hooksecurefunc(ElvUF_Target, "SetSize", function(self)
+					if options.anchorElvUF then
+						self.SCMAnchor.SetHeight(self, self.SCMHeight)
+						self.SCMAnchor.SetHeight(ElvUF_Target_HealthBar, self.SCMHeight - 2)
+						--self.SCMAnchor.SetHeight(ElvUF_Target_HealthBackground, self.SCMHeight - 2)
+					end
+				end)
+			end
+		end
+	end
 end
 
 function SCM:ApplyCustomAnchors(maxGroupWidth, rowConfig)
 	for frame, options in pairs(self.CustomAnchors) do
 		frame = type(frame) == "string" and _G[frame] or frame
-		if frame and options.anchorIndex and options.xOffset and options.yOffset then
+		if frame and type(frame) == "table" and options.anchorIndex and options.xOffset and options.yOffset then
 			if not frame.SCMHook then
 				frame.SCMHook = true
 				frame.OriginalClearAllPoints = frame.ClearAllPoints

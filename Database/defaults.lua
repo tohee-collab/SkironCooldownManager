@@ -18,6 +18,7 @@ SCM.DefaultDB = {
             glowType = "Proc",
             borderSize = 1,
             anchorUUF = true,
+            anchorElvUI = true,
             borderColor = {r = 0, g = 0, b = 0, a = 1},
             adjustResourceWidth = true,
             resourceBars = {

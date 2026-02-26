@@ -27,8 +27,8 @@ function SCMAPI.ReloadSkins()
 	SCM:ApplyAllCDManagerConfigs()
 end
 
-function SCMAPI.RegisterCustomAnchor(frame, options)
-	if frame and not SCM.CustomAnchors[frame] then
+function SCMAPI.RegisterCustomAnchor(frame, options, override)
+	if frame and (not SCM.CustomAnchors[frame] or override) then
 		SCM.CustomAnchors[frame] = options
 	end
 end
