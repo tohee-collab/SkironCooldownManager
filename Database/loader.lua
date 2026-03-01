@@ -19,6 +19,7 @@ function SCM.DB:RegisterClassConfig(classFileName, config)
 		anchorConfig = {},
 		spellConfig = {},
 		itemConfig = {},
+		customIcons = {},
 	}
 
 	for specID, anchorConfig in pairs(config.anchorConfig) do
@@ -35,6 +36,9 @@ function SCM.DB:RegisterClassConfig(classFileName, config)
 		if config.itemConfig then
 			self.classes[classFileName].itemConfig[specID] = config.itemConfig
 		end
+		if config.customIcons then
+			self.classes[classFileName].customIcons[specID] = config.customIcons[specID] or config.customIcons
+		end
 	end
 end
 
@@ -43,6 +47,7 @@ function SCM.DB:RegisterClassSpecConfig(classFileName, config, specID)
 		anchorConfig = {},
 		spellConfig = {},
 		itemConfig = {},
+		customIcons = {},
 	}
 
 	if config.anchorConfig[specID] then
@@ -56,6 +61,9 @@ function SCM.DB:RegisterClassSpecConfig(classFileName, config, specID)
 
 	if config.itemConfig then
 		self.classes[classFileName].itemConfig[specID] = config.itemConfig
+	end
+	if config.customIcons then
+		self.classes[classFileName].customIcons[specID] = config.customIcons[specID] or config.customIcons
 	end
 end
 

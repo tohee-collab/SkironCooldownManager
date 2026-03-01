@@ -19,6 +19,47 @@ function SCM.Decode(importString)
 	return data
 end
 
+function SCM:AddGlobalAnchor(anchorTabsTbl)
+	local anchorConfig = self.db.global.globalAnchorConfig
+	local nextIndex = #anchorConfig + 1
+	anchorConfig[nextIndex] = {
+		anchor = { "CENTER", "UIParent", "CENTER", 0, 0 },
+		rowConfig = {
+			[1] = {
+				size = 40,
+				limit = 8,
+			},
+		},
+	}
+	tinsert(anchorTabsTbl, { value = nextIndex, text = "Anchor " .. nextIndex })
+	SCM:ApplyAllCDManagerConfigs()
+	return nextIndex
+end
+
+function SCM:RemoveGlobalAnchor(anchorIndex, anchorTabsTbl)
+	if self.db.global.globalAnchorConfig[anchorIndex] then
+		tremove(self.db.global.globalAnchorConfig, anchorIndex)
+	end
+	for i = #self.db.global.globalCustomIcons, 1, -1 do
+		local cfg = self.db.global.globalCustomIcons[i]
+		if cfg.anchorGroup == anchorIndex then
+			tremove(self.db.global.globalCustomIcons, i)
+		elseif cfg.anchorGroup and cfg.anchorGroup > anchorIndex then
+			cfg.anchorGroup = cfg.anchorGroup - 1
+		end
+	end
+	for i = #anchorTabsTbl, 1, -1 do
+		if anchorTabsTbl[i].value == anchorIndex then
+			tremove(anchorTabsTbl, i)
+		end
+	end
+	for i, tab in ipairs(anchorTabsTbl) do
+		tab.value = i
+		tab.text = "Anchor " .. i
+	end
+	SCM:ApplyAllCDManagerConfigs()
+end
+
 function SCM:AddAnchor(anchorTabsTbl, frame)
 	local nextIndex = #SCM.anchorConfig + 1
 	self.anchorConfig[nextIndex] = {
@@ -102,6 +143,45 @@ function SCM:RemoveRow(anchorIndex, rowIndex)
 	end
 end
 
+
+function SCM:AddCustomIcon(anchorGroup, iconType, idValue, isGlobal)
+	local dbTable = isGlobal and self.db.global.globalCustomIcons or self.customIcons
+	if not dbTable then
+		return
+	end
+
+	local nextOrder = 1
+	for _, entry in ipairs(dbTable) do
+		if entry.anchorGroup == anchorGroup and (entry.order or 0) >= nextOrder then
+			nextOrder = (entry.order or 0) + 1
+		end
+	end
+
+	tinsert(dbTable, {
+		id = (iconType == "item" and "item:" or "spell:") .. idValue,
+		iconType = iconType,
+		spellID = iconType == "spell" and idValue or nil,
+		itemID = iconType == "item" and idValue or nil,
+		anchorGroup = anchorGroup,
+		order = nextOrder,
+	})
+end
+
+function SCM:RemoveCustomIcon(anchorGroup, id, isGlobal)
+	local dbTable = isGlobal and self.db.global.globalCustomIcons or self.customIcons
+	if not dbTable then
+		return
+	end
+
+	for i = #dbTable, 1, -1 do
+		local entry = dbTable[i]
+		if entry.anchorGroup == anchorGroup and entry.id == id then
+			tremove(dbTable, i)
+			break
+		end
+	end
+end
+
 function SCM:AddSpellToConfig(anchorGroup, order, info, displayData, sourceIndex)
 	if not self.spellConfig[displayData.spellID] then
 		self.spellConfig[displayData.spellID] = {
@@ -180,6 +260,7 @@ end
 
 local function OpenOptions()
 	local options = SCM.db.global.options
+	SCM.isOptionsOpen = true
 
 	SCM:StopAllGlows()
 
@@ -224,6 +305,7 @@ local function OpenOptions()
 	tabs:SelectTab("General")
 	frame:AddChild(tabs)
 	frame:SetCallback("OnClose", function()
+		SCM.isOptionsOpen = nil
 		for _, anchorFrame in pairs(SCM.anchorFrames) do
 			anchorFrame.debugTexture:Hide()
 			anchorFrame.debugText:Hide()

@@ -4,6 +4,18 @@ SCM.Defaults = {}
 
 SCM.DefaultDB = {
     global = {
+		globalAnchorConfig = {
+			[1] = {
+				anchor = { "CENTER", "UIParent", "CENTER", 0, -360 },
+				rowConfig = {
+					[1] = {
+						size = 40,
+						limit = 8,
+					},
+				},
+			},
+		},
+		globalCustomIcons = {},
 		options = {
 			showAnchorHighlight = true,
 			debug = false,
@@ -94,6 +106,7 @@ SCM.DefaultClassConfig = {
 	spellConfig = {},
 	anchorConfig = {},
 	itemConfig = {},
+	customIcons = {},
 }
 
 SCM.Defaults.GlobalSettingsTabs = {

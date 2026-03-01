@@ -3,7 +3,7 @@ ScrollFrame Container
 Plain container that scrolls its content and doesn't grow in height.
 -------------------------------------------------------------------------------]]
 
-local Type, Version = "SCMHorizontalScrollFrame", 2
+local Type, Version = "SCMHorizontalScrollFrame", 3
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then
 	return
@@ -246,6 +246,28 @@ local methods = {
 
 	["AddSpellByCooldownID"] = function(self, cooldownID)
 		--self.dataProvider:Insert()
+	end,
+
+
+	["AddCustomIcon"] = function(self, iconData)
+		local highestIndex = 0
+		for _, data in self.dataProvider:Enumerate() do
+			if data.dataIndex > highestIndex and data.dataIndex < 100 then
+				highestIndex = data.dataIndex
+			end
+		end
+		local dataIndex = highestIndex + 1
+		self.dataProvider:Insert({
+			dataIndex = dataIndex,
+			texture = iconData.texture,
+			spellID = iconData.spellID,
+			itemID = iconData.itemID,
+			isKnown = true,
+			isCustom = true,
+			iconType = iconData.iconType,
+			id = iconData.id,
+		})
+		return dataIndex
 	end,
 
 	["AddAddButton"] = function(self)
