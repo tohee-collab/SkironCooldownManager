@@ -56,6 +56,16 @@
 					</Anchors>
 					<TexCoords left="0.12" right="0.88" top="0.12" bottom="0.88"/>
 				</Texture>
+				<FontString name="$parentSpellChargesText" parentKey="SpellChargesText" inherits="NumberFontNormalLarge" justifyH="RIGHT" text="">
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT" x="-4" y="5"/>
+					</Anchors>
+				</FontString>
+				<FontString name="$parentItemCountText" parentKey="ItemCountText" inherits="NumberFontNormalLarge" justifyH="RIGHT" text="">
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT" x="-4" y="5"/>
+					</Anchors>
+				</FontString>
 			</Layer>
 		</Layers>
 		<Frames>

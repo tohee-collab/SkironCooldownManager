@@ -13,8 +13,51 @@ local function SortByIndex(a, b)
 	return a.dataIndex < b.dataIndex
 end
 
-local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, anchorIndex)
+
+local function ShowNumericInputPopup(key, title, callback)
+	StaticPopupDialogs[key] = StaticPopupDialogs[key] or {
+		text = title,
+		button1 = ACCEPT,
+		button2 = CANCEL,
+		hasEditBox = true,
+		timeout = 0,
+		whileDead = true,
+		hideOnEscape = true,
+		preferredIndex = 3,
+		OnAccept = function(self)
+			local id = tonumber(self.editBox:GetText() or "")
+			if id and id > 0 then
+				callback(id)
+			end
+		end,
+	}
+	StaticPopup_Show(key)
+end
+
+local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, anchorIndex, isGlobal)
 	rootDescription:CreateTitle("Add Icon")
+
+	if isGlobal then
+		rootDescription:CreateButton("Custom Spell (SpellID)", function()
+			ShowNumericInputPopup("SCM_CUSTOM_SPELL_ID", "Enter Spell ID", function(spellID)
+				if C_Spell.GetSpellTexture(spellID) then
+					scrollFrame:AddCustomIcon({ texture = C_Spell.GetSpellTexture(spellID), spellID = spellID, iconType = "spell", id = "spell:" .. spellID, isCustom = true })
+					SCM:AddCustomIcon(anchorIndex, "spell", spellID, true)
+					SCM:ApplyAllCDManagerConfigs()
+				end
+			end)
+		end)
+		rootDescription:CreateButton("Custom Item (ItemID)", function()
+			ShowNumericInputPopup("SCM_CUSTOM_ITEM_ID", "Enter Item ID", function(itemID)
+				if C_Item.GetItemIconByID(itemID) then
+					scrollFrame:AddCustomIcon({ texture = C_Item.GetItemIconByID(itemID), spellID = 0, itemID = itemID, iconType = "item", id = "item:" .. itemID, isCustom = true })
+					SCM:AddCustomIcon(anchorIndex, "item", itemID, true)
+					SCM:ApplyAllCDManagerConfigs()
+				end
+			end)
+		end)
+		return
+	end
 
 	local dataProvider = CooldownViewerSettings:GetDataProvider()
 	local cooldownInfoByID = dataProvider and dataProvider.displayData.cooldownInfoByID
@@ -126,12 +169,55 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 	ProcessAndCreateButtons(buffButton, buffItems, true)
 
+	rootDescription:CreateDivider()
+	rootDescription:CreateButton("Custom Spell (SpellID)", function()
+		ShowNumericInputPopup("SCM_CUSTOM_SPELL_ID", "Enter Spell ID", function(spellID)
+			local texture = C_Spell.GetSpellTexture(spellID)
+			if texture then
+				scrollFrame:AddCustomIcon({
+					spellID = spellID,
+					texture = texture,
+					isCustom = true,
+					iconType = "spell",
+					id = "spell:" .. spellID,
+				})
+				if isGlobal then
+					SCM:AddCustomIcon(anchorIndex, "spell", spellID, true)
+				else
+					SCM:AddCustomIcon(anchorIndex, "spell", spellID)
+				end
+				SCM:ApplyAllCDManagerConfigs()
+			end
+		end)
+	end)
+	rootDescription:CreateButton("Custom Item (ItemID)", function()
+		ShowNumericInputPopup("SCM_CUSTOM_ITEM_ID", "Enter Item ID", function(itemID)
+			local texture = C_Item.GetItemIconByID(itemID)
+			if texture then
+				local dataIndex = scrollFrame:AddCustomIcon({
+					spellID = 0,
+					texture = texture,
+					id = "item:" .. itemID,
+					isCustom = true,
+					iconType = "item",
+					itemID = itemID,
+				})
+				if isGlobal then
+					SCM:AddCustomIcon(anchorIndex, "item", itemID, true)
+				else
+					SCM:AddCustomIcon(anchorIndex, "item", itemID)
+				end
+				SCM:ApplyAllCDManagerConfigs()
+			end
+		end)
+	end)
+
 	for _, customEntry in pairs(SCM.CustomEntries) do
 		customEntry(rootDescription, scrollFrame, anchorIndex)
 	end
 end
 
-local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl)
+local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal)
 	self:ReleaseChildren()
 
 	if not data.rowConfig[rowIndex] then
@@ -192,7 +278,8 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl)
 	addRowButton:SetRelativeWidth(0.5)
 	addRowButton:SetDisabled(#rowTabsTbl >= 9)
 	addRowButton:SetCallback("OnClick", function()
-		local nextIndex = SCM:AddRow(anchorIndex)
+		local nextIndex = isGlobal and (#data.rowConfig + 1) or SCM:AddRow(anchorIndex)
+		if isGlobal then data.rowConfig[nextIndex] = { size = 40, limit = 8 } end
 
 		tinsert(rowTabsTbl, { value = nextIndex, text = "Row " .. nextIndex })
 		table.sort(rowTabsTbl, function(a, b)
@@ -209,7 +296,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl)
 	deleteRowButton:SetRelativeWidth(0.5)
 	deleteRowButton:SetDisabled(rowIndex == 1)
 	deleteRowButton:SetCallback("OnClick", function()
-		SCM:RemoveRow(anchorIndex, rowIndex)
+		if isGlobal then tremove(data.rowConfig, rowIndex) else SCM:RemoveRow(anchorIndex, rowIndex) end
 
 		local removedIndex
 		for i, tab in ipairs(rowTabsTbl) do
@@ -232,14 +319,15 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl)
 	buttonGroup:AddChild(deleteRowButton)
 end
 
-local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
+local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isGlobal)
 	anchorWidget:ReleaseChildren()
 	SCM.activeAnchorSettings = anchorIndex
 	local options = SCM.db.global.options
 
 	if options.showAnchorHighlight then
 		for group, anchorFrame in pairs(SCM.anchorFrames) do
-			if group == anchorIndex then
+			local activeGroup = isGlobal and (100 + anchorIndex) or anchorIndex
+			if group == activeGroup then
 				anchorFrame.isGlowActive = true
 				LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
 				LibCustomGlow.PixelGlow_Start(anchorFrame, { 0.34, 0.70, 0.91, 1 }, nil, nil, nil, nil, nil, nil, nil, "SCM")
@@ -253,7 +341,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 		end
 	end
 
-	local data = SCM.anchorConfig[anchorIndex]
+	local data = isGlobal and SCM.db.global.globalAnchorConfig[anchorIndex] or SCM.anchorConfig[anchorIndex]
 	if not data then
 		return
 	end
@@ -279,7 +367,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 	addAnchorButton:SetRelativeWidth(0.5)
 	addAnchorButton:SetDisabled(#anchorTabsTbl >= 15)
 	addAnchorButton:SetCallback("OnClick", function()
-		local nextIndex = SCM:AddAnchor(anchorTabsTbl, frame)
+		local nextIndex = isGlobal and SCM:AddGlobalAnchor(anchorTabsTbl) or SCM:AddAnchor(anchorTabsTbl, frame)
 		anchorWidget:SetTabs(anchorTabsTbl)
 		anchorWidget:SelectTab(nextIndex)
 	end)
@@ -288,9 +376,9 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 	local deleteAnchorButton = AceGUI:Create("Button")
 	deleteAnchorButton:SetText("Delete Anchor")
 	deleteAnchorButton:SetRelativeWidth(0.5)
-	deleteAnchorButton:SetDisabled(anchorIndex <= 3)
+	deleteAnchorButton:SetDisabled((not isGlobal and anchorIndex <= 3) or (isGlobal and anchorIndex == 1))
 	deleteAnchorButton:SetCallback("OnClick", function()
-		SCM:RemoveAnchor(anchorIndex, anchorTabsTbl)
+		if isGlobal then SCM:RemoveGlobalAnchor(anchorIndex, anchorTabsTbl) else SCM:RemoveAnchor(anchorIndex, anchorTabsTbl) end
 		anchorWidget:SetTabs(anchorTabsTbl)
 		anchorWidget:SelectTab(#anchorTabsTbl)
 	end)
@@ -382,7 +470,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 	rowTabs:SetFullWidth(true)
 	rowTabs:SetTabs(rowTabsTbl)
 	rowTabs:SetCallback("OnGroupSelected", function(self, event, rowIndex)
-		SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl)
+		SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal)
 	end)
 	rowTabs:SelectTab(1)
 	anchorOptions:AddChild(rowTabs)
@@ -412,7 +500,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 
 	horizontalScrollFrame:SetSortComparator(SortByIndex)
 
-	if SCM.spellConfig then
+	if not isGlobal and SCM.spellConfig then
 		local defaultCooldownViewerConfig = SCM.defaultCooldownViewerConfig
 		local spells = {}
 		for spellID, info in pairs(SCM.spellConfig) do
@@ -446,6 +534,22 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 			horizontalScrollFrame:AddSpellBySpellID(spellInfo.data, spellInfo.info.anchorGroup[anchorIndex].order, spellInfo.isBuffIcon)
 		end
 	end
+	local customCollection = isGlobal and SCM.db.global.globalCustomIcons or SCM.customIcons
+	for _, customIcon in ipairs(customCollection or {}) do
+		if customIcon.anchorGroup == anchorIndex then
+			local texture = customIcon.iconType == "spell" and C_Spell.GetSpellTexture(customIcon.spellID) or C_Item.GetItemIconByID(customIcon.itemID)
+			if texture or SCM.isOptionsOpen then
+				horizontalScrollFrame:AddCustomIcon({
+					texture = texture or 134400,
+					spellID = customIcon.spellID or 0,
+					itemID = customIcon.itemID,
+					iconType = customIcon.iconType,
+					id = customIcon.id,
+				})
+			end
+		end
+	end
+
 	horizontalScrollFrame:AddAddButton()
 
 	local customSpellSettings = AceGUI:Create("InlineGroup")
@@ -474,7 +578,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 		if button == "LeftButton" then
 			if buttonFrame.data.isAddButton then
 				local menu = MenuUtil.CreateContextMenu(nil, function(owner, rootDescription)
-					CreateAddSpellDropdown(owner, rootDescription, horizontalScrollFrame, anchorIndex)
+					CreateAddSpellDropdown(owner, rootDescription, horizontalScrollFrame, anchorIndex, isGlobal)
 				end)
 			else
 				if not lastButtonFrame or lastButtonFrame ~= buttonFrame then
@@ -576,7 +680,11 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 		elseif button == "RightButton" and not buttonFrame.data.isAddButton then
 			local menu = MenuUtil.CreateContextMenu(nil, function(owner, rootDescription)
 				rootDescription:CreateButton("Remove", function()
-					SCM:RemoveSpellFromConfig(anchorIndex, buttonFrame.data)
+					if buttonFrame.data.isCustom then
+						SCM:RemoveCustomIcon(anchorIndex, buttonFrame.data.id, isGlobal)
+					else
+						SCM:RemoveSpellFromConfig(anchorIndex, buttonFrame.data)
+					end
 					horizontalScrollFrame:RemoveButton(buttonFrame.data)
 					SCM:ApplyAllCDManagerConfigs()
 				end)
@@ -619,29 +727,43 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl)
 	--self:AddChild(label)
 end
 
-local function CDM(self, frame, group)
+local function CreateAnchorTabGroup(parent, frame, isGlobal)
 	local anchorTabs = AceGUI:Create("TabGroup")
 	anchorTabs:SetLayout("fill")
 	anchorTabs:SetFullWidth(true)
 	anchorTabs:SetFullHeight(true)
-	anchorTabs.frame:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 0, -30)
-	anchorTabs.frame:SetPoint("BOTTOMRIGHT", self.frame, "BOTTOMRIGHT", 0, -5)
-	anchorTabs.frame:SetParent(self.frame)
-	anchorTabs.frame:Show()
 
+	local sourceConfig = isGlobal and SCM.db.global.globalAnchorConfig or SCM.anchorConfig
 	local anchorTabsTbl = {}
-	for i, anchor in ipairs(SCM.anchorConfig) do
+	for i in ipairs(sourceConfig) do
 		tinsert(anchorTabsTbl, { value = i, text = "Anchor " .. i })
 	end
 
 	anchorTabs:SetTabs(anchorTabsTbl)
 	anchorTabs:SetCallback("OnGroupSelected", function(self, event, anchorIndex)
-		SelectAnchor(self, frame, anchorIndex, anchorTabsTbl)
+		SelectAnchor(self, frame, anchorIndex, anchorTabsTbl, isGlobal)
 	end)
 	anchorTabs:SelectTab(1)
-	self:AddChild(anchorTabs)
+	parent:AddChild(anchorTabs)
+end
 
-	self.typeTab = anchorTabs
+local function CDM(self, frame, group)
+	local modeTabs = AceGUI:Create("TabGroup")
+	modeTabs:SetLayout("fill")
+	modeTabs:SetFullWidth(true)
+	modeTabs:SetFullHeight(true)
+	modeTabs:SetTabs({
+		{ value = "spec", text = "Spec Anchors" },
+		{ value = "global", text = "Global Anchors" },
+	})
+	modeTabs:SetCallback("OnGroupSelected", function(widget, event, mode)
+		widget:ReleaseChildren()
+		CreateAnchorTabGroup(widget, frame, mode == "global")
+	end)
+	modeTabs:SelectTab("spec")
+	self:AddChild(modeTabs)
+
+	self.typeTab = modeTabs
 end
 
 SCM.MainTabs.CDM.callback = CDM

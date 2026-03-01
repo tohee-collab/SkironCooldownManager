@@ -1,6 +1,7 @@
 local addonName, SCM = ...
 SCM.anchorFrames = {}
 SCM.itemFrames = {}
+SCM.customIconFrames = {}
 SCM.MainTabs = {}
 SCM.OptionsCallbacks = {}
 SCM.Skins = {}
@@ -35,6 +36,20 @@ local PIVOT_MAP = {
 		RIGHT = "LEFT",
 	},
 }
+
+local function ToGlobalGroup(index)
+	return 100 + (index or 1)
+end
+
+local function GetAnchorConfigForGroup(config, group)
+	if config and config.anchorConfig and config.anchorConfig[group] then
+		return config.anchorConfig[group]
+	end
+
+	if SCM.globalAnchorConfig and group >= 100 then
+		return SCM.globalAnchorConfig[group - 100]
+	end
+end
 
 local function SortBySCMOrder(a, b)
 	return (a.SCMOrder or 0) < (b.SCMOrder or 0)
@@ -383,6 +398,105 @@ local function HideItemIcons()
 	end
 end
 
+local function GetCurveCharges(spellID)
+	local charges = 0
+	if SCM.GetSpellChargesFromCurve then
+		charges = SCM:GetSpellChargesFromCurve(spellID) or 0
+	elseif C_Spell and C_Spell.GetSpellCharges then
+		local chargeInfo = C_Spell.GetSpellCharges(spellID)
+		charges = chargeInfo and chargeInfo.currentCharges or 0
+	end
+	return charges
+end
+
+function SCM:GetSpellChargesFromCurve(spellID)
+	if CooldownViewerManager and CooldownViewerManager.GetSecretChargesCurveValue then
+		local ok, value = pcall(CooldownViewerManager.GetSecretChargesCurveValue, CooldownViewerManager, spellID)
+		if ok and type(value) == "number" then
+			return value
+		end
+	end
+end
+
+local function SetCustomIconCountText(frame, iconType, id)
+	frame.SpellChargesText:SetText("")
+	frame.ItemCountText:SetText("")
+	frame.SpellChargesText:Hide()
+	frame.ItemCountText:Hide()
+
+	if iconType == "spell" then
+		local charges = GetCurveCharges(id)
+		if charges and charges > 0 then
+			frame.SpellChargesText:SetText(charges)
+			frame.SpellChargesText:Show()
+		end
+	else
+		local count = C_Item and C_Item.GetItemCount and C_Item.GetItemCount(id, false, false, true) or GetItemCount(id, false, false)
+		if count and count > 0 then
+			frame.ItemCountText:SetText(count)
+			frame.ItemCountText:Show()
+		end
+	end
+end
+
+local function ProcessCustomIcons(iconConfig, validChildren, isGlobal)
+	for index, config in ipairs(iconConfig or {}) do
+		local frameID = (isGlobal and "global:" or "spec:") .. (config.id or tostring(index))
+		local frame = SCM.customIconFrames[frameID] or CreateFrame("Frame", nil, UIParent, "PermokItemIconTemplate")
+		SCM.customIconFrames[frameID] = frame
+		frame:SetScale(cachedViewerScale)
+		frame.SCMConfig = config
+		frame.SCMOrder = config.order or index
+		frame.SCMCooldownID = frameID
+		frame.SCMSpellID = config.spellID
+
+		local iconType = config.iconType or (config.spellID and "spell") or "item"
+		local iconTexture
+		if iconType == "spell" and config.spellID then
+			iconTexture = C_Spell.GetSpellTexture(config.spellID)
+			frame.SCMSpellID = config.spellID
+		elseif iconType == "item" and config.itemID then
+			iconTexture = C_Item.GetItemIconByID(config.itemID)
+		end
+
+		if SCM.isOptionsOpen and not iconTexture then
+			iconTexture = 134400
+		end
+
+		local shouldShow = iconTexture ~= nil
+		if shouldShow then
+			frame.Icon:SetTexture(iconTexture)
+			SetCustomIconCountText(frame, iconType, config.spellID or config.itemID)
+			frame:Show()
+			SCM:SkinChild(frame, config)
+			local anchor = config.anchorGroup or 1
+			if isGlobal then
+				anchor = ToGlobalGroup(anchor)
+			end
+			validChildren[anchor] = validChildren[anchor] or {}
+			tinsert(validChildren[anchor], frame)
+		else
+			frame:Hide()
+		end
+	end
+end
+
+local function HideUnusedCustomIcons(specConfig, globalConfig)
+	local keep = {}
+	for _, cfg in ipairs(specConfig or {}) do
+		keep["spec:" .. (cfg.id or "")] = true
+	end
+	for _, cfg in ipairs(globalConfig or {}) do
+		keep["global:" .. (cfg.id or "")] = true
+	end
+
+	for id, frame in pairs(SCM.customIconFrames) do
+		if not keep[id] then
+			frame:Hide()
+		end
+	end
+end
+
 local function OrderCDManagerSpells_Actual()
 	cachedViewerScale = 1
 
@@ -415,8 +529,12 @@ local function OrderCDManagerSpells_Actual()
 		HideItemIcons()
 	end
 
+	ProcessCustomIcons(SCM.customIcons, cachedCooldownFrameTbl, false)
+	ProcessCustomIcons(SCM.globalCustomIcons, cachedCooldownFrameTbl, true)
+	HideUnusedCustomIcons(SCM.customIcons, SCM.globalCustomIcons)
+
 	for group, visibleChildren in pairs(cachedCooldownFrameTbl) do
-		local anchorConfig = config and config.anchorConfig and config.anchorConfig[group]
+		local anchorConfig = GetAnchorConfigForGroup(config, group)
 		local rowConfig = (anchorConfig and anchorConfig.rowConfig and #anchorConfig.rowConfig > 0) and anchorConfig.rowConfig or DEFAULT_ROW_CONFIG
 		local lastRowConfig = rowConfig[#rowConfig]
 		local growDir = anchorConfig and anchorConfig.grow or "CENTER"
@@ -555,7 +673,15 @@ local function OrderCDManagerSpells_Actual()
 		end
 	end
 
+	local allAnchors = {}
 	for group, anchorConfig in pairs(config.anchorConfig) do
+		allAnchors[group] = anchorConfig
+	end
+	for index, anchorConfig in pairs(SCM.globalAnchorConfig or {}) do
+		allAnchors[ToGlobalGroup(index)] = anchorConfig
+	end
+
+	for group, anchorConfig in pairs(allAnchors) do
 		if not cachedCooldownFrameTbl[group] then
 			local rowConfig = anchorConfig.rowConfig
 
@@ -876,6 +1002,7 @@ function SCM:UpdateDB()
 	local specAnchorConfig = currentConfig and currentConfig.anchorConfig[specID]
 	local specSpellConfig = currentConfig and currentConfig.spellConfig[specID]
 	local itemConfig = currentConfig and currentConfig.itemConfig and currentConfig.itemConfig[specID]
+	local customIcons = currentConfig and currentConfig.customIcons and currentConfig.customIcons[specID]
 
 	self.db.profile[class] = self.db.profile[class] or {}
 	self.db.profile[class][specID] = self.db.profile[class][specID]
@@ -883,12 +1010,17 @@ function SCM:UpdateDB()
 			anchorConfig = CopyTable(specAnchorConfig or self.DB.defaultAnchorConfig),
 			itemConfig = itemConfig or {},
 			spellConfig = specSpellConfig or {},
+			customIcons = customIcons or {},
 		}
 
 	self.currentConfig = self.db.profile[class][specID]
+	self.currentConfig.customIcons = self.currentConfig.customIcons or {}
 	self.anchorConfig = self.currentConfig.anchorConfig
 	self.spellConfig = self.currentConfig.spellConfig
 	self.itemConfig = self.currentConfig.itemConfig
+	self.customIcons = self.currentConfig.customIcons
+	self.globalAnchorConfig = self.db.global.globalAnchorConfig or {}
+	self.globalCustomIcons = self.db.global.globalCustomIcons or {}
 end
 
 function SCM:SetHooks()
@@ -945,6 +1077,10 @@ function SCM:PLAYER_ENTERING_WORLD(isInitialLogin, isReload)
 	end
 
 	self.isInInstance = IsInInstance()
+end
+
+function SCM:BAG_UPDATE_DELAYED()
+	SCM:ApplyAllCDManagerConfigs()
 end
 
 function SCM:BAG_UPDATE_COOLDOWN()
@@ -1039,6 +1175,7 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 	eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 	eventFrame:RegisterEvent("BAG_UPDATE_COOLDOWN")
+	eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
 	eventFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 	eventFrame:RegisterEvent("ACTIVE_PLAYER_SPECIALIZATION_CHANGED")
 	eventFrame:RegisterEvent("EDIT_MODE_LAYOUTS_UPDATED")
