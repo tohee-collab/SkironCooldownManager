@@ -40,14 +40,15 @@ function SCM:RemoveGlobalAnchor(anchorIndex, anchorTabsTbl)
 	if self.db.global.globalAnchorConfig[anchorIndex] then
 		tremove(self.db.global.globalAnchorConfig, anchorIndex)
 	end
-	for i = #self.db.global.globalCustomIcons, 1, -1 do
-		local cfg = self.db.global.globalCustomIcons[i]
-		if cfg.anchorGroup == anchorIndex then
-			tremove(self.db.global.globalCustomIcons, i)
-		elseif cfg.anchorGroup and cfg.anchorGroup > anchorIndex then
-			cfg.anchorGroup = cfg.anchorGroup - 1
+
+	for id, config in pairs(self.db.global.globalCustomConfig) do
+		if config.anchorGroup == anchorIndex then
+			self.db.global.globalCustomConfig[id] = nil
+		elseif config.anchorGroup and config.anchorGroup > anchorIndex then
+			config.anchorGroup = config.anchorGroup - 1
 		end
 	end
+	
 	for i = #anchorTabsTbl, 1, -1 do
 		if anchorTabsTbl[i].value == anchorIndex then
 			tremove(anchorTabsTbl, i)
@@ -143,12 +144,14 @@ function SCM:RemoveRow(anchorIndex, rowIndex)
 	end
 end
 
-
 function SCM:AddCustomIcon(anchorGroup, iconType, idValue, isGlobal)
-	local dbTable = isGlobal and self.db.global.globalCustomIcons or self.customIcons
+	local dbTable = isGlobal and self.db.global.globalCustomConfig or self.customConfig
 	if not dbTable then
 		return
 	end
+
+	local baseID = (iconType == "item" and "item:" or "spell:") .. idValue
+	local uniqueID = self:UID(baseID)
 
 	local nextOrder = 1
 	for _, entry in ipairs(dbTable) do
@@ -157,18 +160,20 @@ function SCM:AddCustomIcon(anchorGroup, iconType, idValue, isGlobal)
 		end
 	end
 
-	tinsert(dbTable, {
-		id = (iconType == "item" and "item:" or "spell:") .. idValue,
+	dbTable[uniqueID] = {
+		id = uniqueID,
 		iconType = iconType,
 		spellID = iconType == "spell" and idValue or nil,
 		itemID = iconType == "item" and idValue or nil,
 		anchorGroup = anchorGroup,
 		order = nextOrder,
-	})
+	}
+
+	return uniqueID
 end
 
 function SCM:RemoveCustomIcon(anchorGroup, id, isGlobal)
-	local dbTable = isGlobal and self.db.global.globalCustomIcons or self.customIcons
+	local dbTable = isGlobal and self.db.global.globalCustomConfig or self.customConfig
 	if not dbTable then
 		return
 	end
@@ -263,14 +268,11 @@ local function OpenOptions()
 	SCM.isOptionsOpen = true
 
 	SCM:StopAllGlows()
+	SCM:ApplyAllCDManagerConfigs()
 
 	local frame = AceGUI:Create("SCMFrame")
 	frame:SetTitle(addonName)
 	frame:SetLayout("flow")
-	frame:SetCallback("OnClose", function()
-		SCM.OptionsFrame = nil
-		SCM:ApplyAllCDManagerConfigs()
-	end)
 	SCM.OptionsFrame = frame
 
 	local tabsTbl = {}
@@ -305,11 +307,13 @@ local function OpenOptions()
 	tabs:SelectTab("General")
 	frame:AddChild(tabs)
 	frame:SetCallback("OnClose", function()
+		SCM.OptionsFrame = nil
 		SCM.isOptionsOpen = nil
 		for _, anchorFrame in pairs(SCM.anchorFrames) do
 			anchorFrame.debugTexture:Hide()
 			anchorFrame.debugText:Hide()
 		end
+		SCM:ApplyAllCDManagerConfigs()
 	end)
 
 	if SCM.db.global.options.showAnchorHighlight then

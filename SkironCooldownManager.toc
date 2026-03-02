@@ -23,15 +23,17 @@ Custom-Widgets\AceGUIContainer-SCMTabGroup.lua
 Custom-Widgets\AceGUIContainer-SCMScrollFrame.lua
 Custom-Widgets\AceGUIContainer-SCMHorizontalScrollFrame.lua
 
-glow.lua
-skinning.lua
-core.lua
-profiles.lua
-
 Database\constants.lua
 Database\defaults.lua
 Database\sharedmedia.lua
 Database\loader.lua
+
+
+glow.lua
+skinning.lua
+core.lua
+profiles.lua
+uid.lua
 
 Options\cdm.lua
 Options\general.lua

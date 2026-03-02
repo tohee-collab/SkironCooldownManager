@@ -33,7 +33,7 @@ function SCM:SkinChild(child, childConfig)
 		child.Icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)
 
 		local fontPath = LSM:Fetch("font", options.chargeFont)
-		if child.ChargeCount and child.ChargeCount.Current then
+		if child.ChargeCount and child.ChargeCount.Current and (not child.SCMIconType or child.SCMIconType == "spell") then
 			if fontPath then
 				child.ChargeCount.Current:SetFont(fontPath, options.chargeFontSize, "OUTLINE")
 			end
@@ -124,7 +124,7 @@ function SCM:SkinChild(child, childConfig)
 		end
 
 		local fontPath = LSM:Fetch("font", options.chargeFont)
-		if child.ChargeCount and child.ChargeCount.Current then
+		if child.ChargeCount and child.ChargeCount.Current and (not child.SCMIconType or child.SCMIconType == "spell") then
 			if fontPath then
 				child.ChargeCount.Current:SetFont(fontPath, options.chargeFontSize, "OUTLINE")
 			end
@@ -143,6 +143,6 @@ function SCM:SkinChild(child, childConfig)
 		end
 	end
 	for _, customSkin in ipairs(SCM.Skins) do
-		customSkin(child)
+		pcall(customSkin, child)
 	end
 end

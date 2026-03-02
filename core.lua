@@ -397,57 +397,60 @@ local function HideItemIcons()
 	end
 end
 
-local function GetCurveCharges(spellID)
-	local charges = 0
-	if SCM.GetSpellChargesFromCurve then
-		charges = SCM:GetSpellChargesFromCurve(spellID) or 0
-	elseif C_Spell and C_Spell.GetSpellCharges then
-		local chargeInfo = C_Spell.GetSpellCharges(spellID)
-		charges = chargeInfo and chargeInfo.currentCharges or 0
-	end
-	return charges
-end
-
-function SCM:GetSpellChargesFromCurve(spellID)
-	if CooldownViewerManager and CooldownViewerManager.GetSecretChargesCurveValue then
-		local ok, value = pcall(CooldownViewerManager.GetSecretChargesCurveValue, CooldownViewerManager, spellID)
-		if ok and type(value) == "number" then
-			return value
-		end
-	end
-end
-
 local function SetCustomIconCountText(frame, iconType, id)
-	frame.SpellChargesText:SetText("")
-	frame.ItemCountText:SetText("")
-	frame.SpellChargesText:Hide()
-	frame.ItemCountText:Hide()
+	frame.ChargeCount.Current:SetText("")
+	frame.ChargeCount.Current:Hide()
 
 	if iconType == "spell" then
-		local charges = GetCurveCharges(id)
-		if charges and charges > 0 then
-			frame.SpellChargesText:SetText(charges)
-			frame.SpellChargesText:Show()
-		end
+		return
 	else
-		local count = C_Item and C_Item.GetItemCount and C_Item.GetItemCount(id, false, false, true) or GetItemCount(id, false, false)
+		local count = C_Item.GetItemCount(id)
 		if count and count > 0 then
-			frame.ItemCountText:SetText(count)
-			frame.ItemCountText:Show()
+			frame.ChargeCount.Current:SetText(count)
+			frame.ChargeCount.Current:Show()
+			return true
+		else
+			return
 		end
 	end
+end
+
+local function UpdateCustomIconCooldown(frame, iconType, config)
+	if iconType == "spell" then
+		local durationObject = C_Spell.GetSpellCooldownDuration(config.spellID)
+		frame.Cooldown:SetCooldownFromDurationObject(durationObject)
+		frame.Icon:SetDesaturation(C_CurveUtil.EvaluateColorValueFromBoolean(durationObject:IsZero(), 0, 1))
+
+		return not durationObject:IsZero()
+	elseif iconType == "item" then
+		local startTime, duration, _, modRate = C_Item.GetItemCooldown(config.itemID)
+		if startTime and startTime > 0 then
+			if modRate then
+				frame.Cooldown:SetCooldown(startTime, duration, modRate)
+			else
+				frame.Cooldown:SetCooldown(startTime, duration)
+			end
+			frame.Icon:SetDesaturated(true)
+			return true
+		end
+	end
+
+	frame.Cooldown:Clear()
+	frame.Icon:SetDesaturated(false)
+	return false
 end
 
 local function ProcessCustomIcons(iconConfig, validChildren, isGlobal)
-	for index, config in ipairs(iconConfig or {}) do
-		local frameID = (isGlobal and "global:" or "spec:") .. (config.id or tostring(index))
-		local frame = SCM.customIconFrames[frameID] or CreateFrame("Frame", nil, UIParent, "PermokItemIconTemplate")
-		SCM.customIconFrames[frameID] = frame
+	for id, config in pairs(iconConfig or {}) do
+		local isNewFrame = not SCM.customIconFrames[id]
+		local frame = SCM.customIconFrames[id] or CreateFrame("Frame", "PRMKCUSTOMICONBUTTON" .. id, UIParent, "PermokItemIconTemplate")
+		SCM.customIconFrames[id] = frame
 		frame:SetScale(cachedViewerScale)
 		frame.SCMConfig = config
 		frame.SCMOrder = config.order or index
-		frame.SCMCooldownID = frameID
+		frame.SCMCooldownID = id
 		frame.SCMSpellID = config.spellID
+		frame.SCMIconType = config.iconType
 
 		local iconType = config.iconType or (config.spellID and "spell") or "item"
 		local iconTexture
@@ -465,32 +468,38 @@ local function ProcessCustomIcons(iconConfig, validChildren, isGlobal)
 		local shouldShow = iconTexture ~= nil
 		if shouldShow then
 			frame.Icon:SetTexture(iconTexture)
-			SetCustomIconCountText(frame, iconType, config.spellID or config.itemID)
-			frame:Show()
-			SCM:SkinChild(frame, config)
-			local anchor = config.anchorGroup or 1
-			if isGlobal then
-				anchor = ToGlobalGroup(anchor)
+
+			if isNewFrame then
+				frame.Cooldown:SetScript("OnCooldownDone", function()
+					frame.Icon:SetDesaturated(false)
+				end)
 			end
-			validChildren[anchor] = validChildren[anchor] or {}
-			tinsert(validChildren[anchor], frame)
+
+			local hasCount = SetCustomIconCountText(frame, iconType, config.spellID or config.itemID)
+			local isOnCooldown = UpdateCustomIconCooldown(frame, iconType, config)
+			if SCM.isOptionsOpen then
+				shouldShow = true
+			else
+				local canShowIcon = iconType == "spell" or hasCount
+				shouldShow = canShowIcon and (not config.hideWhenNotOnCooldown or isOnCooldown)
+			end
+
+			if isNewFrame then
+				SetupChildHooks(frame)
+			end
+
+			frame:SetShown(shouldShow)
+			if shouldShow then
+				SCM:SkinChild(frame, config)
+				local anchor = config.anchorGroup or 1
+				if isGlobal then
+					anchor = ToGlobalGroup(anchor)
+					frame.SCMGlobal = isGlobal
+				end
+				validChildren[anchor] = validChildren[anchor] or {}
+				tinsert(validChildren[anchor], frame)
+			end
 		else
-			frame:Hide()
-		end
-	end
-end
-
-local function HideUnusedCustomIcons(specConfig, globalConfig)
-	local keep = {}
-	for _, cfg in ipairs(specConfig or {}) do
-		keep["spec:" .. (cfg.id or "")] = true
-	end
-	for _, cfg in ipairs(globalConfig or {}) do
-		keep["global:" .. (cfg.id or "")] = true
-	end
-
-	for id, frame in pairs(SCM.customIconFrames) do
-		if not keep[id] then
 			frame:Hide()
 		end
 	end
@@ -528,9 +537,8 @@ local function OrderCDManagerSpells_Actual()
 		HideItemIcons()
 	end
 
-	ProcessCustomIcons(SCM.customIcons, cachedCooldownFrameTbl, false)
-	ProcessCustomIcons(SCM.globalCustomIcons, cachedCooldownFrameTbl, true)
-	HideUnusedCustomIcons(SCM.customIcons, SCM.globalCustomIcons)
+	ProcessCustomIcons(SCM.customConfig, cachedCooldownFrameTbl, false)
+	ProcessCustomIcons(SCM.globalCustomConfig, cachedCooldownFrameTbl, true)
 
 	for group, visibleChildren in pairs(cachedCooldownFrameTbl) do
 		local anchorConfig = GetAnchorConfigForGroup(config, group)
@@ -742,7 +750,11 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 
 		anchorFrame.debugText = anchorFrame:CreateFontString(nil, "OVERLAY", "Permok_Expressway_Large")
 		anchorFrame.debugText:SetPoint("CENTER", anchorFrame, "CENTER", 0, 0)
-		anchorFrame.debugText:SetText(group)
+		if group > 100 then
+			anchorFrame.debugText:SetText("G" .. group - 100)
+		else
+			anchorFrame.debugText:SetText(group)
+		end
 		anchorFrame.debugText:SetFontHeight(35)
 		anchorFrame.debugText:SetShown(self.OptionsFrame ~= nil)
 		anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
@@ -1121,7 +1133,7 @@ function SCM:UpdateDB()
 	local specAnchorConfig = currentConfig and currentConfig.anchorConfig[specID]
 	local specSpellConfig = currentConfig and currentConfig.spellConfig[specID]
 	local itemConfig = currentConfig and currentConfig.itemConfig and currentConfig.itemConfig[specID]
-	local customIcons = currentConfig and currentConfig.customIcons and currentConfig.customIcons[specID]
+	local customConfig = currentConfig and currentConfig.customConfig and currentConfig.customConfig[specID]
 
 	self.db.profile[class] = self.db.profile[class] or {}
 	self.db.profile[class][specID] = self.db.profile[class][specID]
@@ -1129,17 +1141,17 @@ function SCM:UpdateDB()
 			anchorConfig = CopyTable(specAnchorConfig or self.DB.defaultAnchorConfig),
 			itemConfig = itemConfig or {},
 			spellConfig = specSpellConfig or {},
-			customIcons = customIcons or {},
+			customConfig = customConfig or {},
 		}
 
 	self.currentConfig = self.db.profile[class][specID]
-	self.currentConfig.customIcons = self.currentConfig.customIcons or {}
+	self.currentConfig.customConfig = self.currentConfig.customConfig or {}
 	self.anchorConfig = self.currentConfig.anchorConfig
 	self.spellConfig = self.currentConfig.spellConfig
 	self.itemConfig = self.currentConfig.itemConfig
-	self.customIcons = self.currentConfig.customIcons
+	self.customConfig = self.currentConfig.customConfig
 	self.globalAnchorConfig = self.db.global.globalAnchorConfig or {}
-	self.globalCustomIcons = self.db.global.globalCustomIcons or {}
+	self.globalCustomConfig = self.db.global.globalCustomConfig or {}
 end
 
 function SCM:SetHooks()
@@ -1204,14 +1216,37 @@ end
 
 function SCM:BAG_UPDATE_COOLDOWN()
 	RunNextFrame(function()
+		local GetItemCooldown = C_Item.GetItemCooldown
+
 		for _, frame in pairs(SCM.itemFrames) do
-			local start, duration, enable = C_Item.GetItemCooldown(frame.itemID)
+			local start, duration = GetItemCooldown(frame.itemID)
 			if start and start > 0 then
 				frame.Cooldown:SetCooldown(start, duration)
 				frame.Icon:SetDesaturated(true)
 			else
 				frame.Cooldown:Clear()
 				frame.Icon:SetDesaturated(false)
+			end
+		end
+
+		for _, frame in pairs(SCM.customIconFrames) do
+			if frame:IsShown() then
+				local config = frame.SCMConfig
+				local itemID = config and config.itemID
+				if itemID and config.iconType == "item" then
+					local start, duration = GetItemCooldown(itemID)
+					if start and start > 0 then
+						frame.Cooldown:SetCooldown(start, duration)
+						frame.Icon:SetDesaturated(true)
+					else
+						frame.Cooldown:Clear()
+						frame.Icon:SetDesaturated(false)
+					end
+
+					if not SetCustomIconCountText(frame, "item", itemID) and not SCM.isOptionsOpen then
+						frame:Hide()
+					end
+				end
 			end
 		end
 	end)

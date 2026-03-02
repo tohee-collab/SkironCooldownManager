@@ -20,7 +20,6 @@ local CreateFrame, UIParent = CreateFrame, UIParent
 Support functions
 -------------------------------------------------------------------------------]]
 
-
 local function GetCursorScaled(controller)
 	local x, y = GetCursorPosition()
 	local scale = controller:GetEffectiveScale()
@@ -193,6 +192,7 @@ Methods
 -------------------------------------------------------------------------------]]
 local methods = {
 	["OnAcquire"] = function(self)
+		self.dataProvider:ClearSortComparator()
 		self.dataProvider:Flush()
 	end,
 
@@ -232,10 +232,12 @@ local methods = {
 		end
 
 		self.dataProvider:Insert({
+			id = info.spellID,
 			dataIndex = dataIndex,
 			texture = C_Spell.GetSpellTexture(info.spellID),
 			spellID = info.spellID,
 			isKnown = info.isKnown,
+			iconType = "spell",
 			isDisabled = info.isDisabled or (info.category and info.category < 0),
 			isBuffIcon = isBuffIcon or info.category >= 2,
 			cooldownID = info.cooldownID,
@@ -247,7 +249,6 @@ local methods = {
 	["AddSpellByCooldownID"] = function(self, cooldownID)
 		--self.dataProvider:Insert()
 	end,
-
 
 	["AddCustomIcon"] = function(self, iconData)
 		local highestIndex = 0
@@ -304,9 +305,13 @@ local methods = {
 
 		if data.isAddButton then
 			button.Icon:SetAtlas("cdm-empty")
+			button.Icon:SetVertexColor(1, 1, 1, 1)
 			button:SetMovable(false)
 		else
-			button.Icon:SetTexture(data.texture)
+			if data.texture then
+				button.Icon:SetTexture(data.texture)
+			end
+
 			button.Icon:SetDesaturated(not data.isKnown)
 			if data.isDisabled then
 				button.Icon:SetVertexColor(0.7, 0, 0, 1)

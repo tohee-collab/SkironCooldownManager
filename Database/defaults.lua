@@ -15,7 +15,7 @@ SCM.DefaultDB = {
 				},
 			},
 		},
-		globalCustomIcons = {},
+		globalCustomConfig = {},
 		options = {
 			showAnchorHighlight = true,
 			debug = false,
@@ -106,7 +106,7 @@ SCM.DefaultClassConfig = {
 	spellConfig = {},
 	anchorConfig = {},
 	itemConfig = {},
-	customIcons = {},
+	customConfig = {},
 }
 
 SCM.Defaults.GlobalSettingsTabs = {

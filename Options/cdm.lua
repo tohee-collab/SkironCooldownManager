@@ -13,24 +13,24 @@ local function SortByIndex(a, b)
 	return a.dataIndex < b.dataIndex
 end
 
-
 local function ShowNumericInputPopup(key, title, callback)
-	StaticPopupDialogs[key] = StaticPopupDialogs[key] or {
-		text = title,
-		button1 = ACCEPT,
-		button2 = CANCEL,
-		hasEditBox = true,
-		timeout = 0,
-		whileDead = true,
-		hideOnEscape = true,
-		preferredIndex = 3,
-		OnAccept = function(self)
-			local id = tonumber(self.editBox:GetText() or "")
-			if id and id > 0 then
-				callback(id)
-			end
-		end,
-	}
+	StaticPopupDialogs[key] = StaticPopupDialogs[key]
+		or {
+			text = title,
+			button1 = ACCEPT,
+			button2 = CANCEL,
+			hasEditBox = true,
+			timeout = 0,
+			whileDead = true,
+			hideOnEscape = true,
+			preferredIndex = 3,
+			OnAccept = function(self)
+				local id = tonumber(self.EditBox:GetText() or "")
+				if id and id > 0 then
+					callback(id)
+				end
+			end,
+		}
 	StaticPopup_Show(key)
 end
 
@@ -38,20 +38,20 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 	rootDescription:CreateTitle("Add Icon")
 
 	if isGlobal then
-		rootDescription:CreateButton("Custom Spell (SpellID)", function()
-			ShowNumericInputPopup("SCM_CUSTOM_SPELL_ID", "Enter Spell ID", function(spellID)
-				if C_Spell.GetSpellTexture(spellID) then
-					scrollFrame:AddCustomIcon({ texture = C_Spell.GetSpellTexture(spellID), spellID = spellID, iconType = "spell", id = "spell:" .. spellID, isCustom = true })
-					SCM:AddCustomIcon(anchorIndex, "spell", spellID, true)
-					SCM:ApplyAllCDManagerConfigs()
-				end
-			end)
-		end)
-		rootDescription:CreateButton("Custom Item (ItemID)", function()
+		-- rootDescription:CreateButton("Custom Spell", function()
+		-- 	ShowNumericInputPopup("SCM_CUSTOM_SPELL_ID", "Enter Spell ID", function(spellID)
+		-- 		if C_Spell.GetSpellTexture(spellID) then
+		-- 			scrollFrame:AddCustomIcon({ texture = C_Spell.GetSpellTexture(spellID), spellID = spellID, iconType = "spell", id = "spell:" .. spellID, isCustom = true })
+		-- 			SCM:AddCustomIcon(anchorIndex, "spell", spellID, true)
+		-- 			SCM:ApplyAllCDManagerConfigs()
+		-- 		end
+		-- 	end)
+		-- end)
+		rootDescription:CreateButton("Custom Item", function()
 			ShowNumericInputPopup("SCM_CUSTOM_ITEM_ID", "Enter Item ID", function(itemID)
 				if C_Item.GetItemIconByID(itemID) then
-					scrollFrame:AddCustomIcon({ texture = C_Item.GetItemIconByID(itemID), spellID = 0, itemID = itemID, iconType = "item", id = "item:" .. itemID, isCustom = true })
-					SCM:AddCustomIcon(anchorIndex, "item", itemID, true)
+					local uniqueID = SCM:AddCustomIcon(anchorIndex, "item", itemID, true)
+					scrollFrame:AddCustomIcon({ texture = C_Item.GetItemIconByID(itemID), spellID = 0, itemID = itemID, iconType = "item", id = uniqueID, isCustom = true })
 					SCM:ApplyAllCDManagerConfigs()
 				end
 			end)
@@ -113,7 +113,9 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 		local data = cooldownInfoByID[cooldownID]
 
 		if info and data then
-			if not SCM:IsSpellInData(data.spellID, data.category) and not scrollFrame.dataProvider:FindByPredicate(function(data) return data.spellID == info.spellID end) then
+			if not SCM:IsSpellInData(data.spellID, data.category) and not scrollFrame.dataProvider:FindByPredicate(function(data)
+				return data.spellID == info.spellID
+			end) then
 				table.insert(essentialItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 0 })
 			end
 		end
@@ -129,7 +131,9 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 		local data = cooldownInfoByID[cooldownID]
 
 		if info and data then
-			if not SCM:IsSpellInData(data.spellID, data.category) and not scrollFrame.dataProvider:FindByPredicate(function(data) return data.spellID == info.spellID end) then
+			if not SCM:IsSpellInData(data.spellID, data.category) and not scrollFrame.dataProvider:FindByPredicate(function(data)
+				return data.spellID == info.spellID
+			end) then
 				table.insert(utilityItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 1 })
 			end
 		end
@@ -147,7 +151,9 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 		local data = cooldownInfoByID[cooldownID]
 
 		if info and data then
-			if not SCM:IsSpellInData(data.spellID, data.category) and not scrollFrame.dataProvider:FindByPredicate(function(data) return data.spellID == info.spellID end) then
+			if not SCM:IsSpellInData(data.spellID, data.category) and not scrollFrame.dataProvider:FindByPredicate(function(data)
+				return data.spellID == info.spellID
+			end) then
 				table.insert(buffItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 2 })
 			end
 		end
@@ -159,7 +165,9 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 		local data = cooldownInfoByID[cooldownID]
 
 		if info and data and data.category < 3 then
-			if not SCM:IsSpellInData(data.spellID, data.category) and not scrollFrame.dataProvider:FindByPredicate(function(data) return data.spellID == info.spellID end) then
+			if not SCM:IsSpellInData(data.spellID, data.category) and not scrollFrame.dataProvider:FindByPredicate(function(data)
+				return data.spellID == info.spellID
+			end) then
 				table.insert(buffItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 3 })
 			end
 		end
@@ -170,43 +178,44 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 	ProcessAndCreateButtons(buffButton, buffItems, true)
 
 	rootDescription:CreateDivider()
-	rootDescription:CreateButton("Custom Spell (SpellID)", function()
-		ShowNumericInputPopup("SCM_CUSTOM_SPELL_ID", "Enter Spell ID", function(spellID)
-			local texture = C_Spell.GetSpellTexture(spellID)
-			if texture then
-				scrollFrame:AddCustomIcon({
-					spellID = spellID,
-					texture = texture,
-					isCustom = true,
-					iconType = "spell",
-					id = "spell:" .. spellID,
-				})
-				if isGlobal then
-					SCM:AddCustomIcon(anchorIndex, "spell", spellID, true)
-				else
-					SCM:AddCustomIcon(anchorIndex, "spell", spellID)
-				end
-				SCM:ApplyAllCDManagerConfigs()
-			end
-		end)
-	end)
-	rootDescription:CreateButton("Custom Item (ItemID)", function()
+	-- rootDescription:CreateButton("Custom Spell (SpellID)", function()
+	-- 	ShowNumericInputPopup("SCM_CUSTOM_SPELL_ID", "Enter Spell ID", function(spellID)
+	-- 		local texture = C_Spell.GetSpellTexture(spellID)
+	-- 		if texture then
+	-- 			scrollFrame:AddCustomIcon({
+	-- 				spellID = spellID,
+	-- 				texture = texture,
+	-- 				isCustom = true,
+	-- 				iconType = "spell",
+	-- 				id = "spell:" .. spellID,
+	-- 			})
+	-- 			if isGlobal then
+	-- 				SCM:AddCustomIcon(anchorIndex, "spell", spellID, true)
+	-- 			else
+	-- 				SCM:AddCustomIcon(anchorIndex, "spell", spellID)
+	-- 			end
+	-- 			SCM:ApplyAllCDManagerConfigs()
+	-- 		end
+	-- 	end)
+	-- end)
+	rootDescription:CreateButton("Item", function()
 		ShowNumericInputPopup("SCM_CUSTOM_ITEM_ID", "Enter Item ID", function(itemID)
 			local texture = C_Item.GetItemIconByID(itemID)
 			if texture then
-				local dataIndex = scrollFrame:AddCustomIcon({
-					spellID = 0,
+				local uniqueID
+				if isGlobal then
+					uniqueID = SCM:AddCustomIcon(anchorIndex, "item", itemID, true)
+				else
+					uniqueID = SCM:AddCustomIcon(anchorIndex, "item", itemID)
+				end
+
+				scrollFrame:AddCustomIcon({
 					texture = texture,
-					id = "item:" .. itemID,
+					id = uniqueID,
 					isCustom = true,
 					iconType = "item",
 					itemID = itemID,
 				})
-				if isGlobal then
-					SCM:AddCustomIcon(anchorIndex, "item", itemID, true)
-				else
-					SCM:AddCustomIcon(anchorIndex, "item", itemID)
-				end
 				SCM:ApplyAllCDManagerConfigs()
 			end
 		end)
@@ -223,17 +232,6 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 	if not data.rowConfig[rowIndex] then
 		return
 	end
-
-	--local iconSize = AceGUI:Create("Slider")
-	--iconSize:SetRelativeWidth(0.5)
-	--iconSize:SetSliderValues(10, 100, 0.1)
-	--iconSize:SetLabel("Size")
-	--iconSize:SetValue(data.rowConfig[rowIndex].size)
-	--iconSize:SetCallback("OnValueChanged", function(self, event, value)
-	--	data.rowConfig[rowIndex].size = value
-	--	SCM:ApplyAllCDManagerConfigs()
-	--end)
-	--self:AddChild(iconSize)
 
 	local iconWidth = AceGUI:Create("Slider")
 	iconWidth:SetRelativeWidth(0.33)
@@ -279,7 +277,9 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 	addRowButton:SetDisabled(#rowTabsTbl >= 9)
 	addRowButton:SetCallback("OnClick", function()
 		local nextIndex = isGlobal and (#data.rowConfig + 1) or SCM:AddRow(anchorIndex)
-		if isGlobal then data.rowConfig[nextIndex] = { size = 40, limit = 8 } end
+		if isGlobal then
+			data.rowConfig[nextIndex] = { size = 40, limit = 8 }
+		end
 
 		tinsert(rowTabsTbl, { value = nextIndex, text = "Row " .. nextIndex })
 		table.sort(rowTabsTbl, function(a, b)
@@ -296,7 +296,11 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 	deleteRowButton:SetRelativeWidth(0.5)
 	deleteRowButton:SetDisabled(rowIndex == 1)
 	deleteRowButton:SetCallback("OnClick", function()
-		if isGlobal then tremove(data.rowConfig, rowIndex) else SCM:RemoveRow(anchorIndex, rowIndex) end
+		if isGlobal then
+			tremove(data.rowConfig, rowIndex)
+		else
+			SCM:RemoveRow(anchorIndex, rowIndex)
+		end
 
 		local removedIndex
 		for i, tab in ipairs(rowTabsTbl) do
@@ -321,6 +325,7 @@ end
 
 local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isGlobal)
 	anchorWidget:ReleaseChildren()
+
 	SCM.activeAnchorSettings = anchorIndex
 	local options = SCM.db.global.options
 
@@ -378,7 +383,11 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	deleteAnchorButton:SetRelativeWidth(0.5)
 	deleteAnchorButton:SetDisabled((not isGlobal and anchorIndex <= 3) or (isGlobal and anchorIndex == 1))
 	deleteAnchorButton:SetCallback("OnClick", function()
-		if isGlobal then SCM:RemoveGlobalAnchor(anchorIndex, anchorTabsTbl) else SCM:RemoveAnchor(anchorIndex, anchorTabsTbl) end
+		if isGlobal then
+			SCM:RemoveGlobalAnchor(anchorIndex, anchorTabsTbl)
+		else
+			SCM:RemoveAnchor(anchorIndex, anchorTabsTbl)
+		end
 		anchorWidget:SetTabs(anchorTabsTbl)
 		anchorWidget:SelectTab(#anchorTabsTbl)
 	end)
@@ -475,15 +484,6 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	rowTabs:SelectTab(1)
 	anchorOptions:AddChild(rowTabs)
 
-	local label = AceGUI:Create("Label")
-	label:SetRelativeWidth(1.0)
-	label:SetHeight(24)
-	label:SetJustifyH("CENTER")
-	label:SetJustifyV("MIDDLE")
-	label:SetText("|TInterface\\common\\help-i:40:40:0:0|tOnly spells added to visible cooldown manager categories will show up.")
-	label:SetFontObject("Game12Font")
-	scrollFrame:AddChild(label)
-
 	local top = AceGUI:Create("InlineGroup")
 	top:SetLayout("fill")
 	top:SetFullWidth(true)
@@ -534,8 +534,9 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 			horizontalScrollFrame:AddSpellBySpellID(spellInfo.data, spellInfo.info.anchorGroup[anchorIndex].order, spellInfo.isBuffIcon)
 		end
 	end
-	local customCollection = isGlobal and SCM.db.global.globalCustomIcons or SCM.customIcons
-	for _, customIcon in ipairs(customCollection or {}) do
+
+	local customCollection = isGlobal and SCM.db.global.globalCustomConfig or SCM.customConfig
+	for _, customIcon in pairs(customCollection or {}) do
 		if customIcon.anchorGroup == anchorIndex then
 			local texture = customIcon.iconType == "spell" and C_Spell.GetSpellTexture(customIcon.spellID) or C_Item.GetItemIconByID(customIcon.itemID)
 			if texture or SCM.isOptionsOpen then
@@ -552,11 +553,11 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 
 	horizontalScrollFrame:AddAddButton()
 
-	local customSpellSettings = AceGUI:Create("InlineGroup")
-	customSpellSettings:SetLayout("flow")
-	customSpellSettings:SetFullWidth(true)
-	customSpellSettings:SetTitle("")
-	scrollFrame:AddChild(customSpellSettings)
+	local iconSettings = AceGUI:Create("InlineGroup")
+	iconSettings:SetLayout("flow")
+	iconSettings:SetFullWidth(true)
+	iconSettings:SetTitle("")
+	scrollFrame:AddChild(iconSettings)
 
 	local label = AceGUI:Create("Label")
 	label:SetRelativeWidth(1.0)
@@ -565,11 +566,11 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	label:SetJustifyV("MIDDLE")
 	label:SetText("|TInterface\\common\\help-i:40:40:0:0|tClick on an icon above to show spell specific options.")
 	label:SetFontObject("Game12Font")
-	customSpellSettings:AddChild(label)
+	iconSettings:AddChild(label)
 
 	local lastButtonFrame
 	horizontalScrollFrame:SetCallback("OnGroupSelected", function(scrollFrameWidget, event, buttonFrame, button)
-		customSpellSettings:ReleaseChildren()
+		iconSettings:ReleaseChildren()
 
 		if lastButtonFrame then
 			lastButtonFrame:SetBackdropBorderColor(BLACK_FONT_COLOR:GetRGBA())
@@ -582,88 +583,99 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 				end)
 			else
 				if not lastButtonFrame or lastButtonFrame ~= buttonFrame then
-					customSpellSettings:SetTitle(C_Spell.GetSpellName(buttonFrame.data.spellID))
-					buttonFrame:SetBackdropBorderColor(0, 1, 0, 1)
-					local spellConfig = SCM.spellConfig[buttonFrame.data.spellID]
+					local buttonData = buttonFrame.data
+					local buttonConfig = isGlobal and SCM.globalCustomConfig[buttonData.id] or SCM.customConfig[buttonData.id] or SCM.spellConfig[buttonData.id]
 
-					local useCustomGlowColor = AceGUI:Create("CheckBox")
-					useCustomGlowColor:SetLabel("Use Custom Glow Color")
-					useCustomGlowColor:SetRelativeWidth(0.5)
-					useCustomGlowColor:SetValue(spellConfig.useCustomGlowColor)
-					useCustomGlowColor:SetDisabled(not options.useCustomGlow)
-					useCustomGlowColor:SetCallback("OnValueChanged", function(self, event, value)
-						spellConfig.useCustomGlowColor = value or nil
-						SCM:ApplyAllCDManagerConfigs()
-					end)
-					customSpellSettings:AddChild(useCustomGlowColor)
+					if buttonConfig then
+						if buttonData.spellID then
+							iconSettings:SetTitle(C_Spell.GetSpellName(buttonData.spellID))
+						elseif buttonData.itemID then
+							iconSettings:SetTitle(C_Item.GetItemNameByID(buttonData.itemID))
+						end
 
-					local customGlowColor = AceGUI:Create("ColorPicker")
-					customGlowColor:SetRelativeWidth(0.33)
-					customGlowColor:SetLabel("Glow Color")
-					customGlowColor:SetHasAlpha(true)
-					customGlowColor:SetDisabled(not options.useCustomGlow)
-					if spellConfig.customGlowColor then
-						customGlowColor:SetColor(unpack(spellConfig.customGlowColor))
-					end
-					customGlowColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
-						spellConfig.customGlowColor = { r, g, b, a }
-					end)
-					customSpellSettings:AddChild(customGlowColor)
+						buttonFrame:SetBackdropBorderColor(0, 1, 0, 1)
 
-					if not buttonFrame.data.isBuffIcon then
-						local hideWhileReady = AceGUI:Create("CheckBox")
-						hideWhileReady:SetLabel("Show On Cooldown")
-						hideWhileReady:SetRelativeWidth(0.5)
-						hideWhileReady:SetValue(spellConfig.hideWhenNotOnCooldown)
-						hideWhileReady:SetCallback("OnValueChanged", function(self, event, value)
-							spellConfig.hideWhenNotOnCooldown = value or nil
-							SCM:ApplyAllCDManagerConfigs()
-						end)
-						customSpellSettings:AddChild(hideWhileReady)
-					end
-
-					if buttonFrame.data.isBuffIcon then
-						local alwaysShow = AceGUI:Create("CheckBox")
-						alwaysShow:SetLabel("Show Always")
-						alwaysShow:SetRelativeWidth(0.5)
-						alwaysShow:SetValue(spellConfig.alwaysShow)
-						alwaysShow:SetDisabled(not options.hideBuffsWhenInactive)
-						customSpellSettings:AddChild(alwaysShow)
-
-						local desaturate
-						if not options.testSetting[buttonFrame.data.spellID] then
-							desaturate = AceGUI:Create("CheckBox")
-							desaturate:SetLabel("Desaturate While Inactive")
-							desaturate:SetRelativeWidth(0.5)
-							desaturate:SetValue(spellConfig.desaturate)
-							desaturate:SetDisabled(not spellConfig.alwaysShow)
-							desaturate:SetCallback("OnValueChanged", function(self, event, value)
-								spellConfig.desaturate = value or nil
+						if buttonData.iconType == "spell" then
+							local useCustomGlowColor = AceGUI:Create("CheckBox")
+							useCustomGlowColor:SetLabel("Use Custom Glow Color")
+							useCustomGlowColor:SetRelativeWidth(0.5)
+							useCustomGlowColor:SetValue(buttonConfig.useCustomGlowColor)
+							useCustomGlowColor:SetDisabled(not options.useCustomGlow)
+							useCustomGlowColor:SetCallback("OnValueChanged", function(self, event, value)
+								buttonConfig.useCustomGlowColor = value or nil
 								SCM:ApplyAllCDManagerConfigs()
 							end)
-							customSpellSettings:AddChild(desaturate)
-						end
-						alwaysShow:SetCallback("OnValueChanged", function(self, event, value)
-							spellConfig.alwaysShow = value or nil
-							SCM:ApplyAllCDManagerConfigs()
+							iconSettings:AddChild(useCustomGlowColor)
 
-							if desaturate then
-								desaturate:SetDisabled(not value)
+							local customGlowColor = AceGUI:Create("ColorPicker")
+							customGlowColor:SetRelativeWidth(0.33)
+							customGlowColor:SetLabel("Glow Color")
+							customGlowColor:SetHasAlpha(true)
+							customGlowColor:SetDisabled(not options.useCustomGlow)
+							if buttonConfig.customGlowColor then
+								customGlowColor:SetColor(unpack(buttonConfig.customGlowColor))
 							end
-						end)
-					end
+							customGlowColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
+								buttonConfig.customGlowColor = { r, g, b, a }
+							end)
+							iconSettings:AddChild(customGlowColor)
+						end
+						
+						if not buttonFrame.data.isBuffIcon then
+							local hideWhileReady = AceGUI:Create("CheckBox")
+							hideWhileReady:SetLabel("Show On Cooldown")
+							hideWhileReady:SetRelativeWidth(0.5)
+							hideWhileReady:SetValue(buttonConfig.hideWhenNotOnCooldown)
+							hideWhileReady:SetCallback("OnValueChanged", function(self, event, value)
+								buttonConfig.hideWhenNotOnCooldown = value or nil
+								SCM:ApplyAllCDManagerConfigs()
+							end)
+							iconSettings:AddChild(hideWhileReady)
+						end
 
-					local label = AceGUI:Create("Label")
-					label:SetRelativeWidth(1.0)
-					label:SetHeight(24)
-					label:SetJustifyH("CENTER")
-					label:SetJustifyV("MIDDLE")
-					label:SetText("|TInterface\\common\\help-i:40:40:0:0|tMore will come soon!")
-					label:SetFontObject("Game12Font")
-					customSpellSettings:AddChild(label)
-					lastButtonFrame = buttonFrame
+						if buttonFrame.data.isBuffIcon then
+							local alwaysShow = AceGUI:Create("CheckBox")
+							alwaysShow:SetLabel("Show Always")
+							alwaysShow:SetRelativeWidth(0.5)
+							alwaysShow:SetValue(buttonConfig.alwaysShow)
+							alwaysShow:SetDisabled(not options.hideBuffsWhenInactive)
+							iconSettings:AddChild(alwaysShow)
+
+							local desaturate
+							if not options.testSetting[buttonFrame.data.spellID] then
+								desaturate = AceGUI:Create("CheckBox")
+								desaturate:SetLabel("Desaturate While Inactive")
+								desaturate:SetRelativeWidth(0.5)
+								desaturate:SetValue(buttonConfig.desaturate)
+								desaturate:SetDisabled(not buttonConfig.alwaysShow)
+								desaturate:SetCallback("OnValueChanged", function(self, event, value)
+									buttonConfig.desaturate = value or nil
+									SCM:ApplyAllCDManagerConfigs()
+								end)
+								iconSettings:AddChild(desaturate)
+							end
+							alwaysShow:SetCallback("OnValueChanged", function(self, event, value)
+								buttonConfig.alwaysShow = value or nil
+								SCM:ApplyAllCDManagerConfigs()
+
+								if desaturate then
+									desaturate:SetDisabled(not value)
+								end
+							end)
+						end
+
+						local label = AceGUI:Create("Label")
+						label:SetRelativeWidth(1.0)
+						label:SetHeight(24)
+						label:SetJustifyH("CENTER")
+						label:SetJustifyV("MIDDLE")
+						label:SetText("|TInterface\\common\\help-i:40:40:0:0|tMore will come soon!")
+						label:SetFontObject("Game12Font")
+						iconSettings:AddChild(label)
+						lastButtonFrame = buttonFrame
+					end
 				else
-					customSpellSettings:SetTitle("")
+					iconSettings:SetTitle("")
 					lastButtonFrame:SetBackdropBorderColor(BLACK_FONT_COLOR:GetRGBA())
 					lastButtonFrame = nil
 
@@ -674,7 +686,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 					label:SetJustifyV("MIDDLE")
 					label:SetText("|TInterface\\common\\help-i:40:40:0:0|tClick on an icon to show spell specific options.")
 					label:SetFontObject("Game12Font")
-					customSpellSettings:AddChild(label)
+					iconSettings:AddChild(label)
 				end
 			end
 		elseif button == "RightButton" and not buttonFrame.data.isAddButton then
@@ -711,20 +723,6 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	end)
 
 	top:AddChild(horizontalScrollFrame)
-
-	--local label = AceGUI:Create("Label")
-	--label:SetRelativeWidth(1.0)
-	--label:SetHeight(5)
-	--label:SetText("|TInterface\\common\\help-i:40:40:0:15|tAny given icon can only be added to one anchor based on their source.")
-	--label:SetFontObject("Game12Font")
-	--self:AddChild(label)
-
-	--local label = AceGUI:Create("Label")
-	--label:SetRelativeWidth(1.0)
-	--label:SetHeight(5)
-	--label:SetText("|TInterface\\common\\help-i:40:40:0:15|tBuff icons are hidden unless you have the buff or you disable \"Hide While Inactive\".")
-	--label:SetFontObject("Game12Font")
-	--self:AddChild(label)
 end
 
 local function CreateAnchorTabGroup(parent, frame, isGlobal)
@@ -732,6 +730,10 @@ local function CreateAnchorTabGroup(parent, frame, isGlobal)
 	anchorTabs:SetLayout("fill")
 	anchorTabs:SetFullWidth(true)
 	anchorTabs:SetFullHeight(true)
+	anchorTabs.frame:SetPoint("TOPLEFT", parent.frame, "TOPLEFT", 0, -30)
+	anchorTabs.frame:SetPoint("BOTTOMRIGHT", parent.frame, "BOTTOMRIGHT", 0, -5)
+	anchorTabs.frame:SetParent(parent.frame)
+	anchorTabs.frame:Show()
 
 	local sourceConfig = isGlobal and SCM.db.global.globalAnchorConfig or SCM.anchorConfig
 	local anchorTabsTbl = {}

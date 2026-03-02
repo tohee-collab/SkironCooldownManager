@@ -11,7 +11,7 @@ local function MergeConfig(destDB, sourceData, defaultAnchor)
 
 	destDB.spellConfig = sourceData.spellConfig
 	destDB.itemConfig = sourceData.itemConfig
-	destDB.customIcons = sourceData.customIcons or {}
+	destDB.customConfig = sourceData.customConfig or {}
 
 	local anchors = sourceData.anchorConfig
 	if not anchors or #anchors == 0 then
