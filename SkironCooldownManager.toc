@@ -31,6 +31,8 @@ Database\loader.lua
 
 glow.lua
 skinning.lua
+utils.lua
+custom_icons.lua
 core.lua
 profiles.lua
 uid.lua

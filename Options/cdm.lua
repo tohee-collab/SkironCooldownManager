@@ -198,32 +198,35 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 	-- 		end
 	-- 	end)
 	-- end)
-	-- rootDescription:CreateButton("Custom Item", function()
-	-- 	ShowNumericInputPopup("SCM_CUSTOM_ITEM_ID", "Enter Item ID", function(itemID)
-	-- 		local texture = C_Item.GetItemIconByID(itemID)
-	-- 		if texture then
-	-- 			local uniqueID
-	-- 			if isGlobal then
-	-- 				uniqueID = SCM:AddCustomIcon(anchorIndex, "item", itemID, true)
-	-- 			else
-	-- 				uniqueID = SCM:AddCustomIcon(anchorIndex, "item", itemID)
-	-- 			end
--- 
-	-- 			scrollFrame:AddCustomIcon({
-	-- 				texture = texture,
-	-- 				id = uniqueID,
-	-- 				isCustom = true,
-	-- 				iconType = "item",
-	-- 				itemID = itemID,
-	-- 			})
-	-- 			SCM:ApplyAllCDManagerConfigs()
-	-- 		end
-	-- 	end)
-	-- end)
 
-	-- for _, customEntry in pairs(SCM.CustomEntries) do
-	-- 	customEntry(rootDescription, scrollFrame, anchorIndex)
-	-- end
+	if SCM.db.global.options.enableCustomIcons then
+		rootDescription:CreateButton("Custom Item", function()
+			ShowNumericInputPopup("SCM_CUSTOM_ITEM_ID", "Enter Item ID", function(itemID)
+				local texture = C_Item.GetItemIconByID(itemID)
+				if texture then
+					local uniqueID
+					if isGlobal then
+						uniqueID = SCM:AddCustomIcon(anchorIndex, "item", itemID, true)
+					else
+						uniqueID = SCM:AddCustomIcon(anchorIndex, "item", itemID)
+					end
+					--
+					scrollFrame:AddCustomIcon({
+						texture = texture,
+						id = uniqueID,
+						isCustom = true,
+						iconType = "item",
+						itemID = itemID,
+					})
+					SCM:ApplyAllCDManagerConfigs()
+				end
+			end)
+		end)
+
+		for _, customEntry in pairs(SCM.CustomEntries) do
+			customEntry(rootDescription, scrollFrame, anchorIndex)
+		end
+	end
 end
 
 local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal)
@@ -620,7 +623,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 							end)
 							iconSettings:AddChild(customGlowColor)
 						end
-						
+
 						if not buttonFrame.data.isBuffIcon then
 							local hideWhileReady = AceGUI:Create("CheckBox")
 							hideWhileReady:SetLabel("Show On Cooldown")
@@ -754,10 +757,16 @@ local function CDM(self, frame, group)
 	modeTabs:SetLayout("fill")
 	modeTabs:SetFullWidth(true)
 	modeTabs:SetFullHeight(true)
-	modeTabs:SetTabs({
+
+	local tabs = {
 		{ value = "spec", text = "Spec Anchors" },
-		--{ value = "global", text = "Global Anchors" },
-	})
+	}
+
+	if SCM.db.global.options.enableCustomIcons then
+		tinsert(tabs, { value = "global", text = "Global Anchors" })
+	end
+
+	modeTabs:SetTabs(tabs)
 	modeTabs:SetCallback("OnGroupSelected", function(widget, event, mode)
 		widget:ReleaseChildren()
 		CreateAnchorTabGroup(widget, frame, mode == "global")
