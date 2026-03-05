@@ -23,6 +23,46 @@ local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 	end
 end
 
+local function ApplyCooldownStyle(child, options)
+	if child.GetCooldownFrame then
+		local cooldownFrame = child:GetCooldownFrame()
+		cooldownFrame:ClearAllPoints()
+		cooldownFrame:SetAllPoints(child.Icon)
+		cooldownFrame:SetSwipeTexture("Interface\\Buttons\\WHITE8x8")
+
+		if options.changeCooldownFont then
+			local fontPath = LSM:Fetch("font", options.cooldownFont)
+			local cooldownFontString = cooldownFrame:GetRegions()
+			if cooldownFontString and cooldownFontString.SetFont then
+				if not originalCooldownFont then
+					originalCooldownFont = { cooldownFontString:GetFont() }
+				end
+				if options.enableCustomCooldownFont then
+					cooldownFontString:SetFont(fontPath, options.cooldownFontSize, "OUTLINE")
+				elseif originalCooldownFont then
+					cooldownFontString:SetFont(unpack(originalCooldownFont))
+				end
+			end
+		end
+
+		hooksecurefunc(cooldownFrame, "SetCooldown", function(self)
+			if options.recolorActiveSwipe then
+				self:SetSwipeColor(0, 0, 0, 0.8)
+
+				if self:GetUseAuraDisplayTime() then
+					self:SetSwipeColor(unpack(options.activeSwipeColor))
+				end
+			end
+		end)
+
+		hooksecurefunc(cooldownFrame, "Clear", function(self)
+			if options.recolorActiveSwipe then
+				self:SetSwipeColor(0, 0, 0, 0.8)
+			end
+		end)
+	end
+end
+
 function SCM:SkinChild(child, childConfig)
 	if C_AddOns.IsAddOnLoaded("ElvUI") and ElvUI[1].private.skins.blizzard.cooldownManager then
 		return
@@ -104,31 +144,9 @@ function SCM:SkinChild(child, childConfig)
 			child.DebuffBorder:SetAlpha(0)
 		end
 
-		if child.GetCooldownFrame then
-			local cooldownFrame = child:GetCooldownFrame()
-			cooldownFrame:ClearAllPoints()
-			cooldownFrame:SetAllPoints(child.Icon)
-			cooldownFrame:SetSwipeTexture("Interface\\Buttons\\WHITE8x8")
-
-			hooksecurefunc(cooldownFrame, "SetCooldown", function(self)
-				if options.recolorActiveSwipe then
-					self:SetSwipeColor(0, 0, 0, 0.8)
-
-					if self:GetUseAuraDisplayTime() then
-						self:SetSwipeColor(unpack(options.activeSwipeColor))
-					end
-				end
-			end)
-
-			hooksecurefunc(cooldownFrame, "Clear", function(self)
-				if options.recolorActiveSwipe then
-					self:SetSwipeColor(0, 0, 0, 0.8)
-				end
-			end)
-		end
-
 		local fontPath = LSM:Fetch("font", options.chargeFont)
 		ApplyChargeAndApplicationStyle(child, options, fontPath)
+		ApplyCooldownStyle(child, options)
 	end
 	for _, customSkin in ipairs(SCM.Skins) do
 		pcall(customSkin, child)
