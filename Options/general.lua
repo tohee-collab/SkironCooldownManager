@@ -302,6 +302,44 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		end)
 		chargeSettings:AddChild(yOffset)
 
+		local cooldownTextSettings = AceGUI:Create("InlineGroup")
+		cooldownTextSettings:SetLayout("flow")
+		cooldownTextSettings:SetFullWidth(true)
+		cooldownTextSettings:SetTitle("Cooldown Text")
+		tabWidget:AddChild(cooldownTextSettings)
+
+		local enableCooldownFont = AceGUI:Create("CheckBox")
+		enableCooldownFont:SetRelativeWidth(0.33)
+		enableCooldownFont:SetLabel("Custom Cooldown Font")
+		enableCooldownFont:SetValue(options.changeCooldownFont)
+		enableCooldownFont:SetCallback("OnValueChanged", function(_, _, value)
+			options.enableCustomCooldownFont = value
+			SCM:ApplyAllCDManagerConfigs()
+		end)
+		cooldownTextSettings:AddChild(enableCooldownFont)
+
+		local cooldownFont = AceGUI:Create("LSM30_Font")
+		cooldownFont:SetLabel("Font")
+		cooldownFont:SetRelativeWidth(0.33)
+		cooldownFont:SetList(LSM:HashTable("font"))
+		cooldownFont:SetValue(options.cooldownFont)
+		cooldownFont:SetCallback("OnValueChanged", function(self, event, value)
+			options.changeCooldownFont = value
+			SCM:ApplyAllCDManagerConfigs()
+		end)
+		cooldownTextSettings:AddChild(cooldownFont)
+
+		local cooldownFontSize = AceGUI:Create("Slider")
+		cooldownFontSize:SetRelativeWidth(0.33)
+		cooldownFontSize:SetLabel("Font Size")
+		cooldownFontSize:SetSliderValues(1, 50, 1)
+		cooldownFontSize:SetValue(options.cooldownFontSize)
+		cooldownFontSize:SetCallback("OnValueChanged", function(self, event, value)
+			options.cooldownFontSize = value
+			SCM:ApplyAllCDManagerConfigs()
+		end)
+		cooldownTextSettings:AddChild(cooldownFontSize)
+
 		local auraSettings = AceGUI:Create("InlineGroup")
 		auraSettings:SetLayout("flow")
 		auraSettings:SetFullWidth(true)
@@ -313,6 +351,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		hideBuffsWhenInactive:SetLabel("Hide Inactive Auras")
 		hideBuffsWhenInactive:SetValue(options.hideBuffsWhenInactive)
 		hideBuffsWhenInactive:SetDisabled(not LibEditModeOverride:CanEditActiveLayout())
+		SCM.Utils.SetDisabledTooltip(hideBuffsWhenInactive, "Enable a custom edit mode profile first, then reopen options.")
 		hideBuffsWhenInactive:SetCallback("OnValueChanged", function(self, _, value)
 			if InCombatLockdown() then
 				return
