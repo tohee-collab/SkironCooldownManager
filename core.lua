@@ -17,6 +17,7 @@ local cachedViewerChildren = {}
 local cachedActiveItemFrames = {}
 local cachedVisitedAnchorGroups = {}
 local reusableCustomIconContext = {}
+local activeScopedAnchorGroups
 local UPDATE_SCOPE = {
 	ALL = "all",
 	ESSENTIAL = "essential",
@@ -183,6 +184,16 @@ local function UpdateChildDesaturation(child, shouldDesaturate)
 	end
 end
 
+local function UpdateChildGlow(child, isInactive)
+	if child.SCMConfig and child.SCMConfig.glowWhileActive then
+		if not isInactive then
+			SCM:StartCustomGlow(child)
+		else
+			SCM:StopCustomGlow(child)
+		end
+	end
+end
+
 local function OnManagedChildShow(self)
 	UIParent.SetAlpha(self, self.SCMHidden and 0 or 1)
 	SCM:ApplyAllCDManagerConfigs()
@@ -298,9 +309,6 @@ local function ProcessBuffIcon(child, childData, options)
 	child.SCMBuffOptions = options
 
 	local isInactive = not child.Cooldown:IsShown()
-	--if not issecretvalue(child.Icon:GetTexture()) then
-	--	--isInactive = false
-	--end
 	local forceShow = SCM.simulateBuffs or childData.alwaysShow
 
 	local shouldHide = options.hideBuffsWhenInactive and isInactive and not forceShow
@@ -312,6 +320,7 @@ local function ProcessBuffIcon(child, childData, options)
 
 	SetChildVisibilityState(child, true, true)
 	UpdateChildDesaturation(child, isInactive)
+	UpdateChildGlow(child, isInactive)
 end
 
 local function IsChildOnCooldown(child)
@@ -396,13 +405,15 @@ local function CollectScopedAnchorGroups(updateScope, config)
 	local allCooldownIDs = defaultConfig.cooldownIDs
 
 	for _, child in ipairs(GetOrCacheChildren(viewer, viewerData.isBuffIcon)) do
-		local cooldownID = child:GetCooldownID()
-		local info = (categoryConfig and categoryConfig[cooldownID]) or (allCooldownIDs and allCooldownIDs[cooldownID])
-		local spellID = info and info.spellID
-		local childData = spellID and spellConfig[spellID]
-		local group = childData and (childData.source[categoryIndex] or childData.source[pairCategory])
-		if group then
-			targetGroups[group] = true
+		if child.GetCooldownID then
+			local cooldownID = child:GetCooldownID()
+			local info = (categoryConfig and categoryConfig[cooldownID]) or (allCooldownIDs and allCooldownIDs[cooldownID])
+			local spellID = info and info.spellID
+			local childData = spellID and spellConfig[spellID]
+			local group = childData and (childData.source[categoryIndex] or childData.source[pairCategory])
+			if group then
+				targetGroups[group] = true
+			end
 		end
 	end
 
@@ -411,6 +422,17 @@ end
 
 local function IsScopedGroup(scopedAnchorGroups, group)
 	return not scopedAnchorGroups or scopedAnchorGroups[group]
+end
+
+local function IsScopedAnchorGroupAllowed(group, isGlobal)
+	local effectiveGroup = isGlobal and ToGlobalGroup(group) or group
+	return IsScopedGroup(activeScopedAnchorGroups, effectiveGroup)
+end
+
+local function AddChildToScopedGroup(validChildren, group, child, isGlobal)
+	if IsScopedAnchorGroupAllowed(group, isGlobal) then
+		AddChildToGroup(validChildren, group, child, isGlobal)
+	end
 end
 
 local function ProcessSingleChild(child, validChildren, spellConfig, categoryIndex, isBuffIcon, options)
@@ -498,50 +520,54 @@ local function ProcessItemConfig(itemConfig, validChildren, isGlobal, activeItem
 
 		local slotID = config and (config.slotID or tonumber(configID))
 		if slotID and slotID > 0 then
-			local frameKey = (isGlobal and (config.id or tostring(configID))) or ("spec:" .. tostring(slotID))
-			activeItemFrames[frameKey] = true
+			local anchorGroup = config.anchorGroup or 1
+			local scopedGroup = isGlobal and ToGlobalGroup(anchorGroup) or anchorGroup
+			if IsScopedGroup(activeScopedAnchorGroups, scopedGroup) then
+				local frameKey = (isGlobal and (config.id or tostring(configID))) or ("spec:" .. tostring(slotID))
 
-			local itemID = GetInventoryItemID("player", slotID)
-			local frame = SCM.itemFrames[frameKey] or CreateFrame("Frame", nil, UIParent, "PermokItemIconTemplate")
-			frame:SetScale(cachedViewerScale)
+				local itemID = GetInventoryItemID("player", slotID)
+				if itemID and C_Item.GetItemSpell(itemID) then
+					activeItemFrames[frameKey] = true
+					local frame = SCM.itemFrames[frameKey] or CreateFrame("Frame", nil, UIParent, "PermokItemIconTemplate")
+					frame:SetScale(cachedViewerScale)
 
-			if not SCM.itemFrames[frameKey] then
-				frame.Cooldown:SetScript("OnCooldownDone", OnIconCooldownDone)
-				SCM.itemFrames[frameKey] = frame
-			end
-
-			if itemID and C_Item.GetItemSpell(itemID) then
-				frame.slotID = slotID
-				frame.itemID = itemID
-				frame.SCMCooldownID = config.id or ("slot:" .. slotID)
-				frame.SCMConfig = config
-				frame.SCMOrder = config.order or (100 + slotID)
-
-				if not frame.lastItemID or frame.lastItemID ~= itemID then
-					frame.lastItemID = itemID
-					frame.Icon:SetTexture(C_Item.GetItemIconByID(itemID))
-
-					local item = Item:CreateFromItemID(itemID)
-					if item then
-						item:ContinueOnItemLoad(function()
-							OnItemDataLoaded(item, frame)
-						end)
+					if not SCM.itemFrames[frameKey] then
+						frame.Cooldown:SetScript("OnCooldownDone", OnIconCooldownDone)
+						SCM.itemFrames[frameKey] = frame
 					end
-				end
 
-				local start, duration = GetInventoryItemCooldown("player", slotID)
-				if start and start > 0 then
-					frame.Cooldown:SetCooldown(start, duration)
-					frame.Icon:SetDesaturated(true)
-				else
-					frame.Cooldown:Clear()
-					frame.Icon:SetDesaturated(false)
-				end
+					frame.slotID = slotID
+					frame.itemID = itemID
+					frame.SCMCooldownID = config.id or ("slot:" .. slotID)
+					frame.SCMConfig = config
+					frame.SCMOrder = config.order or (100 + slotID)
 
-				SetChildVisibilityState(frame, true, true)
-				AddChildToGroup(validChildren, config.anchorGroup or 1, frame, isGlobal)
-			else
-				SetChildVisibilityState(frame, false, true)
+					if not frame.lastItemID or frame.lastItemID ~= itemID then
+						frame.lastItemID = itemID
+						frame.Icon:SetTexture(C_Item.GetItemIconByID(itemID))
+
+						local item = Item:CreateFromItemID(itemID)
+						if item then
+							item:ContinueOnItemLoad(function()
+								OnItemDataLoaded(item, frame)
+							end)
+						end
+					end
+
+					local start, duration = GetInventoryItemCooldown("player", slotID)
+					if start and start > 0 then
+						frame.Cooldown:SetCooldown(start, duration)
+						frame.Icon:SetDesaturated(true)
+					else
+						frame.Cooldown:Clear()
+						frame.Icon:SetDesaturated(false)
+					end
+
+					SetChildVisibilityState(frame, true, true)
+					AddChildToScopedGroup(validChildren, anchorGroup, frame, isGlobal)
+				elseif SCM.itemFrames[frameKey] then
+					SetChildVisibilityState(SCM.itemFrames[frameKey], false, true)
+				end
 			end
 		end
 	end
@@ -566,7 +592,8 @@ local function GetCustomIconContext()
 	reusableCustomIconContext.viewerScale = cachedViewerScale
 	reusableCustomIconContext.setChildVisibilityState = SetChildVisibilityState
 	reusableCustomIconContext.setupFrame = SetupCustomIconFrame
-	reusableCustomIconContext.addChildToGroup = AddChildToGroup
+	reusableCustomIconContext.isGroupAllowed = IsScopedAnchorGroupAllowed
+	reusableCustomIconContext.addChildToGroup = AddChildToScopedGroup
 	return reusableCustomIconContext
 end
 
@@ -644,6 +671,7 @@ local function OrderCDManagerSpells_Actual(updateScope)
 
 	local config = SCM.currentConfig
 	local scopedAnchorGroups = CollectScopedAnchorGroups(updateScope, config)
+	activeScopedAnchorGroups = scopedAnchorGroups
 	local options = SCM.db.global.options
 	for i = 1, #VIEWER_PROCESS_ORDER do
 		local viewerData = VIEWER_PROCESS_ORDER[i]
@@ -672,14 +700,16 @@ local function OrderCDManagerSpells_Actual(updateScope)
 	if SCM.globalSlotConfig and next(SCM.globalSlotConfig) then
 		ProcessItemConfig(SCM.globalSlotConfig, cachedCooldownFrameTbl, true, activeItemFrames)
 	end
-	if next(activeItemFrames) then
-		for frameKey, itemFrame in pairs(SCM.itemFrames) do
-			if not activeItemFrames[frameKey] then
-				SetChildVisibilityState(itemFrame, false, true)
+	if not scopedAnchorGroups then
+		if next(activeItemFrames) then
+			for frameKey, itemFrame in pairs(SCM.itemFrames) do
+				if not activeItemFrames[frameKey] then
+					SetChildVisibilityState(itemFrame, false, true)
+				end
 			end
+		else
+			HideItemIcons()
 		end
-	else
-		HideItemIcons()
 	end
 
 	if options.enableCustomIcons then
@@ -711,9 +741,6 @@ local function OrderCDManagerSpells_Actual(updateScope)
 		local maxGroupWidth = 0
 		local startPoint = (growDir == "CENTER" and "TOP") or (growDir == "LEFT" and "TOPRIGHT") or "TOPLEFT"
 
-		if group > 100 then
-			print(#visibleChildren)
-		end
 		while childIndex <= #visibleChildren do
 			local currentRowConfig = rowConfig[rowIndex] or lastRowConfig
 			local rowLimit = currentRowConfig.limit or 8
@@ -804,9 +831,6 @@ local function OrderCDManagerSpells_Actual(updateScope)
 
 			SCM:ApplyCustomAnchors(maxGroupWidth, rowConfig)
 		elseif not InCombatLockdown() then
-			if group > 100 then
-				print(group, initialWidth, maxGroupWidth, max(initialWidth, maxGroupWidth, 1))
-			end
 			groupAnchor:SetSize(max(initialWidth, maxGroupWidth, 1), max(initialHeight, accumulatedY - baseSpacing, 1))
 		end
 	end
@@ -830,6 +854,8 @@ local function OrderCDManagerSpells_Actual(updateScope)
 			UpdateEmptyAnchorGroup(group, anchorConfig, scopedAnchorGroups)
 		end
 	end
+
+	activeScopedAnchorGroups = nil
 end
 
 local isThrottled = false
@@ -861,7 +887,7 @@ local function OnOrderThrottleTick()
 	end
 end
 
-local function OrderCDManagerSpells(updateScope, config)
+local function OrderCDManagerSpells(updateScope)
 	updateScope = updateScope or UPDATE_SCOPE.ALL
 	if updateScope == UPDATE_SCOPE.BUFF then
 		OrderCDManagerSpells_Actual(updateScope)
@@ -972,26 +998,26 @@ end
 function SCM:ApplyEssentialCDManagerConfig()
 	if C_CVar.GetCVar("cooldownViewerEnabled") == "1" then
 		if SCM.currentConfig then
-			OrderCDManagerSpells(UPDATE_SCOPE.ESSENTIAL, SCM.currentConfig)
+			OrderCDManagerSpells(UPDATE_SCOPE.ESSENTIAL)
 		end
 	end
 end
 
 function SCM:ApplyUtilityCDManagerConfig()
 	if SCM.currentConfig then
-		OrderCDManagerSpells(UPDATE_SCOPE.UTILITY, SCM.currentConfig)
+		OrderCDManagerSpells(UPDATE_SCOPE.UTILITY)
 	end
 end
 
 function SCM:ApplyBuffIconCDManagerConfig()
 	if SCM.currentConfig then
-		OrderCDManagerSpells(UPDATE_SCOPE.BUFF, SCM.currentConfig)
+		OrderCDManagerSpells(UPDATE_SCOPE.BUFF)
 	end
 end
 
 function SCM:ApplyAllCDManagerConfigs()
 	if C_CVar.GetCVar("cooldownViewerEnabled") == "1" and SCM.currentConfig then
-		OrderCDManagerSpells(UPDATE_SCOPE.ALL, SCM.currentConfig)
+		OrderCDManagerSpells(UPDATE_SCOPE.ALL)
 	end
 end
 

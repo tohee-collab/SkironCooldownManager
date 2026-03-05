@@ -109,38 +109,42 @@ function CustomIcons.ProcessIcons(iconConfig, validChildren, isGlobal, context)
 	local viewerScale = context.viewerScale or 1
 	local setChildVisibilityState = context.setChildVisibilityState
 	local setupFrame = context.setupFrame
+	local isGroupAllowed = context.isGroupAllowed
 	local addChildToGroup = context.addChildToGroup
 
 	for id, config in pairs(iconConfig or {}) do
-		local isNewFrame = not SCM.customIconFrames[id]
-		local frameName = "PRMKCUSTOMICONBUTTON" .. tostring(id)
-		local frame = SCM.customIconFrames[id] or CreateFrame("Frame", frameName, UIParent, "PermokItemIconTemplate")
-		SCM.customIconFrames[id] = frame
-		ConfigureCustomIconFrame(frame, id, config, viewerScale)
+		local anchorGroup = config.anchorGroup or 1
+		if not isGroupAllowed or isGroupAllowed(anchorGroup, isGlobal) then
+			local isNewFrame = not SCM.customIconFrames[id]
+			local frameName = "PRMKCUSTOMICONBUTTON" .. tostring(id)
+			local frame = SCM.customIconFrames[id] or CreateFrame("Frame", frameName, UIParent, "PermokItemIconTemplate")
+			SCM.customIconFrames[id] = frame
+			ConfigureCustomIconFrame(frame, id, config, viewerScale)
 
-		local iconType = frame.SCMIconType
-		local iconTexture = ResolveCustomIconTexture(config, iconType)
-		if not iconTexture and SCM.isOptionsOpen then
-			iconTexture = 134400
-		end
-
-		if iconTexture then
-			frame.Icon:SetTexture(iconTexture)
-			if isNewFrame and setupFrame then
-				setupFrame(frame)
+			local iconType = frame.SCMIconType
+			local iconTexture = ResolveCustomIconTexture(config, iconType)
+			if not iconTexture and SCM.isOptionsOpen then
+				iconTexture = 134400
 			end
 
-			local hasCount = SetCustomIconCountText(frame, iconType, config.spellID or config.itemID)
-			local isOnCooldown = UpdateCustomIconCooldown(frame, iconType, config)
-			local shouldShow = ShouldShowCustomIcon(config, iconType, hasCount, isOnCooldown)
-			setChildVisibilityState(frame, shouldShow, true)
+			if iconTexture then
+				frame.Icon:SetTexture(iconTexture)
+				if isNewFrame and setupFrame then
+					setupFrame(frame)
+				end
 
-			if shouldShow then
-				SCM:SkinChild(frame, config)
-				addChildToGroup(validChildren, config.anchorGroup or 1, frame, isGlobal)
+				local hasCount = SetCustomIconCountText(frame, iconType, config.spellID or config.itemID)
+				local isOnCooldown = UpdateCustomIconCooldown(frame, iconType, config)
+				local shouldShow = ShouldShowCustomIcon(config, iconType, hasCount, isOnCooldown)
+				setChildVisibilityState(frame, shouldShow, true)
+
+				if shouldShow then
+					SCM:SkinChild(frame, config)
+					addChildToGroup(validChildren, anchorGroup, frame, isGlobal)
+				end
+			else
+				setChildVisibilityState(frame, false, true)
 			end
-		else
-			setChildVisibilityState(frame, false, true)
 		end
 	end
 end

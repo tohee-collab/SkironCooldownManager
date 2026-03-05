@@ -94,7 +94,6 @@ end
 
 local function UpdateBagCooldownFrames()
 	local GetItemCooldown = C_Item.GetItemCooldown
-
 	for _, frame in pairs(SCM.itemFrames) do
 		local start, duration = GetItemCooldown(frame.itemID)
 		SetCooldownVisual(frame, start, duration)

@@ -9,6 +9,25 @@ local colorDisabled = "ff0000"
 SCM.MainTabs.CDM = { value = "CDM", text = "Cooldown Manager", order = 2, subgroups = {} }
 SCM.CustomEntries = {}
 
+local iconTypeTabs = {
+	all = {
+		{ value = "general", text = "General" },
+		--{ value = "load", text = "Load Conditions"},
+	},
+	spell = {},
+	item = {},
+	slot = {
+		{ value = "filter", text = "Filter" },
+	},
+}
+for iconType, options in pairs(iconTypeTabs) do
+	if iconType ~= "all" then
+		for i=#iconTypeTabs.all, 1, -1 do
+			tinsert(options, 1, iconTypeTabs.all[i])
+		end
+	end
+end
+
 local function SortByIndex(a, b)
 	return a.dataIndex < b.dataIndex
 end
@@ -529,7 +548,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	anchorOptions:AddChild(rowTabs)
 
 	local top = AceGUI:Create("InlineGroup")
-	top:SetLayout("fill")
+	top:SetLayout("flow")
 	top:SetFullWidth(true)
 	top:SetHeight(120)
 	top:SetTitle("Spell Config")
@@ -537,10 +556,12 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 
 	top:PauseLayout()
 	local horizontalScrollFrame = AceGUI:Create("SCMHorizontalScrollFrame")
-	horizontalScrollFrame.frame:SetParent(top.frame)
-	horizontalScrollFrame.frame:SetPoint("TOPLEFT", top.frame, "TOPLEFT", 7, -25)
-	horizontalScrollFrame.frame:SetPoint("BOTTOMRIGHT", top.frame, "BOTTOMRIGHT", -8, 35)
-	horizontalScrollFrame.frame:Show()
+	horizontalScrollFrame:SetHeight(60)
+	horizontalScrollFrame:SetFullWidth(true)
+	-- horizontalScrollFrame.frame:SetParent(top.frame)
+	-- horizontalScrollFrame.frame:SetPoint("TOPLEFT", top.frame, "TOPLEFT", 7, -25)
+	-- horizontalScrollFrame.frame:SetPoint("BOTTOMRIGHT", top.frame, "BOTTOMRIGHT", -8, 35)
+	-- horizontalScrollFrame.frame:Show()
 
 	horizontalScrollFrame:SetSortComparator(SortByIndex)
 
@@ -648,95 +669,97 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 				if not lastButtonFrame or lastButtonFrame ~= buttonFrame then
 					local buttonData = buttonFrame.data
 					local buttonConfig = (isGlobal and GetGlobalConfigByID(buttonData.id)) or SCM.customConfig[buttonData.id] or SCM.spellConfig[buttonData.id]
+					buttonFrame:SetBackdropBorderColor(0, 1, 0, 1)
 
 					if buttonConfig then
-						if buttonData.spellID and buttonData.spellID > 0 then
-							iconSettings:SetTitle(C_Spell.GetSpellName(buttonData.spellID))
-						elseif buttonData.itemID then
-							iconSettings:SetTitle(C_Item.GetItemNameByID(buttonData.itemID))
-						elseif buttonData.slotID then
-							iconSettings:SetTitle("Slot ID " .. buttonData.slotID)
-						end
+						local iconSettingsTabs = AceGUI:Create("TabGroup")
+						iconSettingsTabs:SetLayout("flow")
+						iconSettingsTabs:SetFullWidth(true)
+						iconSettingsTabs:SetTabs(iconTypeTabs[buttonData.iconType])
+						iconSettingsTabs:SetCallback("OnGroupSelected", function(self, event, group)
+							iconSettingsTabs:ReleaseChildren()
 
-						buttonFrame:SetBackdropBorderColor(0, 1, 0, 1)
-
-						if buttonData.iconType == "spell" then
-							local useCustomGlowColor = AceGUI:Create("CheckBox")
-							useCustomGlowColor:SetLabel("Use Custom Glow Color")
-							useCustomGlowColor:SetRelativeWidth(0.5)
-							useCustomGlowColor:SetValue(buttonConfig.useCustomGlowColor)
-							useCustomGlowColor:SetDisabled(not options.useCustomGlow)
-							useCustomGlowColor:SetCallback("OnValueChanged", function(self, event, value)
-								buttonConfig.useCustomGlowColor = value or nil
-								SCM:ApplyAllCDManagerConfigs()
-							end)
-							iconSettings:AddChild(useCustomGlowColor)
-
-							local customGlowColor = AceGUI:Create("ColorPicker")
-							customGlowColor:SetRelativeWidth(0.33)
-							customGlowColor:SetLabel("Glow Color")
-							customGlowColor:SetHasAlpha(true)
-							customGlowColor:SetDisabled(not options.useCustomGlow)
-							if buttonConfig.customGlowColor then
-								customGlowColor:SetColor(unpack(buttonConfig.customGlowColor))
-							end
-							customGlowColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
-								buttonConfig.customGlowColor = { r, g, b, a }
-							end)
-							iconSettings:AddChild(customGlowColor)
-						end
-
-						if not buttonFrame.data.isBuffIcon then
-							local hideWhileReady = AceGUI:Create("CheckBox")
-							hideWhileReady:SetLabel("Show On Cooldown")
-							hideWhileReady:SetRelativeWidth(0.5)
-							hideWhileReady:SetValue(buttonConfig.hideWhenNotOnCooldown)
-							hideWhileReady:SetCallback("OnValueChanged", function(self, event, value)
-								buttonConfig.hideWhenNotOnCooldown = value or nil
-								SCM:ApplyAllCDManagerConfigs()
-							end)
-							iconSettings:AddChild(hideWhileReady)
-						end
-
-						if buttonFrame.data.isBuffIcon then
-							local alwaysShow = AceGUI:Create("CheckBox")
-							alwaysShow:SetLabel("Show Always")
-							alwaysShow:SetRelativeWidth(0.5)
-							alwaysShow:SetValue(buttonConfig.alwaysShow)
-							alwaysShow:SetDisabled(not options.hideBuffsWhenInactive)
-							iconSettings:AddChild(alwaysShow)
-
-							local desaturate
-							if not options.testSetting[buttonFrame.data.spellID] then
-								desaturate = AceGUI:Create("CheckBox")
-								desaturate:SetLabel("Desaturate While Inactive")
-								desaturate:SetRelativeWidth(0.5)
-								desaturate:SetValue(buttonConfig.desaturate)
-								desaturate:SetDisabled(not buttonConfig.alwaysShow)
-								desaturate:SetCallback("OnValueChanged", function(self, event, value)
-									buttonConfig.desaturate = value or nil
-									SCM:ApplyAllCDManagerConfigs()
-								end)
-								iconSettings:AddChild(desaturate)
-							end
-							alwaysShow:SetCallback("OnValueChanged", function(self, event, value)
-								buttonConfig.alwaysShow = value or nil
-								SCM:ApplyAllCDManagerConfigs()
-
-								if desaturate then
-									desaturate:SetDisabled(not value)
+							if group == "general" then
+								if buttonData.spellID and buttonData.spellID > 0 then
+									iconSettings:SetTitle(C_Spell.GetSpellName(buttonData.spellID))
+								elseif buttonData.itemID then
+									iconSettings:SetTitle(C_Item.GetItemNameByID(buttonData.itemID))
+								elseif buttonData.slotID then
+									iconSettings:SetTitle("Slot ID " .. buttonData.slotID)
 								end
-							end)
-						end
 
-						local label = AceGUI:Create("Label")
-						label:SetRelativeWidth(1.0)
-						label:SetHeight(24)
-						label:SetJustifyH("CENTER")
-						label:SetJustifyV("MIDDLE")
-						label:SetText("|TInterface\\common\\help-i:40:40:0:0|tMore will come soon!")
-						label:SetFontObject("Game12Font")
-						iconSettings:AddChild(label)
+								if buttonData.iconType == "spell" then
+									local useCustomGlowColor = AceGUI:Create("CheckBox")
+									useCustomGlowColor:SetLabel("Use Custom Glow Color")
+									useCustomGlowColor:SetRelativeWidth(0.5)
+									useCustomGlowColor:SetValue(buttonConfig.useCustomGlowColor)
+									useCustomGlowColor:SetDisabled(not options.useCustomGlow)
+									useCustomGlowColor:SetCallback("OnValueChanged", function(self, event, value)
+										buttonConfig.useCustomGlowColor = value or nil
+										SCM:ApplyAllCDManagerConfigs()
+									end)
+									iconSettingsTabs:AddChild(useCustomGlowColor)
+
+									local customGlowColor = AceGUI:Create("ColorPicker")
+									customGlowColor:SetRelativeWidth(0.33)
+									customGlowColor:SetLabel("Glow Color")
+									customGlowColor:SetHasAlpha(true)
+									customGlowColor:SetDisabled(not options.useCustomGlow)
+									if buttonConfig.customGlowColor then
+										customGlowColor:SetColor(unpack(buttonConfig.customGlowColor))
+									end
+									customGlowColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
+										buttonConfig.customGlowColor = { r, g, b, a }
+									end)
+									iconSettingsTabs:AddChild(customGlowColor)
+								end
+
+								if not buttonFrame.data.isBuffIcon then
+									local hideWhileReady = AceGUI:Create("CheckBox")
+									hideWhileReady:SetLabel("Hide While Ready")
+									hideWhileReady:SetRelativeWidth(0.5)
+									hideWhileReady:SetValue(buttonConfig.hideWhenNotOnCooldown)
+									hideWhileReady:SetCallback("OnValueChanged", function(self, event, value)
+										buttonConfig.hideWhenNotOnCooldown = value or nil
+										SCM:ApplyAllCDManagerConfigs()
+									end)
+									iconSettingsTabs:AddChild(hideWhileReady)
+								end
+
+								if buttonFrame.data.isBuffIcon then
+									local alwaysShow = AceGUI:Create("CheckBox")
+									alwaysShow:SetLabel("Show Always")
+									alwaysShow:SetRelativeWidth(0.5)
+									alwaysShow:SetValue(buttonConfig.alwaysShow)
+									alwaysShow:SetDisabled(not options.hideBuffsWhenInactive)
+									iconSettingsTabs:AddChild(alwaysShow)
+
+									local desaturate
+									if not options.testSetting[buttonFrame.data.spellID] then
+										desaturate = AceGUI:Create("CheckBox")
+										desaturate:SetLabel("Desaturate While Inactive")
+										desaturate:SetRelativeWidth(0.5)
+										desaturate:SetValue(buttonConfig.desaturate)
+										desaturate:SetDisabled(not buttonConfig.alwaysShow)
+										desaturate:SetCallback("OnValueChanged", function(self, event, value)
+											buttonConfig.desaturate = value or nil
+											SCM:ApplyAllCDManagerConfigs()
+										end)
+										iconSettingsTabs:AddChild(desaturate)
+									end
+									alwaysShow:SetCallback("OnValueChanged", function(self, event, value)
+										buttonConfig.alwaysShow = value or nil
+										SCM:ApplyAllCDManagerConfigs()
+
+										if desaturate then
+											desaturate:SetDisabled(not value)
+										end
+									end)
+								end
+							end
+						end)
+						iconSettingsTabs:SelectTab("general")
+						iconSettings:AddChild(iconSettingsTabs)
 						lastButtonFrame = buttonFrame
 					end
 				else
@@ -793,6 +816,8 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	end)
 
 	top:AddChild(horizontalScrollFrame)
+	top:ResumeLayout()
+	top:DoLayout()
 end
 
 local function CreateAnchorTabGroup(parent, frame, isGlobal)
