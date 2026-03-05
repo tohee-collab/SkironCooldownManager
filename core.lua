@@ -410,6 +410,12 @@ end
 
 local function ProcessItemConfig(itemConfig, validChildren, isGlobal, activeItemFrames)
 	for configID, config in pairs(itemConfig or {}) do
+		if type(config) ~= "table" then
+			config = {
+				anchorGroup = tonumber(config) or 1,
+			}
+		end
+
 		local slotID = config and (config.slotID or tonumber(configID))
 		if slotID and slotID > 0 then
 			local frameKey = (isGlobal and (config.id or tostring(configID))) or ("spec:" .. tostring(slotID))
@@ -921,7 +927,10 @@ function SCM:UpdateDB()
 	local currentConfig = self.DB:LoadData()
 	local specAnchorConfig = currentConfig and currentConfig.anchorConfig[specID]
 	local specSpellConfig = currentConfig and currentConfig.spellConfig[specID]
-	local itemConfig = currentConfig and currentConfig.itemConfig and currentConfig.itemConfig[specID]
+	local itemConfig
+	if currentConfig and currentConfig.itemConfig then
+		itemConfig = currentConfig.itemConfig[specID] or currentConfig.itemConfig
+	end
 	local customConfig = currentConfig and currentConfig.customConfig and currentConfig.customConfig[specID]
 
 	self.db.profile[class] = self.db.profile[class] or {}

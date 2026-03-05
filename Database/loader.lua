@@ -1,5 +1,16 @@
 local addonName, SCM = ...
 
+local function GetSpecConfigValue(configTable, specID)
+	if type(configTable) ~= "table" then
+		return
+	end
+
+	-- Support both layouts:
+	-- 1) itemConfig[specID] = { [slotID] = config }
+	-- 2) itemConfig = { [slotID] = config } (shared for all specs)
+	return configTable[specID] or configTable
+end
+
 function SCM.DB:LoadData()
 	SCM.DB.currentConfig = self:GetClassConfig(UnitClassBase("player"))
 	SCM.DB.configLoaded = SCM.DB.currentConfig ~= nil
@@ -34,7 +45,7 @@ function SCM.DB:RegisterClassConfig(classFileName, config)
 		self.classes[classFileName].spellConfig[specID] = spellConfig
 
 		if config.itemConfig then
-			self.classes[classFileName].itemConfig[specID] = config.itemConfig
+			self.classes[classFileName].itemConfig[specID] = GetSpecConfigValue(config.itemConfig, specID)
 		end
 		if config.customConfig then
 			self.classes[classFileName].customConfig[specID] = config.customConfig[specID] or config.customConfig
@@ -60,7 +71,7 @@ function SCM.DB:RegisterClassSpecConfig(classFileName, config, specID)
 	self.classes[classFileName].spellConfig[specID] = config.spellConfig[specID]
 
 	if config.itemConfig then
-		self.classes[classFileName].itemConfig[specID] = config.itemConfig
+		self.classes[classFileName].itemConfig[specID] = GetSpecConfigValue(config.itemConfig, specID)
 	end
 	if config.customConfig then
 		self.classes[classFileName].customConfig[specID] = config.customConfig[specID] or config.customConfig

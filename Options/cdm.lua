@@ -201,27 +201,27 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 	ProcessAndCreateButtons(buffButton, buffItems, true)
 
-	--rootDescription:CreateDivider()
-	-- rootDescription:CreateButton("Custom Spell (SpellID)", function()
-	-- 	ShowNumericInputPopup("SCM_CUSTOM_SPELL_ID", "Enter Spell ID", function(spellID)
-	-- 		local texture = C_Spell.GetSpellTexture(spellID)
-	-- 		if texture then
-	-- 			scrollFrame:AddCustomIcon({
-	-- 				spellID = spellID,
-	-- 				texture = texture,
-	-- 				isCustom = true,
-	-- 				iconType = "spell",
-	-- 				id = "spell:" .. spellID,
-	-- 			})
-	-- 			if isGlobal then
-	-- 				SCM:AddCustomIcon(anchorIndex, "spell", spellID, true)
-	-- 			else
-	-- 				SCM:AddCustomIcon(anchorIndex, "spell", spellID)
-	-- 			end
-	-- 			SCM:ApplyAllCDManagerConfigs()
-	-- 		end
-	-- 	end)
-	-- end)
+	rootDescription:CreateDivider()
+	rootDescription:CreateButton("Custom Spell (SpellID)", function()
+		ShowNumericInputPopup("SCM_CUSTOM_SPELL_ID", "Enter Spell ID", function(spellID)
+			local texture = C_Spell.GetSpellTexture(spellID)
+			if texture then
+				scrollFrame:AddCustomIcon({
+					spellID = spellID,
+					texture = texture,
+					isCustom = true,
+					iconType = "spell",
+					id = "spell:" .. spellID,
+				})
+				if isGlobal then
+					SCM:AddCustomIcon(anchorIndex, "spell", spellID, true)
+				else
+					SCM:AddCustomIcon(anchorIndex, "spell", spellID)
+				end
+				SCM:ApplyAllCDManagerConfigs()
+			end
+		end)
+	end)
 
 	if SCM.db.global.options.enableCustomIcons then
 		rootDescription:CreateButton("Custom Item", function()
