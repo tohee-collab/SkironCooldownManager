@@ -5,6 +5,7 @@ local function OnResourceBarWidthChanged(self)
 end
 
 function SCM:UpdateResourceBarWidth(maxGroupWidth)
+	maxGroupWidth = self:PixelPerfect(maxGroupWidth)
 	for _, resourceBarName in ipairs(SCM.db.global.options.resourceBars) do
 		local resourceBar = _G[resourceBarName]
 		if resourceBar and resourceBar:IsShown() then
@@ -238,9 +239,11 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 end
 
 function SCM:ApplyCustomAnchors(maxGroupWidth, rowConfig)
+	local inLockdown = InCombatLockdown()
+
 	for frame, options in pairs(self.CustomAnchors) do
 		frame = type(frame) == "string" and _G[frame] or frame
-		if frame and type(frame) == "table" and options.anchorIndex and options.xOffset and options.yOffset then
+		if frame and type(frame) == "table" and options.anchorIndex and options.xOffset and options.yOffset and (not frame:IsProtected() or not inLockdown) then
 			if not frame.SCMHook then
 				frame.SCMHook = true
 				frame.OriginalClearAllPoints = frame.ClearAllPoints

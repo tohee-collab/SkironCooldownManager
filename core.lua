@@ -1,4 +1,4 @@
-local addonName, SCM = ...
+﻿local addonName, SCM = ...
 SCM.anchorFrames = {}
 SCM.itemFrames = {}
 SCM.customIconFrames = SCM.customIconFrames or {}
@@ -65,6 +65,7 @@ local function ApplyHideChildNow(child)
 	child.SCMHidden = true
 	UIParent.SetAlpha(child, 0)
 	child:EnableMouse(false)
+	child:SetScript("OnEnter", nil)
 	SCM:Debug("HIDE", GetTime(), child.SCMSpellID or "unknown", child.SCMCooldownID or "unknown")
 
 	if not child.SCMAlphaHook then
@@ -397,12 +398,14 @@ local function OnIconCooldownDone(self)
 	end
 end
 
-local function OnItemDataLoaded(item)
-	local frame = item.SCMTargetFrame
+local function OnItemDataLoaded(item, frame)
+	if not item then
+		return
+	end
+
 	if frame and frame.Icon then
 		frame.Icon:SetTexture(item:GetItemIcon())
 	end
-	item.SCMTargetFrame = nil
 end
 
 local function ProcessItemConfig(itemConfig, validChildren)
@@ -423,8 +426,11 @@ local function ProcessItemConfig(itemConfig, validChildren)
 				frame.Icon:SetTexture(C_Item.GetItemIconByID(itemID))
 
 				local item = Item:CreateFromItemID(itemID)
-				item.SCMTargetFrame = frame
-				item:ContinueOnItemLoad(OnItemDataLoaded)
+				if item then
+					item:ContinueOnItemLoad(function()
+						OnItemDataLoaded(item, frame)
+					end)
+				end
 				frame.SCMOrder = 100 + slotID
 
 				local start, duration = GetInventoryItemCooldown("player", slotID)
@@ -638,23 +644,27 @@ local function OrderCDManagerSpells_Actual()
 			childIndex = endIndex + 1
 			rowIndex = rowIndex + 1
 		end
+		if group == 1 then
+			if not InCombatLockdown() then
+				groupAnchor:SetSize(max(initialWidth, maxGroupWidth, 1), max(initialHeight, accumulatedY - baseSpacing, 1))
 
-		if not InCombatLockdown() then
-			groupAnchor:SetSize(max(initialWidth, maxGroupWidth, 1), max(initialHeight, accumulatedY - baseSpacing, 1))
-
-			if group == 1 then
 				if SCM.db.global.options.adjustResourceWidth then
-					if not SCM.registeredCustomFrame and SCRB and SCRB.registerCustomFrame then
-						SCM.registeredCustomFrame = true
-						SCRB.registerCustomFrame(SCM:GetAnchor(1))
+					if SCRB and SCRB.registerCustomFrame then
+						if not SCM.registeredCustomFrame then
+							SCM.registeredCustomFrame = true
+							SCRB.registerCustomFrame(SCM:GetAnchor(1))
+						end
 					else
 						SCM:UpdateResourceBarWidth(maxGroupWidth)
 					end
 				end
 
 				SCM:UpdateUUFValues(SCM.db.global.options, maxGroupWidth, rowConfig)
-				SCM:ApplyCustomAnchors(maxGroupWidth, rowConfig)
 			end
+
+			SCM:ApplyCustomAnchors(maxGroupWidth, rowConfig)
+		elseif not InCombatLockdown() then
+			groupAnchor:SetSize(max(initialWidth, maxGroupWidth, 1), max(initialHeight, accumulatedY - baseSpacing, 1))
 		end
 	end
 
@@ -681,9 +691,11 @@ local function OrderCDManagerSpells_Actual()
 			SCM:GetAnchor(group, p, a, r, x, y, anchorConfig.growDir, initialIconWidth, not cachedCooldownFrameTbl[group])
 
 			if group == 1 then
-				if not SCM.registeredCustomFrame and SCRB and SCRB.registerCustomFrame then
-					SCM.registeredCustomFrame = true
-					SCRB.registerCustomFrame(anchorConfig)
+				if SCRB and SCRB.registerCustomFrame then
+					if not SCM.registeredCustomFrame then
+						SCM.registeredCustomFrame = true
+						SCRB.registerCustomFrame(anchorConfig)
+					end
 				else
 					SCM:UpdateResourceBarWidth(initialIconWidth)
 				end
@@ -1046,83 +1058,6 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 			ElvUF_Target.SCMAnchor = nil
 			ElvUF_Target.SCMOriginalHeight = nil
 			ElvUF_Target.SCMOriginalAnchor = nil
-		end
-	end
-end
-
-function SCM:ApplyCustomAnchors(maxGroupWidth, rowConfig)
-	for frame, options in pairs(self.CustomAnchors) do
-		frame = type(frame) == "string" and _G[frame] or frame
-		if frame and type(frame) == "table" and options.anchorIndex and options.xOffset and options.yOffset then
-			if not frame.SCMHook then
-				frame.SCMHook = true
-				frame.OriginalClearAllPoints = frame.ClearAllPoints
-				frame.OriginalSetPoint = frame.SetPoint
-				frame.ClearAllPoints = nop
-				frame.SetPoint = nop
-
-				if options.setWidth then
-					frame.OriginalSetWidth = frame.SetWidth
-					frame.SetWidth = nop
-				end
-			end
-
-			frame:OriginalClearAllPoints()
-			local point = options.point
-			local anchorRef = options.anchorFrame
-			local relativePoint = options.relativePoint
-			local xOffset = options.xOffset
-			local yOffset = options.yOffset
-
-			if point and anchorRef and relativePoint then
-				local setPoint = frame.OriginalSetPoint
-				local anchorRefType = type(anchorRef)
-				local isAnchorList = anchorRefType == "table"
-
-				if isAnchorList then
-					for i = 1, #anchorRef do
-						local ref = anchorRef[i]
-						local anchor
-						local anchorIndex = tonumber(ref)
-						if anchorIndex then
-							anchor = SCM:GetAnchor(anchorIndex)
-						else
-							local refType = type(ref)
-							if refType == "string" then
-								anchor = _G[ref]
-							elseif refType == "table" then
-								anchor = ref
-							end
-						end
-
-						if anchor and anchor:IsVisible() then
-							setPoint(frame, point, anchor, relativePoint, xOffset, yOffset)
-							break
-						end
-					end
-				else
-					local anchor
-					local anchorIndex = tonumber(anchorRef)
-					if anchorIndex then
-						anchor = SCM:GetAnchor(anchorIndex)
-					elseif anchorRefType == "string" then
-						anchor = _G[anchorRef]
-					elseif anchorRefType == "table" then
-						anchor = anchorRef
-					end
-
-					if anchor and anchor:IsVisible() then
-						setPoint(frame, point, anchor, relativePoint, xOffset, yOffset)
-						break
-					end
-				end
-			else
-				frame:OriginalSetPoint("BOTTOM", SCM:GetAnchor(options.anchorIndex), "TOP", options.xOffset, options.yOffset)
-			end
-
-			if options.setWidth then
-				frame:OriginalSetWidth(max(200, maxGroupWidth - (options.widthOffset or 0)))
-			end
 		end
 	end
 end
