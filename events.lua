@@ -131,12 +131,31 @@ local function RefreshCooldownViewerData()
 	SCM:ApplyAllCDManagerConfigs()
 end
 
+local function RefreshPixelPerfectLayout()
+	SCM:InvalidatePixelPerfectCache()
+	SCM:ApplyAllCDManagerConfigs()
+end
+
 function SCM:TRAIT_CONFIG_UPDATED()
 	C_Timer.After(0.2, RefreshCooldownViewerData)
 end
 
 function SCM:ACTIVE_PLAYER_SPECIALIZATION_CHANGED()
 	C_Timer.After(0.2, RefreshCooldownViewerData)
+end
+
+function SCM:UI_SCALE_CHANGED()
+	RefreshPixelPerfectLayout()
+end
+
+function SCM:DISPLAY_SIZE_CHANGED()
+	RefreshPixelPerfectLayout()
+end
+
+function SCM:CVAR_UPDATE(cvarName)
+	if cvarName == "uiScale" then
+		RefreshPixelPerfectLayout()
+	end
 end
 
 local function OnProfileChanged(_, _, _, skipReset)
@@ -183,6 +202,9 @@ local function OnSCMAddonLoaded()
 	eventFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 	eventFrame:RegisterEvent("ACTIVE_PLAYER_SPECIALIZATION_CHANGED")
 	eventFrame:RegisterEvent("EDIT_MODE_LAYOUTS_UPDATED")
+	eventFrame:RegisterEvent("UI_SCALE_CHANGED")
+	eventFrame:RegisterEvent("DISPLAY_SIZE_CHANGED")
+	eventFrame:RegisterEvent("CVAR_UPDATE")
 	eventFrame:SetScript("OnEvent", OnEventFrameEvent)
 end
 

@@ -8,16 +8,7 @@ SCM.Skins = {}
 SCM.CustomAnchors = {}
 
 local LibCustomGlow = LibStub("LibCustomGlow-1.0")
-
-local cachedViewerScale
-local cachedChildrenTbl = {}
-local cachedVisibleChildren = {}
-local cachedCooldownFrameTbl = {}
-local cachedViewerChildren = {}
-local cachedActiveItemFrames = {}
-local cachedVisitedAnchorGroups = {}
-local reusableCustomIconContext = {}
-local activeScopedAnchorGroups
+local Cache = SCM.Cache
 local UPDATE_SCOPE = {
 	ALL = "all",
 	ESSENTIAL = "essential",
@@ -42,11 +33,6 @@ local VIEWER_PROCESS_ORDER = {
 	VIEWER_UPDATE_MAPPING[UPDATE_SCOPE.ESSENTIAL],
 	VIEWER_UPDATE_MAPPING[UPDATE_SCOPE.UTILITY],
 	VIEWER_UPDATE_MAPPING[UPDATE_SCOPE.BUFF],
-}
-local cachedScopedAnchorGroups = {
-	[UPDATE_SCOPE.ESSENTIAL] = {},
-	[UPDATE_SCOPE.UTILITY] = {},
-	[UPDATE_SCOPE.BUFF] = {},
 }
 local delayedHideSpellIDs = {
 	[450615] = true,
@@ -365,14 +351,14 @@ end
 
 local function GetOrCacheChildren(viewer, isBuffIcon)
 	if isBuffIcon then
-		cachedViewerChildren[viewer] = nil
+		Cache.cachedViewerChildren[viewer] = nil
 	end
 
-	if not cachedViewerChildren[viewer] then
-		cachedViewerChildren[viewer] = { viewer:GetChildren() }
+	if not Cache.cachedViewerChildren[viewer] then
+		Cache.cachedViewerChildren[viewer] = { viewer:GetChildren() }
 	end
 
-	return cachedViewerChildren[viewer]
+	return Cache.cachedViewerChildren[viewer]
 end
 
 local function CollectScopedAnchorGroups(updateScope, config)
@@ -381,7 +367,7 @@ local function CollectScopedAnchorGroups(updateScope, config)
 	end
 
 	local viewerData = VIEWER_UPDATE_MAPPING[updateScope]
-	local targetGroups = viewerData and cachedScopedAnchorGroups[updateScope]
+	local targetGroups = viewerData and Cache.cachedScopedAnchorGroups[updateScope]
 	if not targetGroups then
 		return
 	end
@@ -426,7 +412,7 @@ end
 
 local function IsScopedAnchorGroupAllowed(group, isGlobal)
 	local effectiveGroup = isGlobal and ToGlobalGroup(group) or group
-	return IsScopedGroup(activeScopedAnchorGroups, effectiveGroup)
+	return IsScopedGroup(Cache.activeScopedAnchorGroups, effectiveGroup)
 end
 
 local function AddChildToScopedGroup(validChildren, group, child, isGlobal)
@@ -522,17 +508,17 @@ local function ProcessItemConfig(itemConfig, validChildren, isGlobal, activeItem
 		if slotID and slotID > 0 then
 			local anchorGroup = config.anchorGroup or 1
 			local scopedGroup = isGlobal and ToGlobalGroup(anchorGroup) or anchorGroup
-			if IsScopedGroup(activeScopedAnchorGroups, scopedGroup) then
+			if IsScopedGroup(Cache.activeScopedAnchorGroups, scopedGroup) then
 				local frameKey = (isGlobal and (config.id or tostring(configID))) or ("spec:" .. tostring(slotID))
 
 				local itemID = GetInventoryItemID("player", slotID)
 				if itemID and C_Item.GetItemSpell(itemID) then
 					activeItemFrames[frameKey] = true
 					local frame = SCM.itemFrames[frameKey] or CreateFrame("Frame", nil, UIParent, "PermokItemIconTemplate")
-					frame:SetScale(cachedViewerScale)
+					frame:SetScale(Cache.cachedViewerScale)
 
 					if not SCM.itemFrames[frameKey] then
-						frame.Cooldown:SetScript("OnCooldownDone", OnIconCooldownDone)
+						SetupCooldownHooks(frame)
 						SCM.itemFrames[frameKey] = frame
 					end
 
@@ -590,12 +576,12 @@ local function SetupCustomIconFrame(frame)
 end
 
 local function GetCustomIconContext()
-	reusableCustomIconContext.viewerScale = cachedViewerScale
-	reusableCustomIconContext.setChildVisibilityState = SetChildVisibilityState
-	reusableCustomIconContext.setupFrame = SetupCustomIconFrame
-	reusableCustomIconContext.isGroupAllowed = IsScopedAnchorGroupAllowed
-	reusableCustomIconContext.addChildToGroup = AddChildToScopedGroup
-	return reusableCustomIconContext
+	Cache.reusableCustomIconContext.viewerScale = Cache.cachedViewerScale
+	Cache.reusableCustomIconContext.setChildVisibilityState = SetChildVisibilityState
+	Cache.reusableCustomIconContext.setupFrame = SetupCustomIconFrame
+	Cache.reusableCustomIconContext.isGroupAllowed = IsScopedAnchorGroupAllowed
+	Cache.reusableCustomIconContext.addChildToGroup = AddChildToScopedGroup
+	return Cache.reusableCustomIconContext
 end
 
 local function ApplyManagedAnchorPoint(child)
@@ -639,7 +625,7 @@ local function OnManagedAnchorChildClearAllPoints(child)
 end
 
 local function UpdateEmptyAnchorGroup(group, anchorConfig, scopedAnchorGroups)
-	if not IsScopedGroup(scopedAnchorGroups, group) or cachedCooldownFrameTbl[group] then
+	if not IsScopedGroup(scopedAnchorGroups, group) or Cache.cachedCooldownFrameTbl[group] then
 		return
 	end
 
@@ -664,24 +650,24 @@ local function UpdateEmptyAnchorGroup(group, anchorConfig, scopedAnchorGroups)
 	end
 end
 
-local function OrderCDManagerSpells_Actual(updateScope)
-	cachedViewerScale = 1
+local function OrderCDManagerSpells_Actual(updateScope, scopedAnchorGroupsOverride)
+	Cache.cachedViewerScale = 1
 
-	wipe(cachedChildrenTbl)
-	wipe(cachedCooldownFrameTbl)
+	wipe(Cache.cachedChildrenTbl)
+	wipe(Cache.cachedCooldownFrameTbl)
 
 	local config = SCM.currentConfig
-	local scopedAnchorGroups = CollectScopedAnchorGroups(updateScope, config)
-	activeScopedAnchorGroups = scopedAnchorGroups
+	local scopedAnchorGroups = scopedAnchorGroupsOverride or CollectScopedAnchorGroups(updateScope, config)
+	Cache.activeScopedAnchorGroups = scopedAnchorGroups
 	local options = SCM.db.global.options
 	for i = 1, #VIEWER_PROCESS_ORDER do
 		local viewerData = VIEWER_PROCESS_ORDER[i]
-		ProcessChildren(_G[viewerData.frameName], cachedChildrenTbl, config, viewerData.isBuffIcon)
+		ProcessChildren(_G[viewerData.frameName], Cache.cachedChildrenTbl, config, viewerData.isBuffIcon)
 	end
 
-	for group, children in pairs(cachedChildrenTbl) do
+	for group, children in pairs(Cache.cachedChildrenTbl) do
 		if IsScopedGroup(scopedAnchorGroups, group) then
-			local visibleChildren = GetOrCreateBucket(cachedVisibleChildren, group)
+			local visibleChildren = GetOrCreateBucket(Cache.cachedVisibleChildren, group)
 			wipe(visibleChildren)
 			for _, child in ipairs(children) do
 				if child.SCMShouldBeVisible then
@@ -689,17 +675,17 @@ local function OrderCDManagerSpells_Actual(updateScope)
 				end
 			end
 
-			cachedCooldownFrameTbl[group] = visibleChildren
+			Cache.cachedCooldownFrameTbl[group] = visibleChildren
 		end
 	end
 
-	wipe(cachedActiveItemFrames)
-	local activeItemFrames = cachedActiveItemFrames
+	wipe(Cache.cachedActiveItemFrames)
+	local activeItemFrames = Cache.cachedActiveItemFrames
 	if SCM.itemConfig and next(SCM.itemConfig) then
-		ProcessItemConfig(SCM.itemConfig, cachedCooldownFrameTbl, false, activeItemFrames)
+		ProcessItemConfig(SCM.itemConfig, Cache.cachedCooldownFrameTbl, false, activeItemFrames)
 	end
 	if SCM.globalSlotConfig and next(SCM.globalSlotConfig) then
-		ProcessItemConfig(SCM.globalSlotConfig, cachedCooldownFrameTbl, true, activeItemFrames)
+		ProcessItemConfig(SCM.globalSlotConfig, Cache.cachedCooldownFrameTbl, true, activeItemFrames)
 	end
 	if not scopedAnchorGroups then
 		if next(activeItemFrames) then
@@ -715,14 +701,14 @@ local function OrderCDManagerSpells_Actual(updateScope)
 
 	if options.enableCustomIcons then
 		local customIconContext = GetCustomIconContext()
-		CustomIcons.ProcessIcons(SCM.customConfig, cachedCooldownFrameTbl, false, customIconContext)
-		CustomIcons.ProcessIcons(SCM.globalSpellConfig, cachedCooldownFrameTbl, true, customIconContext)
-		CustomIcons.ProcessIcons(SCM.globalItemConfig, cachedCooldownFrameTbl, true, customIconContext)
+		CustomIcons.ProcessIcons(SCM.customConfig, Cache.cachedCooldownFrameTbl, false, customIconContext)
+		CustomIcons.ProcessIcons(SCM.globalSpellConfig, Cache.cachedCooldownFrameTbl, true, customIconContext)
+		CustomIcons.ProcessIcons(SCM.globalItemConfig, Cache.cachedCooldownFrameTbl, true, customIconContext)
 	else
 		HideCustomIcons()
 	end
 
-	for group, visibleChildren in pairs(cachedCooldownFrameTbl) do
+	for group, visibleChildren in pairs(Cache.cachedCooldownFrameTbl) do
 		local anchorConfig = GetAnchorConfigForGroup(config, group)
 		local rowConfig = (anchorConfig and anchorConfig.rowConfig and #anchorConfig.rowConfig > 0) and anchorConfig.rowConfig or DEFAULT_ROW_CONFIG
 		local lastRowConfig = rowConfig[#rowConfig]
@@ -750,7 +736,7 @@ local function OrderCDManagerSpells_Actual(updateScope)
 
 			local scaleData = anchorConfig and anchorConfig.advancedScale
 			if scaleData then
-				local targetViewer = cachedCooldownFrameTbl[scaleData.viewer]
+				local targetViewer = Cache.cachedCooldownFrameTbl[scaleData.viewer]
 				local targetGroup = targetViewer and targetViewer[scaleData.anchorGroup]
 				if targetGroup and #targetGroup <= scaleData.numChildren then
 					rowIconWidth = scaleData.iconWidth or scaleData.size or rowIconWidth
@@ -769,7 +755,7 @@ local function OrderCDManagerSpells_Actual(updateScope)
 				child.width = rowIconWidth
 				child.height = rowIconHeight
 				child.SCMAnchorFrame = groupAnchor
-				child:SetScale(cachedViewerScale)
+				child:SetScale(Cache.cachedViewerScale)
 				child:SetSize(rowIconWidth, rowIconHeight)
 
 				local offsetX = 0
@@ -836,27 +822,27 @@ local function OrderCDManagerSpells_Actual(updateScope)
 		end
 	end
 
-	for _, children in pairs(cachedChildrenTbl) do
+	for _, children in pairs(Cache.cachedChildrenTbl) do
 		for _, child in ipairs(children) do
 			SetChildVisibilityState(child, child.SCMShouldBeVisible, true)
 		end
 	end
 
-	wipe(cachedVisitedAnchorGroups)
+	wipe(Cache.cachedVisitedAnchorGroups)
 	for group, anchorConfig in pairs(config.anchorConfig) do
-		cachedVisitedAnchorGroups[group] = true
+		Cache.cachedVisitedAnchorGroups[group] = true
 		UpdateEmptyAnchorGroup(group, anchorConfig, scopedAnchorGroups)
 	end
 
 	for index, anchorConfig in pairs(SCM.globalAnchorConfig or {}) do
 		local group = ToGlobalGroup(index)
-		if not cachedVisitedAnchorGroups[group] then
-			cachedVisitedAnchorGroups[group] = true
+		if not Cache.cachedVisitedAnchorGroups[group] then
+			Cache.cachedVisitedAnchorGroups[group] = true
 			UpdateEmptyAnchorGroup(group, anchorConfig, scopedAnchorGroups)
 		end
 	end
 
-	activeScopedAnchorGroups = nil
+	Cache.activeScopedAnchorGroups = nil
 end
 
 local isThrottled = false
@@ -928,7 +914,7 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 		anchorFrame = CreateFrame("Frame", "SCM_GroupAnchor_" .. group, UIParent)
 		anchorFrame:SetFrameStrata("HIGH")
 		anchorFrame.debugTexture = anchorFrame:CreateTexture(nil, "BACKGROUND")
-		anchorFrame:SetScale(cachedViewerScale)
+		anchorFrame:SetScale(Cache.cachedViewerScale)
 
 		anchorFrame.debugTexture:SetAllPoints()
 		anchorFrame.debugTexture:SetColorTexture(8 / 255, 8 / 255, 8 / 255, 0.4)
@@ -1127,18 +1113,4 @@ function SCM:UpdateDB()
 	self.globalSpellConfig = self.db.global.globalSpellConfig
 	self.globalItemConfig = self.db.global.globalItemConfig
 	self.globalSlotConfig = self.db.global.globalSlotConfig
-end
-
-function SCM:ClearChildrenCache()
-	wipe(cachedChildrenTbl)
-end
-
-function SCM:ClearViewerChildrenCache()
-	wipe(cachedViewerChildren)
-end
-
-function SCM:PixelPerfect()
-	local screenHeight = select(2, GetPhysicalScreenSize())
-	local scale = UIParent:GetEffectiveScale()
-	return (768 / screenHeight) / scale
 end
