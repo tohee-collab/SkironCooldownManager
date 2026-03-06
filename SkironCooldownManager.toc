@@ -1,8 +1,9 @@
 ## Interface: 120000
 ## Title: SkironCooldownManager
 ## Author: Permok
+## Version @project-version@
 ## SavedVariables: SkironCooldownManagerDB
-## OptionalDeps: Plater, Details, UnhaltedUnitFrames, CooldownViewer, SenseiClassResourceBar
+## OptionalDeps: Plater, Details, UnhaltedUnitFrames, CooldownViewer, SenseiClassResourceBar, ElvUI
 ## X-Curse-Project-ID: 1453035
 ## X-Wago-ID: O67DaZK3
 
