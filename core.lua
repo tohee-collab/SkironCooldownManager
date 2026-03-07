@@ -81,7 +81,7 @@ function SCM:BAG_UPDATE_DELAYED()
 	SCM:ApplyAllCDManagerConfigs()
 end
 
-local function SetCooldownVisual(frame, start, duration)
+local function SetItemCooldownVisual(frame, start, duration)
 	if start and start > 0 then
 		frame.Cooldown:SetCooldown(start, duration)
 		frame.Icon:SetDesaturated(true)
@@ -93,18 +93,30 @@ local function SetCooldownVisual(frame, start, duration)
 	return false
 end
 
+local function SetSpellCooldownVisual(frame, durationObject) end
+
 local function UpdateBagCooldownFrames()
 	local GetItemCooldown = C_Item.GetItemCooldown
 	for _, frame in pairs(SCM.itemFrames) do
 		local start, duration = GetItemCooldown(frame.itemID)
-		SetCooldownVisual(frame, start, duration)
+		SetItemCooldownVisual(frame, start, duration)
 	end
 
-	CustomIcons.UpdateBagIcons(SetCooldownVisual, SCM.SetChildVisibilityState)
+	CustomIcons.UpdateBagIcons(SetItemCooldownVisual, SCM.SetChildVisibilityState)
 end
 
 function SCM:BAG_UPDATE_COOLDOWN()
 	RunNextFrame(UpdateBagCooldownFrames)
+end
+
+function SCM:SPELL_UPDATE_COOLDOWN(spellID)
+	for _, data in pairs(self.db.global.globalSpellConfig) do
+		if data.spellID and data.spellID == spellID then
+			SetSpellCooldownVisual()
+
+			break
+		end
+	end
 end
 
 function SCM:PLAYER_EQUIPMENT_CHANGED()
@@ -199,6 +211,7 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 	eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 	eventFrame:RegisterEvent("BAG_UPDATE_COOLDOWN")
+	eventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
 	eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
 	eventFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 	eventFrame:RegisterEvent("ACTIVE_PLAYER_SPECIALIZATION_CHANGED")
