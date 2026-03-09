@@ -12,12 +12,13 @@ SCM.CustomEntries = {}
 local iconTypeTabs = {
 	all = {
 		{ value = "general", text = "General" },
+		{ value = "load", text = "Load Conditions" },
 		--{ value = "load", text = "Load Conditions"},
 	},
 	spell = {},
 	item = {},
 	slot = {
-		{ value = "filter", text = "Filter" },
+		-- { value = "filter", text = "Filter" },
 	},
 }
 for iconType, options in pairs(iconTypeTabs) do
@@ -684,7 +685,6 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 				if not lastButtonFrame or lastButtonFrame ~= buttonFrame then
 					local buttonData = buttonFrame.data
 					local buttonConfig = buttonData.isCustom and SCM:GetConfigTableByID(buttonData.id, buttonData.iconType, isGlobal) or SCM.spellConfig[buttonData.spellID]
-					
 
 					buttonFrame:SetBackdropBorderColor(0, 1, 0, 1)
 
@@ -784,6 +784,15 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 										end
 									end)
 								end
+							elseif group == "load" then
+								local label = AceGUI:Create("Label")
+								label:SetRelativeWidth(1.0)
+								label:SetHeight(24)
+								label:SetJustifyH("CENTER")
+								label:SetJustifyV("MIDDLE")
+								label:SetText("|TInterface\\common\\help-i:40:40:0:0|tNot yet implemented. Will come soon tm.")
+								label:SetFontObject("Game12Font")
+								iconSettings:AddChild(label)
 							end
 						end)
 						iconSettingsTabs:SelectTab("general")
