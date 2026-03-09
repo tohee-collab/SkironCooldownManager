@@ -91,15 +91,20 @@ function SCM:BAG_UPDATE_DELAYED()
 --	SCM.CustomIcons.ProcessIcons()
 end
 
+function SCM:UNIT_SPELLCAST_SUCCEEDED(_, _, spellID)
+	SCM:ApplyAnchorGroupBySpellID(spellID, "cast")
+end
+
 function SCM:BAG_UPDATE_COOLDOWN()
 	SCM:ApplyAnchorGroupByIconTypes(false, "item", "slot")
 end
 
 function SCM:SPELL_UPDATE_COOLDOWN(spellID)
-	SCM:ApplyAnchorGroupBySpellID(spellID)
+	SCM:ApplyAnchorGroupBySpellID(spellID, "spell")
 end
 
 function SCM:PLAYER_EQUIPMENT_CHANGED()
+	SCM:CreateAllCustomIcons()
 	SCM:ApplyAllCDManagerConfigs()
 end
 
@@ -199,6 +204,7 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	eventFrame:RegisterEvent("UI_SCALE_CHANGED")
 	eventFrame:RegisterEvent("DISPLAY_SIZE_CHANGED")
 	eventFrame:RegisterEvent("CVAR_UPDATE")
+	eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 	eventFrame:SetScript("OnEvent", OnEventFrameEvent)
 
 	SCM:GetAnchor(1)

@@ -78,6 +78,16 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 		end
 	end
 
+	if iconType == "cast" and config.spellID then
+		if frame.lastCastStartTime and config.duration > 0 and frame.lastCastStartTime + config.duration < GetTime() then
+			frame.Cooldown:SetCooldown(frame.lastCastStartTime, config.duration)
+			return true
+		elseif not frame.SCMHidden then
+			SCM:SetChildVisibilityState(frame, false, true)
+			return
+		end
+	end
+
 	frame.Cooldown:Clear()
 	frame.Icon:SetDesaturated(false)
 end
@@ -111,7 +121,7 @@ local function DoesItemOrSpellExists(config)
 		if config.slotID then
 			local itemID = GetInventoryItemID("player", config.slotID)
 			if itemID then
-				return C_Item.DoesItemExistByID(itemID)
+				return C_Item.DoesItemExistByID(itemID) and C_Item.GetItemSpell(itemID)
 			end
 		end
 	end
@@ -196,6 +206,8 @@ function CustomIcons.CreateIcons(customConfig, isGlobal)
 					frame.UpdateCharges = UpdateCustomIconCharges
 				end
 			end
+		elseif customFrames[id] then
+			SCM.SetChildVisibilityState(customFrames[id], false, true)
 		end
 	end
 end
@@ -204,7 +216,7 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 	for id, config in pairs(customConfig) do
 		local anchorGroup = config.anchorGroup or 1
 		local customFrames = CustomIcons.GetCustomIconFrames(config)
-		if customFrames[id] and SCM.IsScopedAnchorGroupAllowed(anchorGroup, isGlobal) then
+		if customFrames[id] and SCM.IsScopedAnchorGroupAllowed(anchorGroup, isGlobal) and DoesItemOrSpellExists(config) then
 			local frame = customFrames[id]
 			local iconType = frame.SCMIconType
 			local iconTexture = ResolveCustomIconTexture(config, iconType)
@@ -229,6 +241,8 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 			else
 				SCM.SetChildVisibilityState(frame, false, true)
 			end
+		elseif customFrames[id] then
+			SCM.SetChildVisibilityState(customFrames[id], false, true)
 		end
 	end
 end

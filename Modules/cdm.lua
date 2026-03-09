@@ -1017,18 +1017,32 @@ function SCM:ApplyAnchorGroupByIconTypes(skipGlobal, ...)
 	end
 end
 
-function SCM:ApplyAnchorGroupBySpellID(spellID)
+function SCM:ApplyAnchorGroupBySpellID(spellID, iconType)
 	local scopedGroups = {}
 
-	for _, config in pairs(self:GetConfigTable("spell")) do
+	for id, config in pairs(self:GetConfigTable(iconType)) do
 		if config.spellID == spellID then
 			scopedGroups[config.anchorGroup] = true
+
+			if iconType == "cast" then
+				local customFrames = SCM.CustomIcons.GetCustomIconFrames(config)
+				if customFrames and customFrames[id] then
+					customFrames[id].lastCastStartTime = GetTime()
+				end
+			end
 		end
 	end
 
-	for _, config in pairs(self:GetConfigTable("spell", true)) do
+	for id, config in pairs(self:GetConfigTable(iconType, true)) do
 		if config.spellID == spellID then
 			scopedGroups[config.anchorGroup] = true
+
+			if iconType == "cast" then
+				local customFrames = SCM.CustomIcons.GetCustomIconFrames(config)
+				if customFrames and customFrames[id] then
+					customFrames[id].lastCastStartTime = GetTime()
+				end
+			end
 		end
 	end
 
