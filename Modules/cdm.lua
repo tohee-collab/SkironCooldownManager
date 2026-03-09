@@ -219,6 +219,7 @@ local function OnBuffCooldownSet(self)
 
 	ShowChild(parent)
 	UpdateChildDesaturation(parent, false)
+	UpdateChildGlow(parent, false)
 	SCM:ApplyAllCDManagerConfigs()
 end
 
@@ -238,6 +239,7 @@ local function OnBuffCooldownEnd(self)
 		return
 	end
 
+	UpdateChildGlow(parent, true)
 	SCM:ApplyAllCDManagerConfigs()
 end
 
@@ -319,7 +321,6 @@ local function ProcessBuffIcon(child, childData, options)
 
 	SetChildVisibilityState(child, true, true)
 	UpdateChildDesaturation(child, isInactive)
-	UpdateChildGlow(child, isInactive)
 end
 
 local function IsChildOnCooldown(child)
@@ -340,18 +341,23 @@ end
 
 local function OnRegularCooldownChanged(self)
 	local parent = self:GetParent()
-	if parent and parent.SCMConfig and parent.SCMConfig.hideWhenNotOnCooldown then
-		local viewer = parent.viewerFrame
-		if viewer then
-			local viewerName = viewer:GetName()
-			if viewerName == VIEWER_UPDATE_MAPPING[UPDATE_SCOPE.ESSENTIAL].frameName then
-				RunNextFrame(RequestApplyEssentialCDManagerConfig)
-			elseif viewerName == VIEWER_UPDATE_MAPPING[UPDATE_SCOPE.UTILITY].frameName then
-				RunNextFrame(RequestApplyUtilityCDManagerConfig)
+	if parent and parent.SCMConfig then
+		local config = parent.SCMConfig
+		if config.hideWhenNotOnCooldown then
+			local viewer = parent.viewerFrame
+			if viewer then
+				local viewerName = viewer:GetName()
+				if viewerName == VIEWER_UPDATE_MAPPING[UPDATE_SCOPE.ESSENTIAL].frameName then
+					RunNextFrame(RequestApplyEssentialCDManagerConfig)
+				elseif viewerName == VIEWER_UPDATE_MAPPING[UPDATE_SCOPE.UTILITY].frameName then
+					RunNextFrame(RequestApplyUtilityCDManagerConfig)
+				end
+			else
+				RunNextFrame(RequestApplyAllCDManagerConfigs)
 			end
-		else
-			RunNextFrame(RequestApplyAllCDManagerConfigs)
 		end
+
+		UpdateChildGlow(parent, not self:GetUseAuraDisplayTime())
 	end
 end
 
@@ -534,7 +540,7 @@ end
 
 local function SetupCustomIconFrame(frame)
 	frame.Cooldown:SetScript("OnCooldownDone", OnIconCooldownDone)
-	SetupChildHooks(frame)
+	--SetupChildHooks(frame)
 end
 SCM.SetupCustomIconFrame = SetupCustomIconFrame
 
@@ -845,7 +851,9 @@ local function OnAnchorDebugTextureHide(self)
 end
 
 function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, growDir, iconSize, resetSize)
-	if group > 100 and not self.db.global.options.enableCustomIcons then return end
+	if group > 100 and not self.db.global.options.enableCustomIcons then
+		return
+	end
 
 	local anchorFrame = self.anchorFrames[group]
 	if not anchorFrame then
@@ -972,7 +980,9 @@ function SCM:ApplyAnchorGroupCDManagerConfig(group, isGlobal)
 end
 
 local function GetScopeGroupsForConfig(customConfig, scopedGroups, isGlobal)
-	if not customConfig then return scopedGroups end
+	if not customConfig then
+		return scopedGroups
+	end
 
 	local scopedGroups = scopedGroups or {}
 
@@ -985,7 +995,9 @@ local function GetScopeGroupsForConfig(customConfig, scopedGroups, isGlobal)
 end
 
 function SCM:ApplyAnchorGroupCustomConfig(customConfig)
-	if not customConfig then return end
+	if not customConfig then
+		return
+	end
 
 	local scopedGroups = GetScopeGroupsForConfig(customConfig)
 	if next(scopedGroups) then
@@ -1012,7 +1024,7 @@ end
 function SCM:ApplyAnchorGroupByIconTypes(skipGlobal, ...)
 	local scopedGroups = {}
 
-	for _, iconType in ipairs({...}) do
+	for _, iconType in ipairs({ ... }) do
 		scopedGroups = GetScopeGroupsForConfig(self:GetConfigTable(iconType), scopedGroups)
 		if not skipGlobal then
 			scopedGroups = GetScopeGroupsForConfig(self:GetConfigTable(iconType, true), scopedGroups, true)
@@ -1156,9 +1168,8 @@ function SCM:UpdateDB()
 	self.currentConfig.customConfig = self.currentConfig.customConfig or {}
 	self.customConfig = EnsureCustomConfigTables(self.currentConfig.customConfig)
 
-	self.globalAnchorConfig = self.db.global.globalAnchorConfig or {}
-	self.globalCustomConfig = EnsureCustomConfigTables(self.db.global.globalCustomConfig)
-	self.db.global.globalCustomConfig = self.globalCustomConfig
+	self.globalAnchorConfig = self.db.global.globalAnchorConfig
+	self.globalCustomConfig = self.db.global.globalCustomConfig
 
 	self.isHideWhenInactiveEnabled = self:GetHideWhenInactive() == 1
 end
