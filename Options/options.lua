@@ -223,7 +223,6 @@ function SCM:RemoveSpellFromConfig(anchorIndex, data)
 		for category, anchorGroup in pairs(spellConfig.source) do
 			if anchorGroup == anchorIndex then
 				spellConfig.source[category] = nil
-				break
 			end
 		end
 

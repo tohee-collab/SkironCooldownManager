@@ -229,6 +229,8 @@ local function OnBuffCooldownEnd(self)
 		return
 	end
 
+	UpdateChildGlow(parent, true)
+
 	local options = parent.SCMBuffOptions
 	if not options or not options.hideBuffsWhenInactive then
 		return
