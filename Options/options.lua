@@ -146,77 +146,47 @@ function SCM:RemoveRow(anchorIndex, rowIndex)
 	end
 end
 
-local function GetGlobalConfigTable(self, iconType)
-	if iconType == "spell" then
-		return self.db.global.globalSpellConfig
-	end
-
-	if iconType == "slot" then
-		return self.db.global.globalSlotConfig
-	end
-
-	return self.db.global.globalItemConfig
-end
-
-local function HideRemovedCustomIconFrame(id)
-	local frame = SCM.customIconFrames and SCM.customIconFrames[id]
-	if frame and SCM.SetChildVisibilityState then
-		SCM.SetChildVisibilityState(frame, false, true)
-	end
-end
-
-function SCM:AddCustomIcon(anchorGroup, iconType, idValue, isGlobal)
-	local dbTable = isGlobal and GetGlobalConfigTable(self, iconType) or self.customConfig
-	if not dbTable then
+function SCM:AddCustomIcon(anchorGroup, iconType, configID, order, uniqueID, isGlobal)
+	local configTable = SCM:GetConfigTable(iconType, isGlobal)
+	if not configTable then
 		return
 	end
 
-	local basePrefix = iconType == "spell" and "spell:" or (iconType == "slot" and "slot:" or "item:")
-	local baseID = basePrefix .. idValue
-	local uniqueID = self:UID(baseID)
+	uniqueID = uniqueID or SCM:GetUniqueID(configID, iconType, isGlobal)
 
-	local nextOrder = 1
-	for _, entry in pairs(dbTable) do
-		if entry.anchorGroup == anchorGroup and (entry.order or 0) >= nextOrder then
-			nextOrder = (entry.order or 0) + 1
+	if not order then
+		order = 1
+		for _, entry in pairs(configTable) do
+			if entry.anchorGroup == anchorGroup and (entry.order or 0) >= order then
+				order = (entry.order or 0) + 1
+			end
 		end
 	end
 
-	dbTable[uniqueID] = {
+	configTable[uniqueID] = {
 		id = uniqueID,
 		iconType = iconType,
-		spellID = iconType == "spell" and idValue or nil,
-		itemID = iconType == "item" and idValue or nil,
-		slotID = iconType == "slot" and idValue or nil,
+		spellID = iconType == "spell" and configID or nil,
+		itemID = iconType == "item" and configID or nil,
+		slotID = iconType == "slot" and configID or nil,
 		anchorGroup = anchorGroup,
-		order = nextOrder,
+		order = order,
 	}
+
+	self.CustomIcons.CreateIcons(configTable, isGlobal)
 
 	return uniqueID
 end
 
-function SCM:RemoveCustomIcon(anchorGroup, id, isGlobal, iconType)
-	if isGlobal then
-		local globalTables = iconType and { GetGlobalConfigTable(self, iconType) } or {
-			self.db.global.globalSpellConfig,
-			self.db.global.globalItemConfig,
-			self.db.global.globalSlotConfig,
-		}
-		for _, tableRef in pairs(globalTables) do
-			local entry = tableRef and tableRef[id]
-			if entry and (not anchorGroup or entry.anchorGroup == anchorGroup) then
-				tableRef[id] = nil
-				HideRemovedCustomIconFrame(id)
-				return
-			end
+function SCM:RemoveCustomIcon(id, isGlobal, iconType)
+	local configTable = SCM:GetConfigTable(iconType, isGlobal)
+	if configTable and configTable[id] then
+		configTable[id] = nil
+		
+		local customFrames = SCM.CustomIcons.GetCustomIconFrames(configTable)
+		if customFrames and customFrames[id] then
+			SCM.SetChildVisibilityState(customFrames[id], false, true)
 		end
-		return
-	end
-
-	local entry = self.customConfig and self.customConfig[id]
-	if entry and (not anchorGroup or entry.anchorGroup == anchorGroup) then
-		self.customConfig[id] = nil
-		HideRemovedCustomIconFrame(id)
 	end
 end
 
@@ -271,6 +241,11 @@ function SCM:AddTab(tab)
 	if self.OptionsFrame and self.OptionsFrame:IsShown() then
 		self.OptionsFrame:DoLayout()
 	end
+end
+
+function SCM:GetHideWhenInactive()
+	LibEditModeOverride:LoadLayouts()
+	return LibEditModeOverride:GetFrameSetting(BuffIconCooldownViewer, Enum.EditModeCooldownViewerSetting.HideWhenInactive)
 end
 
 function SCM:SetHideWhenInactive(value)

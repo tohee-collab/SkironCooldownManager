@@ -15,9 +15,11 @@ SCM.DefaultDB = {
 				},
 			},
 		},
-		globalSpellConfig = {},
-		globalItemConfig = {},
-		globalSlotConfig = {},
+		globalCustomConfig = {
+			spellConfig = {},
+			itemConfig = {},
+			slotConfig = {},
+		},
 		options = {
 			anchorUUFRoles = {
 				["HEALER"] = false,
@@ -32,7 +34,7 @@ SCM.DefaultDB = {
 			showAnchorHighlight = true,
 			debug = false,
             enableSkinning = true,
-			enableCustomIcons = false,
+			enableCustomIcons = true,
 			simulateAuras = true,
 			chargeFont = "Expressway",
 			chargeFontSize = 22,

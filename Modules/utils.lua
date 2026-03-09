@@ -126,28 +126,17 @@ function Utils.SortBySCMOrder(a, b)
 	return (a.SCMOrder or 0) < (b.SCMOrder or 0)
 end
 
-function Utils.GetOrCreateBucket(container, key)
-	local bucket = container[key]
-	if bucket then
-		return bucket
-	end
-
-	bucket = {}
-	container[key] = bucket
-	return bucket
-end
-
 function Utils.AddChildToGroup(validChildren, group, child, isGlobal)
 	if isGlobal then
 		group = Utils.ToGlobalGroup(group)
 		child.SCMGlobal = true
 	end
 
-	local groupChildren = Utils.GetOrCreateBucket(validChildren, group)
+	local groupChildren = GetOrCreateTableEntry(validChildren, group)
 	groupChildren[#groupChildren + 1] = child
 	return group
 end
 
-function Utils.NormalizeIconType(config)
+function Utils.GetIconType(config)
 	return config.iconType or (config.spellID and "spell") or "item"
 end

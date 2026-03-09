@@ -1,5 +1,4 @@
 local addonName, SCM = ...
-local CustomIcons = SCM.CustomIcons
 
 local function OnEssentialCooldownViewerLayout()
 	SCM:ApplyEssentialCDManagerConfig()
@@ -62,14 +61,24 @@ function SCM:SetHooks()
 	end
 end
 
+function SCM:CreateAllCustomIcons()
+	for _, config in pairs(self.customConfig) do
+		SCM.CustomIcons.CreateIcons(config)
+	end
+
+	for _, config in pairs(self.globalCustomConfig) do
+		SCM.CustomIcons.CreateIcons(config, true)
+	end
+end
+
 function SCM:PLAYER_ENTERING_WORLD(isInitialLogin, isReload)
 	if isInitialLogin or isReload then
 		SCM:UpdateCooldownInfo(true, CooldownViewerSettings:GetDataProvider())
 		SCM:UpdateDB()
 
+		SCM:CreateAllCustomIcons()
 		SCM:ApplyAllCDManagerConfigs()
 		SCM:SetHooks()
-		SCM:GetAnchor(1)
 	elseif self.isInInstance ~= IsInInstance() then
 		SCM:ApplyAllCDManagerConfigs()
 	end
@@ -78,45 +87,16 @@ function SCM:PLAYER_ENTERING_WORLD(isInitialLogin, isReload)
 end
 
 function SCM:BAG_UPDATE_DELAYED()
-	SCM:ApplyAllCDManagerConfigs()
-end
-
-local function SetItemCooldownVisual(frame, start, duration)
-	if start and start > 0 then
-		frame.Cooldown:SetCooldown(start, duration)
-		frame.Icon:SetDesaturated(true)
-		return true
-	end
-
-	frame.Cooldown:Clear()
-	frame.Icon:SetDesaturated(false)
-	return false
-end
-
-local function SetSpellCooldownVisual(frame, durationObject) end
-
-local function UpdateBagCooldownFrames()
-	local GetItemCooldown = C_Item.GetItemCooldown
-	for _, frame in pairs(SCM.itemFrames) do
-		local start, duration = GetItemCooldown(frame.itemID)
-		SetItemCooldownVisual(frame, start, duration)
-	end
-
-	CustomIcons.UpdateBagIcons(SetItemCooldownVisual, SCM.SetChildVisibilityState)
+	--SCM:ApplyAllCDManagerConfigs()
+--	SCM.CustomIcons.ProcessIcons()
 end
 
 function SCM:BAG_UPDATE_COOLDOWN()
-	RunNextFrame(UpdateBagCooldownFrames)
+	SCM:ApplyAnchorGroupByIconTypes(false, "item", "slot")
 end
 
 function SCM:SPELL_UPDATE_COOLDOWN(spellID)
-	for _, data in pairs(self.db.global.globalSpellConfig) do
-		if data.spellID and data.spellID == spellID then
-			SetSpellCooldownVisual()
-
-			break
-		end
-	end
+	SCM:ApplyAnchorGroupBySpellID(spellID)
 end
 
 function SCM:PLAYER_EQUIPMENT_CHANGED()
@@ -223,3 +203,20 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 
 	SCM:GetAnchor(1)
 end)
+
+function SCM:GetConfigTable(iconType, isGlobal)
+	if iconType == "spell" then
+		return isGlobal and self.globalCustomConfig.spellConfig or self.customConfig.spellConfig
+	end
+
+	if iconType == "slot" then
+		return isGlobal and self.globalCustomConfig.slotConfig or self.customConfig.slotConfig
+	end
+
+	return isGlobal and self.globalCustomConfig.itemConfig or self.customConfig.itemConfig
+end
+
+function SCM:GetConfigTableByID(configID, iconType, isGlobal)
+	local configTable = self:GetConfigTable(iconType, isGlobal)
+	return configTable and configTable[configID]
+end

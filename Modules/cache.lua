@@ -1,16 +1,16 @@
 local SCM = select(2, ...)
 
-SCM.Cache = SCM.Cache or {}
+SCM.Cache = {}
 local Cache = SCM.Cache
 
-Cache.cachedViewerScale = Cache.cachedViewerScale or 1
-Cache.cachedChildrenTbl = Cache.cachedChildrenTbl or {}
-Cache.cachedVisibleChildren = Cache.cachedVisibleChildren or {}
-Cache.cachedCooldownFrameTbl = Cache.cachedCooldownFrameTbl or {}
-Cache.cachedViewerChildren = Cache.cachedViewerChildren or {}
-Cache.cachedActiveItemFrames = Cache.cachedActiveItemFrames or {}
-Cache.cachedVisitedAnchorGroups = Cache.cachedVisitedAnchorGroups or {}
-Cache.reusableCustomIconContext = Cache.reusableCustomIconContext or {}
+Cache.cachedViewerScale = 1
+Cache.cachedChildrenTbl = {}
+Cache.cachedVisibleChildren = {}
+Cache.cachedCooldownFrameTbl = {}
+Cache.cachedViewerChildren = {}
+Cache.cachedActiveItemFrames = {}
+Cache.cachedVisitedAnchorGroups = {}
+Cache.reusableCustomIconContext = {}
 Cache.cachedScopedAnchorGroups = Cache.cachedScopedAnchorGroups or {
 	essential = {},
 	utility = {},

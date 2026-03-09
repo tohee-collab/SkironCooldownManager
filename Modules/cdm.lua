@@ -44,7 +44,6 @@ local Utils = SCM.Utils
 local ToGlobalGroup = Utils.ToGlobalGroup
 local SortBySCMOrder = Utils.SortBySCMOrder
 local AddChildToGroup = Utils.AddChildToGroup
-local GetOrCreateBucket = Utils.GetOrCreateBucket
 local CustomIcons = SCM.CustomIcons
 local PIVOT_MAP = {
 	LEFT = {
@@ -188,13 +187,18 @@ local function UpdateChildGlow(child, isInactive)
 	end
 end
 
-local function OnManagedChildShow(self)
-	UIParent.SetAlpha(self, self.SCMHidden and 0 or 1)
-	SCM:ApplyAllCDManagerConfigs()
+local function OnManagedChildShow(child)
+	UIParent.SetAlpha(child, child.SCMHidden and 0 or 1)
+	if child and child.SCMGroup then
+		SCM:ApplyAnchorGroupCDManagerConfig(child.SCMGroup)
+	end
 end
 
-local function OnManagedChildHide()
-	SCM:ApplyAllCDManagerConfigs()
+local function OnManagedChildHide(child)
+	--SCM:ApplyAllCDManagerConfigs()
+	if child and child.SCMGroup then
+		SCM:ApplyAnchorGroupCDManagerConfig(child.SCMGroup)
+	end
 end
 
 local function SetupChildHooks(child)
@@ -303,9 +307,10 @@ local function ProcessBuffIcon(child, childData, options)
 	child.SCMBuffOptions = options
 
 	local isInactive = not child.Cooldown:IsShown()
-	local forceShow = SCM.simulateBuffs or childData.alwaysShow
+	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and childData.alwaysShow)
 
-	local shouldHide = options.hideBuffsWhenInactive and isInactive and not forceShow
+	--local shouldHide = options.hideBuffsWhenInactive and isInactive and not forceShow
+	local shouldHide = isInactive and not forceShow
 
 	if shouldHide then
 		SetChildVisibilityState(child, false, true)
@@ -440,12 +445,14 @@ local function IsScopedAnchorGroupAllowed(group, isGlobal)
 	local effectiveGroup = isGlobal and ToGlobalGroup(group) or group
 	return IsScopedGroup(Cache.activeScopedAnchorGroups, effectiveGroup)
 end
+SCM.IsScopedAnchorGroupAllowed = IsScopedAnchorGroupAllowed
 
 local function AddChildToScopedGroup(validChildren, group, child, isGlobal)
 	if IsScopedAnchorGroupAllowed(group, isGlobal) then
 		AddChildToGroup(validChildren, group, child, isGlobal)
 	end
 end
+SCM.AddChildToScopedGroup = AddChildToScopedGroup
 
 local function ProcessSingleChild(child, validChildren, spellConfig, categoryIndex, isBuffIcon, options)
 	if not child.Icon then
@@ -479,6 +486,7 @@ local function ProcessSingleChild(child, validChildren, spellConfig, categoryInd
 	child.SCMConfig = childData
 	child.SCMOrder = childData.anchorGroup[group].order
 	child.SCMCooldownID = cooldownID
+	child.SCMGroup = group
 
 	SCM:SkinChild(child, childData)
 
@@ -510,105 +518,21 @@ local function OnIconCooldownDone(self)
 	if parent and parent.Icon then
 		parent.Icon:SetDesaturated(false)
 	end
-end
 
-local function OnItemDataLoaded(item, frame)
-	if not item then
-		return
+	if parent.UpdateCooldown then
+		parent.UpdateCooldown(parent, parent.SCMIconType, parent.SCMConfig)
 	end
 
-	if frame and frame.Icon then
-		frame.Icon:SetTexture(item:GetItemIcon())
+	if parent.UpdateCharges then
+		parent.UpdateCharges(parent, parent.spellID)
 	end
-end
-
-local function ProcessItemConfig(itemConfig, validChildren, isGlobal, activeItemFrames)
-	for configID, config in pairs(itemConfig or {}) do
-		if type(config) ~= "table" then
-			config = {
-				anchorGroup = tonumber(config) or 1,
-			}
-		end
-
-		local slotID = config and (config.slotID or tonumber(configID))
-		if slotID and slotID > 0 then
-			local anchorGroup = config.anchorGroup or 1
-			local scopedGroup = isGlobal and ToGlobalGroup(anchorGroup) or anchorGroup
-			if IsScopedGroup(Cache.activeScopedAnchorGroups, scopedGroup) then
-				local frameKey = (isGlobal and (config.id or tostring(configID))) or ("spec:" .. tostring(slotID))
-
-				local itemID = GetInventoryItemID("player", slotID)
-				if itemID and C_Item.GetItemSpell(itemID) then
-					activeItemFrames[frameKey] = true
-					local frame = SCM.itemFrames[frameKey] or CreateFrame("Frame", nil, UIParent, "PermokItemIconTemplate")
-					frame:SetScale(Cache.cachedViewerScale)
-
-					if not SCM.itemFrames[frameKey] then
-						SetupCooldownHooks(frame)
-						SCM.itemFrames[frameKey] = frame
-					end
-
-					frame.slotID = slotID
-					frame.itemID = itemID
-					frame.SCMCooldownID = config.id or ("slot:" .. slotID)
-					frame.SCMConfig = config
-					frame.SCMOrder = config.order or (100 + slotID)
-
-					if not frame.lastItemID or frame.lastItemID ~= itemID then
-						frame.lastItemID = itemID
-						frame.Icon:SetTexture(C_Item.GetItemIconByID(itemID))
-
-						local item = Item:CreateFromItemID(itemID)
-						if item then
-							item:ContinueOnItemLoad(function()
-								OnItemDataLoaded(item, frame)
-							end)
-						end
-					end
-
-					local start, duration = GetInventoryItemCooldown("player", slotID)
-					local isOnCooldown = start and start > 0
-					if isOnCooldown then
-						frame.Cooldown:SetCooldown(start, duration)
-						frame.Icon:SetDesaturated(true)
-					else
-						frame.Cooldown:Clear()
-						frame.Icon:SetDesaturated(false)
-					end
-
-					SetChildVisibilityState(frame, not (config.hideWhenNotOnCooldown and not isOnCooldown), true)
-					AddChildToScopedGroup(validChildren, anchorGroup, frame, isGlobal)
-				elseif SCM.itemFrames[frameKey] then
-					SetChildVisibilityState(SCM.itemFrames[frameKey], false, true)
-				end
-			end
-		end
-	end
-end
-
-local function HideItemIcons()
-	for _, itemFrame in pairs(SCM.itemFrames) do
-		SetChildVisibilityState(itemFrame, false, true)
-	end
-end
-
-local function HideCustomIcons()
-	CustomIcons.HideIcons(SetChildVisibilityState)
 end
 
 local function SetupCustomIconFrame(frame)
 	frame.Cooldown:SetScript("OnCooldownDone", OnIconCooldownDone)
 	SetupChildHooks(frame)
 end
-
-local function GetCustomIconContext()
-	Cache.reusableCustomIconContext.viewerScale = Cache.cachedViewerScale
-	Cache.reusableCustomIconContext.setChildVisibilityState = SetChildVisibilityState
-	Cache.reusableCustomIconContext.setupFrame = SetupCustomIconFrame
-	Cache.reusableCustomIconContext.isGroupAllowed = IsScopedAnchorGroupAllowed
-	Cache.reusableCustomIconContext.addChildToGroup = AddChildToScopedGroup
-	return Cache.reusableCustomIconContext
-end
+SCM.SetupCustomIconFrame = SetupCustomIconFrame
 
 local function ApplyManagedAnchorPoint(child)
 	local anchorFrame = child.SCMAnchorFrame
@@ -640,14 +564,6 @@ local function OnManagedAnchorChildSetHeight(child)
 	if anchorFrame then
 		anchorFrame.SetHeight(child, child.height)
 	end
-end
-
-local function OnManagedAnchorChildSetPoint(child)
-	ApplyManagedAnchorPoint(child)
-end
-
-local function OnManagedAnchorChildClearAllPoints(child)
-	ApplyManagedAnchorPoint(child)
 end
 
 local function UpdateEmptyAnchorGroup(group, anchorConfig, scopedAnchorGroups)
@@ -693,7 +609,7 @@ local function OrderCDManagerSpells_Actual(updateScope, scopedAnchorGroupsOverri
 
 	for group, children in pairs(Cache.cachedChildrenTbl) do
 		if IsScopedGroup(scopedAnchorGroups, group) then
-			local visibleChildren = GetOrCreateBucket(Cache.cachedVisibleChildren, group)
+			local visibleChildren = GetOrCreateTableEntry(Cache.cachedVisibleChildren, group)
 			wipe(visibleChildren)
 			for _, child in ipairs(children) do
 				if child.SCMShouldBeVisible then
@@ -705,33 +621,16 @@ local function OrderCDManagerSpells_Actual(updateScope, scopedAnchorGroupsOverri
 		end
 	end
 
-	wipe(Cache.cachedActiveItemFrames)
-	local activeItemFrames = Cache.cachedActiveItemFrames
-	if SCM.itemConfig and next(SCM.itemConfig) then
-		ProcessItemConfig(SCM.itemConfig, Cache.cachedCooldownFrameTbl, false, activeItemFrames)
-	end
-	if SCM.globalSlotConfig and next(SCM.globalSlotConfig) then
-		ProcessItemConfig(SCM.globalSlotConfig, Cache.cachedCooldownFrameTbl, true, activeItemFrames)
-	end
-	if not scopedAnchorGroups then
-		if next(activeItemFrames) then
-			for frameKey, itemFrame in pairs(SCM.itemFrames) do
-				if not activeItemFrames[frameKey] then
-					SetChildVisibilityState(itemFrame, false, true)
-				end
-			end
-		else
-			HideItemIcons()
-		end
-	end
-
 	if options.enableCustomIcons then
-		local customIconContext = GetCustomIconContext()
-		CustomIcons.ProcessIcons(SCM.customConfig, Cache.cachedCooldownFrameTbl, false, customIconContext)
-		CustomIcons.ProcessIcons(SCM.globalSpellConfig, Cache.cachedCooldownFrameTbl, true, customIconContext)
-		CustomIcons.ProcessIcons(SCM.globalItemConfig, Cache.cachedCooldownFrameTbl, true, customIconContext)
+		for _, customConfig in pairs(SCM.customConfig) do
+			CustomIcons.ProcessIcons(customConfig, Cache.cachedCooldownFrameTbl)
+		end
+
+		for _, customConfig in pairs(SCM.globalCustomConfig) do
+			CustomIcons.ProcessIcons(customConfig, Cache.cachedCooldownFrameTbl, true)
+		end
 	else
-		HideCustomIcons()
+		CustomIcons.HideIcons()
 	end
 
 	for group, visibleChildren in pairs(Cache.cachedCooldownFrameTbl) do
@@ -804,8 +703,8 @@ local function OrderCDManagerSpells_Actual(updateScope, scopedAnchorGroupsOverri
 
 				if not child.SCMPointHook then
 					child.SCMPointHook = true
-					hooksecurefunc(child, "SetPoint", OnManagedAnchorChildSetPoint)
-					hooksecurefunc(child, "ClearAllPoints", OnManagedAnchorChildClearAllPoints)
+					hooksecurefunc(child, "SetPoint", ApplyManagedAnchorPoint)
+					hooksecurefunc(child, "ClearAllPoints", ApplyManagedAnchorPoint)
 				end
 
 				local anchorData = child.SCMAnchorData or {}
@@ -901,6 +800,13 @@ local function OnOrderThrottleTick()
 end
 
 local function OrderCDManagerSpells(updateScope)
+	-- print(updateScope)
+	-- if updateScope == UPDATE_SCOPE.ALL then
+	-- 	if DevTool then
+	-- 		DevTool:AddData({strsplit("\n", debugstack())}, updateScope)
+	-- 	end
+	-- end
+
 	updateScope = updateScope or UPDATE_SCOPE.ALL
 	if updateScope == UPDATE_SCOPE.BUFF then
 		OrderCDManagerSpells_Actual(updateScope)
@@ -913,7 +819,7 @@ local function OrderCDManagerSpells(updateScope)
 
 	OrderCDManagerSpells_Actual(updateScope)
 	isThrottled = true
-	C_Timer.After(0, OnOrderThrottleTick)
+	C_Timer.After(0.1, OnOrderThrottleTick)
 end
 
 local function OnAnchorDebugTextureShow(self)
@@ -1061,6 +967,76 @@ function SCM:ApplyAnchorGroupCDManagerConfig(group, isGlobal)
 	OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, { [scopedGroup] = true })
 end
 
+local function GetScopeGroupsForConfig(customConfig, scopedGroups)
+	if not customConfig then return scopedGroups end
+
+	local scopedGroups = scopedGroups or {}
+
+	for _, config in pairs(customConfig) do
+		scopedGroups[config.anchorGroup] = true
+	end
+
+	return scopedGroups
+end
+
+function SCM:ApplyAnchorGroupCustomConfig(customConfig)
+	if not customConfig then return end
+
+	local scopedGroups = GetScopeGroupsForConfig(customConfig)
+	if next(scopedGroups) then
+		OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, scopedGroups)
+	end
+end
+
+function SCM:ApplyAnchorGroupByIconType(iconType, skipGlobal)
+	local scopedGroups = GetScopeGroupsForConfig(self:GetConfigTable(iconType))
+
+	if not skipGlobal then
+		local globalConfigTable = self:GetConfigTable(iconType, true)
+
+		if globalConfigTable then
+			scopedGroups = GetScopeGroupsForConfig(globalConfigTable, scopedGroups)
+		end
+	end
+
+	if next(scopedGroups) then
+		OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, scopedGroups)
+	end
+end
+
+function SCM:ApplyAnchorGroupByIconTypes(skipGlobal, ...)
+	local scopedGroups = {}
+
+	for _, iconType in ipairs({...}) do
+		scopedGroups = GetScopeGroupsForConfig(self:GetConfigTable(iconType), scopedGroups)
+		scopedGroups = GetScopeGroupsForConfig(self:GetConfigTable(iconType, true), scopedGroups)
+	end
+
+	if next(scopedGroups) then
+		OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, scopedGroups)
+	end
+end
+
+function SCM:ApplyAnchorGroupBySpellID(spellID)
+	local scopedGroups = {}
+
+	for _, config in pairs(self:GetConfigTable("spell")) do
+		if config.spellID == spellID then
+			scopedGroups[config.anchorGroup] = true
+		end
+	end
+
+	for _, config in pairs(self:GetConfigTable("spell", true)) do
+		if config.spellID == spellID then
+			scopedGroups[config.anchorGroup] = true
+		end
+	end
+
+	if next(scopedGroups) then
+		OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, scopedGroups)
+	end
+end
+
 function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)
 	self.defaultCooldownViewerConfig = {
 		cooldownIDs = {},
@@ -1103,6 +1079,15 @@ function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)
 	end
 end
 
+local function GetOrCreateCustomConfig()
+	SCM.currentConfig.customConfig = GetOrCreateTableEntry(SCM.currentConfig, "customConfig", {spellConfig = {},itemConfig = {},slotConfig = {}})
+	SCM.currentConfig.customConfig.spellConfig = GetOrCreateTableEntry(SCM.currentConfig.customConfig, "spellConfig")
+	SCM.currentConfig.customConfig.itemConfig = GetOrCreateTableEntry(SCM.currentConfig.customConfig, "itemConfig")
+	SCM.currentConfig.customConfig.slotConfig = GetOrCreateTableEntry(SCM.currentConfig.customConfig, "slotConfig")
+
+	return SCM.currentConfig.customConfig
+end
+
 function SCM:UpdateDB()
 	local class = UnitClassBase("player")
 	local specID = GetSpecializationInfo(GetSpecialization())
@@ -1110,30 +1095,27 @@ function SCM:UpdateDB()
 	local currentConfig = self.DB:LoadData()
 	local specAnchorConfig = currentConfig and currentConfig.anchorConfig[specID]
 	local specSpellConfig = currentConfig and currentConfig.spellConfig[specID]
-	local itemConfig
-	if currentConfig and currentConfig.itemConfig then
-		itemConfig = currentConfig.itemConfig[specID] or currentConfig.itemConfig
-	end
-	local customConfig = currentConfig and currentConfig.customConfig and currentConfig.customConfig[specID]
+	local specCustomConfig = currentConfig and currentConfig.customConfig and currentConfig.customConfig[specID]
 
 	self.db.profile[class] = self.db.profile[class] or {}
 	self.db.profile[class][specID] = self.db.profile[class][specID]
 		or {
 			anchorConfig = CopyTable(specAnchorConfig or self.DB.defaultAnchorConfig),
-			itemConfig = itemConfig or {},
 			spellConfig = specSpellConfig or {},
-			customConfig = customConfig or {},
+			customConfig = specCustomConfig or {},
 		}
 
 	self.currentConfig = self.db.profile[class][specID]
-	self.currentConfig.customConfig = self.currentConfig.customConfig or {}
 	self.anchorConfig = self.currentConfig.anchorConfig
 	self.spellConfig = self.currentConfig.spellConfig
 	self.itemConfig = self.currentConfig.itemConfig
-	self.customConfig = self.currentConfig.customConfig
+	self.customConfig = GetOrCreateCustomConfig()
 
 	self.globalAnchorConfig = self.db.global.globalAnchorConfig or {}
-	self.globalSpellConfig = self.db.global.globalSpellConfig
-	self.globalItemConfig = self.db.global.globalItemConfig
-	self.globalSlotConfig = self.db.global.globalSlotConfig
+	self.globalCustomConfig = self.db.global.globalCustomConfig
+
+	self.isHideWhenInactiveEnabled = self:GetHideWhenInactive() == 1
+	-- self.globalSpellConfig = self.db.global.globalCustomConfig.spellConfig
+	-- self.globalItemConfig = self.db.global.globalCustomConfig.itemConfig
+	-- self.globalSlotConfig = self.db.global.globalCustomConfig.slotConfig
 end

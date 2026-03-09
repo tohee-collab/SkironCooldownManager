@@ -30,21 +30,22 @@ Database\sharedmedia.lua
 Database\loader.lua
 
 
-glow.lua
-cache.lua
-skinning.lua
-utils.lua
-custom_icons.lua
-cdm.lua
+Modules\glow.lua
+Modules\cache.lua
+Modules\skinning.lua
+Modules\utils.lua
+Modules\customicons.lua
+Modules\cdm.lua
+Modules\anchors.lua
+Modules\uid.lua
+Modules\profiles.lua
+
 core.lua
-anchors.lua
-profiles.lua
-uid.lua
+api.lua
+
 
 Options\cdm.lua
 Options\general.lua
 Options\options.lua
 Options\profiles.lua
 Options\temporary.lua
-
-api.lua
