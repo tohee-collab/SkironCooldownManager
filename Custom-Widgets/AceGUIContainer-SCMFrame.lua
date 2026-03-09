@@ -137,6 +137,8 @@ local function Constructor()
 	frame.TitleContainer:SetScript("OnMouseDown", Title_OnMouseDown)
 	frame.TitleContainer:SetScript("OnMouseUp", Title_OnMouseUp)
 
+	frame.NineSlice:SetFrameStrata("LOW")
+	frame.NineSlice:SetFrameLevel(1)
 	--Container Support
 	local content = CreateFrame("Frame", nil, frame)
 	content:SetPoint("TOPLEFT", 17, -27)
