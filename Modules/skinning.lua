@@ -65,6 +65,7 @@ local function ApplyCooldownStyle(child, options)
 				end
 			end
 
+			self:SetReverse(options.reverseActiveSwipe)
 			ApplyCooldownFont(self, options)
 		end)
 

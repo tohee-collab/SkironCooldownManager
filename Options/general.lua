@@ -404,6 +404,15 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			options.activeSwipeColor = { r, g, b, a }
 		end)
 		swipeSettings:AddChild(activeSwipeColor)
+
+		local reverseActiveSwipe = AceGUI:Create("CheckBox")
+		reverseActiveSwipe:SetRelativeWidth(0.33)
+		reverseActiveSwipe:SetLabel("Reverse Active Swipe")
+		reverseActiveSwipe:SetValue(options.reverseActiveSwipe)
+		reverseActiveSwipe:SetCallback("OnValueChanged", function(_, _, value)
+			options.reverseActiveSwipe = value
+		end)
+		swipeSettings:AddChild(reverseActiveSwipe)
 	elseif group == "Glow" then
 		local glowSettings = AceGUI:Create("InlineGroup")
 		glowSettings:SetLayout("flow")
