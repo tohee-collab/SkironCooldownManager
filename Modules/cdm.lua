@@ -1138,6 +1138,13 @@ local function EnsureCustomConfigTables(customConfig)
 	customConfig.slotConfig = GetOrCreateTableEntry(customConfig, "slotConfig")
 	customConfig.timerConfig = GetOrCreateTableEntry(customConfig, "timerConfig")
 
+	local allowedKeys = SCM.DefaultDB.global.globalCustomConfig
+	for key in pairs(customConfig) do
+		if not allowedKeys[key] then
+			customConfig[key] = nil
+		end
+	end
+
 	return customConfig
 end
 
@@ -1167,7 +1174,7 @@ function SCM:UpdateDB()
 	self.customConfig = EnsureCustomConfigTables(self.currentConfig.customConfig)
 
 	self.globalAnchorConfig = self.db.global.globalAnchorConfig
-	self.globalCustomConfig = self.db.global.globalCustomConfig
+	self.globalCustomConfig = EnsureCustomConfigTables(self.db.global.globalCustomConfig)
 
 	self.isHideWhenInactiveEnabled = self:GetHideWhenInactive() == 1
 end
