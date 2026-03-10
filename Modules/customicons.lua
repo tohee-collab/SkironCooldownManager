@@ -251,39 +251,41 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 	for id, config in pairs(customConfig) do
 		local anchorGroup = config.anchorGroup or 1
 		local customFrames = CustomIcons.GetCustomIconFrames(config)
-		if customFrames[id] and DoesItemOrSpellExists(config) then
-			if SCM.IsScopedAnchorGroupAllowed(anchorGroup, isGlobal) then
-				local frame = customFrames[id]
-				local iconType = frame.SCMIconType
-				local iconTexture = ResolveCustomIconTexture(config, iconType)
-				if not iconTexture and SCM.isOptionsOpen then
-					iconTexture = 134400
-				end
-
-				if iconTexture then
-					if frame.SCMIconTexture ~= iconTexture then
-						frame.SCMIconTexture = iconTexture
-						frame.Icon:SetTexture(iconTexture)
+		if customFrames then
+			if customFrames[id] and DoesItemOrSpellExists(config) then
+				if SCM.IsScopedAnchorGroupAllowed(anchorGroup, isGlobal) then
+					local frame = customFrames[id]
+					local iconType = frame.SCMIconType
+					local iconTexture = ResolveCustomIconTexture(config, iconType)
+					if not iconTexture and SCM.isOptionsOpen then
+						iconTexture = 134400
 					end
-					local hasCount = SetCustomIconCountText(frame, iconType, config.spellID or config.itemID)
-					local isOnCooldown = UpdateCustomIconCooldown(frame, iconType, config)
-					local shouldShow = ShouldShowCustomIcon(config, iconType, hasCount, isOnCooldown)
 
-					SCM.SetChildVisibilityState(frame, shouldShow, true)
-
-					if shouldShow then
-						if iconType == "spell" then
-							UpdateCustomIconCharges(frame, config.spellID)
+					if iconTexture then
+						if frame.SCMIconTexture ~= iconTexture then
+							frame.SCMIconTexture = iconTexture
+							frame.Icon:SetTexture(iconTexture)
 						end
+						local hasCount = SetCustomIconCountText(frame, iconType, config.spellID or config.itemID)
+						local isOnCooldown = UpdateCustomIconCooldown(frame, iconType, config)
+						local shouldShow = ShouldShowCustomIcon(config, iconType, hasCount, isOnCooldown)
 
-						SCM.AddChildToScopedGroup(validChildren, anchorGroup, frame, isGlobal)
+						SCM.SetChildVisibilityState(frame, shouldShow, true)
+
+						if shouldShow then
+							if iconType == "spell" then
+								UpdateCustomIconCharges(frame, config.spellID)
+							end
+
+							SCM.AddChildToScopedGroup(validChildren, anchorGroup, frame, isGlobal)
+						end
+					else
+						SCM.SetChildVisibilityState(frame, false, true)
 					end
-				else
-					SCM.SetChildVisibilityState(frame, false, true)
 				end
+			elseif customFrames[id] then
+				SCM.SetChildVisibilityState(customFrames[id], false, true)
 			end
-		elseif customFrames[id] then
-			SCM.SetChildVisibilityState(customFrames[id], false, true)
 		end
 	end
 end
