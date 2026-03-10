@@ -137,7 +137,7 @@ local customButtonConfigs = {
 			GameTooltip_SetTitle(tooltip, MenuUtil.GetElementText(elementDescription))
 			GameTooltip_AddInstructionLine(tooltip, "Timers can only be created based on successful casts.")
 			--GameTooltip_AddNormalLine(tooltip, "Casting Tiger's Lust, can display a custom timer for Tiger's Lust.")
-		end
+		end,
 	},
 }
 
@@ -813,17 +813,19 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 									iconSettingsTabs:AddChild(castTimer)
 								end
 
-								local useCustomGlowColor = AceGUI:Create("CheckBox")
-								useCustomGlowColor:SetLabel("Glow While Active")
-								useCustomGlowColor:SetRelativeWidth(0.5)
-								useCustomGlowColor:SetValue(buttonConfig.glowWhileActive)
-								useCustomGlowColor:SetDisabled(not options.useCustomGlow)
-								SCM.Utils.SetDisabledTooltip(useCustomGlowColor, "Enable 'Use Custom Glow' in Global Settings > Glow first.")
-								useCustomGlowColor:SetCallback("OnValueChanged", function(self, event, value)
-									buttonConfig.glowWhileActive = value or nil
-									ApplyIconConfigUpdate()
-								end)
-								iconSettingsTabs:AddChild(useCustomGlowColor)
+								if buttonData.iconType == "spell" or buttonData.iconType == "timer" then
+									local glowWhileActive = AceGUI:Create("CheckBox")
+									glowWhileActive:SetLabel("Glow While Active")
+									glowWhileActive:SetRelativeWidth(0.5)
+									glowWhileActive:SetValue(buttonConfig.glowWhileActive)
+									glowWhileActive:SetDisabled(not options.useCustomGlow)
+									SCM.Utils.SetDisabledTooltip(glowWhileActive, "Enable 'Use Custom Glow' in Global Settings > Glow first.")
+									glowWhileActive:SetCallback("OnValueChanged", function(self, event, value)
+										buttonConfig.glowWhileActive = value or nil
+										ApplyIconConfigUpdate()
+									end)
+									iconSettingsTabs:AddChild(glowWhileActive)
+								end
 							elseif group == "load" then
 								local label = AceGUI:Create("Label")
 								label:SetRelativeWidth(1.0)
