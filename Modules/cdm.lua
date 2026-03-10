@@ -974,15 +974,16 @@ function SCM:ApplyAnchorGroupCDManagerConfig(group, isGlobal)
 		scopedGroup = ToGlobalGroup(scopedGroup)
 	end
 
-	OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, { [scopedGroup] = true })
+	local scopedGroups = self:AcquireScopedGroupCache()
+	scopedGroups[scopedGroup] = true
+	OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, scopedGroups)
+	self:ReleaseScopedGroupCache(scopedGroups)
 end
 
 local function GetScopeGroupsForConfig(customConfig, scopedGroups, isGlobal)
 	if not customConfig then
 		return scopedGroups
 	end
-
-	local scopedGroups = scopedGroups or {}
 
 	for _, config in pairs(customConfig) do
 		local group = isGlobal and ToGlobalGroup(config.anchorGroup) or config.anchorGroup
@@ -997,61 +998,73 @@ function SCM:ApplyAnchorGroupCustomConfig(customConfig)
 		return
 	end
 
-	local scopedGroups = GetScopeGroupsForConfig(customConfig)
+	local scopedGroups = self:AcquireScopedGroupCache()
+	GetScopeGroupsForConfig(customConfig, scopedGroups)
 	if next(scopedGroups) then
 		OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, scopedGroups)
 	end
+	self:ReleaseScopedGroupCache(scopedGroups)
 end
 
 function SCM:ApplyAnchorGroupByIconType(iconType, skipGlobal)
-	local scopedGroups = GetScopeGroupsForConfig(self:GetConfigTable(iconType))
+	local scopedGroups = self:AcquireScopedGroupCache()
+	GetScopeGroupsForConfig(self:GetConfigTable(iconType), scopedGroups)
 
 	if not skipGlobal then
 		local globalConfigTable = self:GetConfigTable(iconType, true)
 
 		if globalConfigTable then
-			scopedGroups = GetScopeGroupsForConfig(globalConfigTable, scopedGroups, true)
+			GetScopeGroupsForConfig(globalConfigTable, scopedGroups, true)
 		end
 	end
 
 	if next(scopedGroups) then
 		OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, scopedGroups)
 	end
+	self:ReleaseScopedGroupCache(scopedGroups)
 end
 
 function SCM:ApplyAnchorGroupByIconTypes(skipGlobal, ...)
-	local scopedGroups = {}
-
-	for _, iconType in ipairs({ ... }) do
-		scopedGroups = GetScopeGroupsForConfig(self:GetConfigTable(iconType), scopedGroups)
+	local scopedGroups = self:AcquireScopedGroupCache()
+	local numIconTypes = select("#", ...)
+	for i = 1, numIconTypes do
+		local iconType = select(i, ...)
+		GetScopeGroupsForConfig(self:GetConfigTable(iconType), scopedGroups)
 		if not skipGlobal then
-			scopedGroups = GetScopeGroupsForConfig(self:GetConfigTable(iconType, true), scopedGroups, true)
+			GetScopeGroupsForConfig(self:GetConfigTable(iconType, true), scopedGroups, true)
 		end
 	end
 
 	if next(scopedGroups) then
 		OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, scopedGroups)
 	end
+	self:ReleaseScopedGroupCache(scopedGroups)
 end
 
 function SCM:ApplyAnchorGroupBySpellID(spellID, iconType)
-	local scopedGroups = {}
-
-	for id, config in pairs(self:GetConfigTable(iconType)) do
-		if config.spellID == spellID then
-			scopedGroups[config.anchorGroup] = true
+	local scopedGroups = self:AcquireScopedGroupCache()
+	local configTable = self:GetConfigTable(iconType)
+	if configTable then
+		for _, config in pairs(configTable) do
+			if config.spellID == spellID then
+				scopedGroups[config.anchorGroup] = true
+			end
 		end
 	end
 
-	for id, config in pairs(self:GetConfigTable(iconType, true)) do
-		if config.spellID == spellID then
-			scopedGroups[ToGlobalGroup(config.anchorGroup)] = true
+	local globalConfigTable = self:GetConfigTable(iconType, true)
+	if globalConfigTable then
+		for _, config in pairs(globalConfigTable) do
+			if config.spellID == spellID then
+				scopedGroups[ToGlobalGroup(config.anchorGroup)] = true
+			end
 		end
 	end
 
 	if next(scopedGroups) then
 		OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, scopedGroups)
 	end
+	self:ReleaseScopedGroupCache(scopedGroups)
 end
 
 local function ApplySuccessfulCastToConfigTable(configTable, spellID, scopedGroups, isGlobal, now)
@@ -1077,7 +1090,7 @@ end
 
 function SCM:ApplySuccessfulCastBySpellID(spellID)
 	local now = GetTime()
-	local scopedGroups = {}
+	local scopedGroups = self:AcquireScopedGroupCache()
 
 	scopedGroups = ApplySuccessfulCastToConfigTable(self:GetConfigTable("timer"), spellID, scopedGroups, false, now)
 	scopedGroups = ApplySuccessfulCastToConfigTable(self:GetConfigTable("timer", true), spellID, scopedGroups, true, now)
@@ -1087,6 +1100,7 @@ function SCM:ApplySuccessfulCastBySpellID(spellID)
 	if next(scopedGroups) then
 		OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, scopedGroups)
 	end
+	self:ReleaseScopedGroupCache(scopedGroups)
 end
 
 function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)

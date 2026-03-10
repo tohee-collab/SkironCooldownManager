@@ -11,6 +11,7 @@ Cache.cachedViewerChildren = {}
 Cache.cachedActiveItemFrames = {}
 Cache.cachedVisitedAnchorGroups = {}
 Cache.reusableCustomIconContext = {}
+Cache.reusableScopedGroupTables = {}
 Cache.cachedScopedAnchorGroups = Cache.cachedScopedAnchorGroups or {
 	essential = {},
 	utility = {},
@@ -27,6 +28,27 @@ end
 
 function SCM:InvalidatePixelPerfectCache()
 	Cache.cachedPixelPerfectMultiplier = nil
+end
+
+function SCM:AcquireScopedGroupCache()
+	local reusableScopedGroupTables = Cache.reusableScopedGroupTables
+	local scopedGroups = reusableScopedGroupTables[#reusableScopedGroupTables]
+	if scopedGroups then
+		reusableScopedGroupTables[#reusableScopedGroupTables] = nil
+		return scopedGroups
+	end
+
+	return {}
+end
+
+function SCM:ReleaseScopedGroupCache(scopedGroups)
+	if not scopedGroups then
+		return
+	end
+
+	wipe(scopedGroups)
+	local reusableScopedGroupTables = Cache.reusableScopedGroupTables
+	reusableScopedGroupTables[#reusableScopedGroupTables + 1] = scopedGroups
 end
 
 function SCM:GetPixelPerfectMultiplier()
