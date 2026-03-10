@@ -49,6 +49,7 @@ local function ResetCustomIconFrame(_, frame)
 	frame.SCMCustom = nil
 	frame.SCMIconTexture = nil
 	frame.SCMActiveGlow = nil
+	frame.SCMGlowWhileActive = nil
 	frame.SCMPandemic = nil
 	frame.spellID = nil
 	frame.itemID = nil
@@ -130,6 +131,22 @@ desaturationCurve:SetType(Enum.LuaCurveType.Step)
 desaturationCurve:AddPoint(0, 0)
 desaturationCurve:AddPoint(0.001, 1)
 
+local function UpdateCustomIconGlow(frame, isActive)
+	if not frame or not frame.SCMConfig then
+		return
+	end
+
+	if frame.SCMConfig.glowWhileActive and isActive then
+		if not frame.SCMGlowWhileActive then
+			frame.SCMGlowWhileActive = true
+			SCM:StartCustomGlow(frame)
+		end
+	elseif frame.SCMGlowWhileActive then
+		frame.SCMGlowWhileActive = nil
+		SCM:StopCustomGlow(frame)
+	end
+end
+
 local function GetActiveCustomTimer(frame, iconType, config, now)
 	local duration
 	if iconType == "spell" or iconType == "timer" then
@@ -158,6 +175,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 	if customTimerStart then
 		frame.Cooldown:SetCooldown(customTimerStart, customTimerDuration)
 		frame.Icon:SetDesaturated(false)
+		UpdateCustomIconGlow(frame, true)
 		return true
 	end
 
@@ -178,7 +196,9 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 			end
 		end
 
-		return frame.Cooldown:IsShown()
+		local isOnCooldown = frame.Cooldown:IsShown()
+		UpdateCustomIconGlow(frame, not isOnCooldown)
+		return isOnCooldown
 	end
 
 	if iconType == "item" then
@@ -190,6 +210,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 				frame.Cooldown:SetCooldown(startTime, duration)
 			end
 			frame.Icon:SetDesaturated(true)
+			UpdateCustomIconGlow(frame, true)
 			return true
 		end
 	end
@@ -199,12 +220,14 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 		if startTime and startTime > 0 then
 			frame.Cooldown:SetCooldown(startTime, duration)
 			frame.Icon:SetDesaturated(true)
+			UpdateCustomIconGlow(frame, true)
 			return true
 		end
 	end
 
 	frame.Cooldown:Clear()
 	frame.Icon:SetDesaturated(false)
+	UpdateCustomIconGlow(frame, false)
 end
 
 local function UpdateCustomIconCharges(frame, spellID)
