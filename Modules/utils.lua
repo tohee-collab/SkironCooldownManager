@@ -138,5 +138,6 @@ function Utils.AddChildToGroup(validChildren, group, child, isGlobal)
 end
 
 function Utils.GetIconType(config)
+	if not config or not (type(config) == "table") then return end
 	return config.iconType or (config.spellID and "spell") or "item"
 end

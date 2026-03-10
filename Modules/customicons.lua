@@ -11,6 +11,10 @@ local CustomSpellFrames = {}
 
 function CustomIcons.GetCustomIconFrames(config)
 	local iconType = GetIconType(config)
+	if not iconType then
+		return
+	end
+
 	if iconType == "spell" or iconType == "timer" then
 		return CustomSpellFrames
 	end
@@ -206,37 +210,39 @@ function CustomIcons.CreateIcons(customConfig, isGlobal)
 
 	for id, config in pairs(customConfig) do
 		local customFrames = CustomIcons.GetCustomIconFrames(config)
-		if not customFrames[id] and DoesItemOrSpellExists(config) then
-			local frameName = (isGlobal and "SCM_Custom_Icon_Global_" or "SCM_Custom_Icon_") .. tostring(id)
-			local frame = CreateFrame("Frame", frameName, UIParent, "SCMItemIconTemplate")
-			customFrames[id] = frame
-			SCM.customIconFrames[id] = frame
-			ConfigureCustomIconFrame(frame, id, config, viewerScale, config.anchorGroup or 1, isGlobal)
+		if customFrames then
+			if not customFrames[id] and DoesItemOrSpellExists(config) then
+				local frameName = (isGlobal and "SCM_Custom_Icon_Global_" or "SCM_Custom_Icon_") .. tostring(id)
+				local frame = CreateFrame("Frame", frameName, UIParent, "SCMItemIconTemplate")
+				customFrames[id] = frame
+				SCM.customIconFrames[id] = frame
+				ConfigureCustomIconFrame(frame, id, config, viewerScale, config.anchorGroup or 1, isGlobal)
 
-			local iconType = frame.SCMIconType
-			local iconTexture = ResolveCustomIconTexture(config, iconType)
-			if not iconTexture then
-				iconTexture = 134400
-			end
-
-			frame.SCMIconTexture = iconTexture
-			frame.Icon:SetTexture(iconTexture)
-			SCM.SetupCustomIconFrame(frame)
-			SCM.SetChildVisibilityState(frame, false, true)
-			SCM:SkinChild(frame, config)
-
-			frame.UpdateCooldown = UpdateCustomIconCooldown
-
-			if iconType == "spell" then
-				local chargeInfo = C_Spell.GetSpellCharges(config.spellID)
-				UpdateCustomIconCharges(frame, config.spellID)
-
-				if chargeInfo then
-					frame.UpdateCharges = UpdateCustomIconCharges
+				local iconType = frame.SCMIconType
+				local iconTexture = ResolveCustomIconTexture(config, iconType)
+				if not iconTexture then
+					iconTexture = 134400
 				end
+
+				frame.SCMIconTexture = iconTexture
+				frame.Icon:SetTexture(iconTexture)
+				SCM.SetupCustomIconFrame(frame)
+				SCM.SetChildVisibilityState(frame, false, true)
+				SCM:SkinChild(frame, config)
+
+				frame.UpdateCooldown = UpdateCustomIconCooldown
+
+				if iconType == "spell" then
+					local chargeInfo = C_Spell.GetSpellCharges(config.spellID)
+					UpdateCustomIconCharges(frame, config.spellID)
+
+					if chargeInfo then
+						frame.UpdateCharges = UpdateCustomIconCharges
+					end
+				end
+			elseif customFrames[id] then
+				SCM.SetChildVisibilityState(customFrames[id], false, true)
 			end
-		elseif customFrames[id] then
-			SCM.SetChildVisibilityState(customFrames[id], false, true)
 		end
 	end
 end
