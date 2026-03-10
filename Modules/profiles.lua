@@ -3,6 +3,16 @@ local SCM = select(2, ...)
 local dataVersion = 1
 local pairs, tonumber, select = pairs, tonumber, select
 local GetSpecializationInfoByID = GetSpecializationInfoByID
+local EXPORT_TYPE_ALL = 0
+local EXPORT_TYPE_CLASS = 1
+local EXPORT_TYPE_GLOBAL_SETTINGS = 2
+local EXPORT_TYPE_GLOBAL_ANCHORS = 3
+local GLOBAL_CUSTOM_CONFIG_KEYS = {
+	"spellConfig",
+	"itemConfig",
+	"slotConfig",
+	"timerConfig",
+}
 
 local function MergeConfig(destDB, sourceData, defaultAnchor)
 	if not destDB or not sourceData then
@@ -24,9 +34,9 @@ end
 local function GetExportString(classFileName, specID)
 	local exportType = specID
 	if classFileName == "ALL" or (not classFileName and not specID) then
-		exportType = 0
+		exportType = EXPORT_TYPE_ALL
 	elseif classFileName and not specID then
-		exportType = 1
+		exportType = EXPORT_TYPE_CLASS
 	end
 
 	local prefix = string.format("!SCM:%d:%d!", dataVersion, exportType)
@@ -55,9 +65,121 @@ function SCM:ExportProfile(widget, classFileName, specID)
 end
 
 function SCM:ExportGlobalSettings()
-	local exportType = 2
+	local exportType = EXPORT_TYPE_GLOBAL_SETTINGS
 	local prefix = string.format("!SCM:%d:%d!", dataVersion, exportType)
 	return prefix .. SCM.Encode(self.db.global.options)
+end
+
+function SCM:ExportGlobalAnchors()
+	local prefix = string.format("!SCM:%d:%d!", dataVersion, EXPORT_TYPE_GLOBAL_ANCHORS)
+	return prefix .. SCM.Encode({
+		globalAnchorConfig = self.db.global.globalAnchorConfig,
+		globalCustomConfig = self.db.global.globalCustomConfig,
+	})
+end
+
+local function DecodeImportString(importString)
+	local parameterString, dataString = importString:match("^!([^!]+)!(.+)$")
+	if not parameterString or not dataString then
+		return
+	end
+
+	local prefix, version, typeStr = strsplit(":", parameterString)
+	local typeID = tonumber(typeStr)
+	local versionID = tonumber(version)
+
+	if prefix ~= "SCM" or versionID ~= dataVersion then
+		print("Invalid Import String")
+		return
+	end
+
+	local data = SCM.Decode(dataString)
+	if not data then
+		return
+	end
+
+	return typeID, data
+end
+
+local function NormalizeAnchorEntry(anchorConfig)
+	if type(anchorConfig) ~= "table" then
+		anchorConfig = {}
+	end
+
+	if type(anchorConfig.anchor) ~= "table" then
+		anchorConfig.anchor = { "CENTER", "UIParent", "CENTER", 0, 0 }
+	end
+
+	if type(anchorConfig.rowConfig) ~= "table" or #anchorConfig.rowConfig == 0 then
+		anchorConfig.rowConfig = {
+			{
+				size = 40,
+				limit = 8,
+			},
+		}
+	end
+
+	return anchorConfig
+end
+
+local function NormalizeImportedGlobalAnchorData(data)
+	local anchors = type(data) == "table" and data.globalAnchorConfig or nil
+	if type(anchors) ~= "table" or #anchors == 0 then
+		anchors = CopyTable(SCM.DefaultDB.global.globalAnchorConfig)
+	else
+		anchors = CopyTable(anchors)
+	end
+
+	for index, anchorConfig in ipairs(anchors) do
+		anchors[index] = NormalizeAnchorEntry(anchorConfig)
+	end
+
+	local customConfig = type(data) == "table" and data.globalCustomConfig or nil
+	if type(customConfig) ~= "table" then
+		customConfig = CopyTable(SCM.DefaultDB.global.globalCustomConfig)
+	else
+		customConfig = CopyTable(customConfig)
+	end
+
+	local allowedKeys = SCM.DefaultDB.global.globalCustomConfig
+	for key in pairs(customConfig) do
+		if not allowedKeys[key] then
+			customConfig[key] = nil
+		end
+	end
+
+	for _, key in ipairs(GLOBAL_CUSTOM_CONFIG_KEYS) do
+		customConfig[key] = type(customConfig[key]) == "table" and customConfig[key] or {}
+		local iconType = key:gsub("Config$", "")
+
+		for id, config in pairs(customConfig[key]) do
+			if type(config) ~= "table" or type(config.anchorGroup) ~= "number" or config.anchorGroup < 1 or config.anchorGroup > #anchors then
+				customConfig[key][id] = nil
+			else
+				config.id = config.id or id
+				config.iconType = config.iconType or iconType
+			end
+		end
+	end
+
+	return anchors, customConfig
+end
+
+local function RefreshImportedGlobalAnchors(self, previousAnchorCount)
+	local currentAnchorCount = #self.db.global.globalAnchorConfig
+	for index = currentAnchorCount + 1, previousAnchorCount do
+		local globalGroup = self.Utils.ToGlobalGroup(index)
+		local anchorFrame = self.anchorFrames[globalGroup]
+		if anchorFrame then
+			anchorFrame:Hide()
+			self.anchorFrames[globalGroup] = nil
+		end
+	end
+
+	self.CustomIcons.ReleaseAllIcons()
+	self:UpdateDB()
+	self:CreateAllCustomIcons()
+	self:ApplyAllCDManagerConfigs()
 end
 
 function SCM:GetFreeProfileName(profileName)
@@ -84,17 +206,8 @@ function SCM:GetFreeProfileName(profileName)
 end
 
 function SCM:ImportProfile(profileName, importString)
-	local parameterString, dataString = importString:match("^!([^!]+)!(.+)$")
-	if not parameterString or not dataString then
-		return
-	end
-
-	local prefix, version, typeStr = strsplit(":", parameterString)
-	local typeID = tonumber(typeStr)
-	local versionID = tonumber(version)
-
-	if prefix ~= "SCM" or versionID ~= dataVersion then
-		print("Invalid Import String")
+	local typeID, data = DecodeImportString(importString)
+	if not typeID then
 		return
 	end
 
@@ -102,19 +215,22 @@ function SCM:ImportProfile(profileName, importString)
 		profileName = SCM.db:GetCurrentProfile()
 	end
 
-	local data = SCM.Decode(dataString)
-	if not data then
+	if typeID == EXPORT_TYPE_GLOBAL_SETTINGS then
+		SCM:ImportGlobalSettingsFromData(data)
 		return
 	end
 
-	if typeID ~= 2 then
-		SCM.db:SetProfile(profileName)
+	if typeID == EXPORT_TYPE_GLOBAL_ANCHORS then
+		SCM:ImportGlobalAnchorsFromData(data)
+		return
 	end
-	
+
+	SCM.db:SetProfile(profileName)
+
 	local db = self.db.profile
 	local defaultAnchor = self.DB.defaultAnchorConfig
 
-	if typeID == 0 then -- All classes
+	if typeID == EXPORT_TYPE_ALL then -- All classes
 		for classFileName, classConfig in pairs(data) do
 			db[classFileName] = db[classFileName] or {}
 			for specID, specConfig in pairs(classConfig) do
@@ -122,7 +238,7 @@ function SCM:ImportProfile(profileName, importString)
 				MergeConfig(db[classFileName][specID], specConfig, defaultAnchor)
 			end
 		end
-	elseif typeID == 1 then -- Single class
+	elseif typeID == EXPORT_TYPE_CLASS then -- Single class
 		for specID, specConfig in pairs(data) do
 			local classFileName = select(6, GetSpecializationInfoByID(specID))
 
@@ -133,8 +249,6 @@ function SCM:ImportProfile(profileName, importString)
 				MergeConfig(db[classFileName][specID], specConfig, defaultAnchor)
 			end
 		end
-	elseif typeID == 2 then -- global settings
-		SCM:ImportGlobalSettingsFromData(data)
 	elseif typeID then -- Single Spec
 		local classFileName = select(6, GetSpecializationInfoByID(typeID))
 
@@ -150,25 +264,13 @@ function SCM:ImportProfile(profileName, importString)
 end
 
 function SCM:ImportGlobalSettings(importString)
-	local parameterString, dataString = importString:match("^!([^!]+)!(.+)$")
-	if not parameterString or not dataString then
+	local typeID, data = DecodeImportString(importString)
+	if not typeID then
 		return
 	end
 
-	local prefix, version, typeStr = strsplit(":", parameterString)
-	local typeID = tonumber(typeStr)
-	local versionID = tonumber(version)
-
-	if typeID ~= 2 then
+	if typeID ~= EXPORT_TYPE_GLOBAL_SETTINGS then
 		self:ImportProfile(nil, importString)
-		return
-	elseif prefix ~= "SCM" or versionID ~= dataVersion then
-		print("Invalid Import String")
-		return
-	end
-
-	local data = SCM.Decode(dataString)
-	if not data then
 		return
 	end
 
@@ -182,6 +284,30 @@ function SCM:ImportGlobalSettings(importString)
 	end
 
 	SCM:ApplyAllCDManagerConfigs()
+end
+
+function SCM:ImportGlobalAnchors(importString)
+	local typeID, data = DecodeImportString(importString)
+	if not typeID then
+		return
+	end
+
+	if typeID ~= EXPORT_TYPE_GLOBAL_ANCHORS then
+		self:ImportProfile(nil, importString)
+		return
+	end
+
+	self:ImportGlobalAnchorsFromData(data)
+end
+
+function SCM:ImportGlobalAnchorsFromData(data)
+	local previousAnchorCount = #(self.db.global.globalAnchorConfig or {})
+	local anchors, customConfig = NormalizeImportedGlobalAnchorData(data)
+
+	self.db.global.globalAnchorConfig = anchors
+	self.db.global.globalCustomConfig = customConfig
+
+	RefreshImportedGlobalAnchors(self, previousAnchorCount)
 end
 
 function SCM:ImportGlobalSettingsFromData(data)
