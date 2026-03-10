@@ -847,6 +847,7 @@ local function OnAnchorDebugTextureShow(self)
 	end
 
 	anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
+	LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
 	LibCustomGlow.PixelGlow_Start(anchorFrame, nil, nil, nil, nil, nil, nil, nil, nil, "SCM")
 end
 
@@ -888,14 +889,6 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 		anchorFrame.debugTexture:HookScript("OnShow", OnAnchorDebugTextureShow)
 		anchorFrame.debugTexture:HookScript("OnHide", OnAnchorDebugTextureHide)
 
-		-- if group == 1 then
-		-- 	hooksecurefunc(anchorFrame, "SetSize", function(self, width, height)
-		-- 		if DevTool then
-		-- 			DevTool:AddData({ strsplit("\n", debugstack()) }, width)
-		-- 		end
-		-- 	end)
-		-- end
-
 		self.anchorFrames[group] = anchorFrame
 	end
 
@@ -935,7 +928,7 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 	anchorFrame:SetPoint(pivot, target, relativePoint, xOffset + ((iconSize or 0) * xMod), yOffset)
 	anchorFrame:Show()
 
-	if self.OptionsFrame ~= nil and self.OptionsFrame:IsShown() and not anchorFrame.isGlowActive then
+	if self.OptionsFrame ~= nil and self.OptionsFrame:IsShown() and not anchorFrame.isGlowActive and self.db.global.options.showAnchorHighlight then
 		anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
 		LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
 		LibCustomGlow.PixelGlow_Start(anchorFrame, nil, nil, nil, nil, nil, nil, nil, nil, "SCM")
