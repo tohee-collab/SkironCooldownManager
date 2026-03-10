@@ -197,7 +197,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 		end
 
 		local isOnCooldown = frame.Cooldown:IsShown()
-		UpdateCustomIconGlow(frame, not isOnCooldown)
+		UpdateCustomIconGlow(frame, false)
 		return isOnCooldown
 	end
 
@@ -210,7 +210,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 				frame.Cooldown:SetCooldown(startTime, duration)
 			end
 			frame.Icon:SetDesaturated(true)
-			UpdateCustomIconGlow(frame, true)
+			UpdateCustomIconGlow(frame, false)
 			return true
 		end
 	end
@@ -220,7 +220,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 		if startTime and startTime > 0 then
 			frame.Cooldown:SetCooldown(startTime, duration)
 			frame.Icon:SetDesaturated(true)
-			UpdateCustomIconGlow(frame, true)
+			UpdateCustomIconGlow(frame, false)
 			return true
 		end
 	end

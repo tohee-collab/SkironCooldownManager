@@ -569,21 +569,21 @@ end
 local function OnManagedAnchorChildSetSize(child)
 	local anchorFrame = child.SCMAnchorFrame
 	if anchorFrame then
-		anchorFrame.SetSize(child, child.width, child.height)
+		anchorFrame.SetSize(child, SCM:PixelPerfect(child.width), SCM:PixelPerfect(child.height))
 	end
 end
 
 local function OnManagedAnchorChildSetWidth(child)
 	local anchorFrame = child.SCMAnchorFrame
 	if anchorFrame then
-		anchorFrame.SetWidth(child, child.width)
+		anchorFrame.SetWidth(child, SCM:PixelPerfect(child.width))
 	end
 end
 
 local function OnManagedAnchorChildSetHeight(child)
 	local anchorFrame = child.SCMAnchorFrame
 	if anchorFrame then
-		anchorFrame.SetHeight(child, child.height)
+		anchorFrame.SetHeight(child, SCM:PixelPerfect(child.height))
 	end
 end
 
@@ -699,7 +699,7 @@ local function OrderCDManagerSpells_Actual(updateScope, scopedAnchorGroupsOverri
 				child.height = rowIconHeight
 				child.SCMAnchorFrame = groupAnchor
 				child:SetScale(Cache.cachedViewerScale)
-				child:SetSize(rowIconWidth, rowIconHeight)
+				child:SetSize(SCM:PixelPerfect(rowIconWidth), SCM:PixelPerfect(rowIconHeight))
 
 				local offsetX = 0
 				if growDir == "CENTER" then
@@ -743,7 +743,7 @@ local function OrderCDManagerSpells_Actual(updateScope, scopedAnchorGroupsOverri
 		end
 		if group == 1 then
 			if not InCombatLockdown() then
-				groupAnchor:SetSize(max(initialWidth, maxGroupWidth, 1), max(initialHeight, accumulatedY - baseSpacing, 1))
+				groupAnchor:SetSize(SCM:PixelPerfect(max(initialWidth, maxGroupWidth, 1)), SCM:PixelPerfect(max(initialHeight, accumulatedY - baseSpacing, 1)))
 
 				if SCM.db.global.options.adjustResourceWidth then
 					if SCRB and SCRB.registerCustomFrame then
@@ -758,7 +758,7 @@ local function OrderCDManagerSpells_Actual(updateScope, scopedAnchorGroupsOverri
 
 			SCM:ApplyCustomAnchors(maxGroupWidth, rowConfig)
 		elseif not InCombatLockdown() then
-			groupAnchor:SetSize(max(initialWidth, maxGroupWidth, 1), max(initialHeight, accumulatedY - baseSpacing, 1))
+			groupAnchor:SetSize(SCM:PixelPerfect(max(initialWidth, maxGroupWidth, 1)), SCM:PixelPerfect(max(initialHeight, accumulatedY - baseSpacing, 1)))
 		end
 	end
 
@@ -917,9 +917,9 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 	end
 
 	if resetSize then
-		anchorFrame:SetSize(iconSize, iconSize)
+		anchorFrame:SetSize(SCM:PixelPerfect(iconSize), SCM:PixelPerfect(iconSize))
 	else
-		anchorFrame:SetSize(max(anchorFrame:GetWidth(), iconSize), max(anchorFrame:GetHeight(), iconSize))
+		anchorFrame:SetSize(SCM:PixelPerfect(max(anchorFrame:GetWidth(), iconSize)), SCM:PixelPerfect(max(anchorFrame:GetHeight(), iconSize)))
 	end
 	anchorFrame:ClearAllPoints()
 	anchorFrame:SetPoint(pivot, target, relativePoint, xOffset + ((iconSize or 0) * xMod), yOffset)
