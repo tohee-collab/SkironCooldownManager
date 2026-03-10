@@ -25,19 +25,19 @@ end
 
 local function ApplyCooldownFont(cooldownFrame, options)
 	options = options or SCM.db.global.options
-	if not options.changeCooldownFont then
-		return
-	end
 
-	local fontPath = LSM:Fetch("font", options.cooldownFont)
-	local cooldownFontString = cooldownFrame:GetRegions()
-	if cooldownFontString and cooldownFontString.SetFont then
-		if not originalCooldownFont then
-			originalCooldownFont = { cooldownFontString:GetFont() }
-		end
-		if options.changeCooldownFont then
+	if options.changeCooldownFont then
+		local fontPath = LSM:Fetch("font", options.cooldownFont)
+		local cooldownFontString = cooldownFrame:GetRegions()
+		if cooldownFontString and cooldownFontString.SetFont then
+			if not originalCooldownFont then
+				originalCooldownFont = { cooldownFontString:GetFont() }
+			end
 			cooldownFontString:SetFont(fontPath, options.cooldownFontSize, "OUTLINE")
-		elseif originalCooldownFont then
+		end
+	elseif originalCooldownFont then
+		local cooldownFontString = cooldownFrame:GetRegions()
+		if cooldownFontString and cooldownFontString.SetFont then
 			cooldownFontString:SetFont(unpack(originalCooldownFont))
 		end
 	end
