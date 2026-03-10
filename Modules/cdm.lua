@@ -897,10 +897,10 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 
 	local target = anchor
 	if type(target) == "string" then
-		local id = target:match("ANCHOR:(%d+)")
-		target = id and self:GetAnchor(tonumber(id)) or _G[target] or SCM[target]
+		local anchorID = target:match("ANCHOR:(%d+)")
+		target = anchorID and self:GetAnchor(tonumber(anchorID)) or _G[target] or SCM[target]
 
-		if id and target then
+		if anchorID and target then
 			anchorFrame:SetScale(target:GetScale())
 		end
 	end
@@ -909,11 +909,11 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 
 	local pivot = (PIVOT_MAP[growDir] and PIVOT_MAP[growDir][point]) or point
 
-	local xMod = 0
+	local xOffsetMultiplier = 0
 	if growDir == "LEFT" then
-		xMod = (point == "TOPLEFT" and 1) or ((point == "TOP" or point == "BOTTOM" or point == "CENTER") and 0.5) or 0
+		xOffsetMultiplier = (point == "TOPLEFT" and 1) or ((point == "TOP" or point == "BOTTOM" or point == "CENTER") and 0.5) or 0
 	elseif growDir == "RIGHT" then
-		xMod = (point == "TOPRIGHT" and -1) or ((point == "TOP" or point == "BOTTOM" or point == "CENTER") and -0.5) or 0
+		xOffsetMultiplier = (point == "TOPRIGHT" and -1) or ((point == "TOP" or point == "BOTTOM" or point == "CENTER") and -0.5) or 0
 	end
 
 	if resetSize then
@@ -922,7 +922,7 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 		anchorFrame:SetSize(SCM:PixelPerfect(max(anchorFrame:GetWidth(), iconSize)), SCM:PixelPerfect(max(anchorFrame:GetHeight(), iconSize)))
 	end
 	anchorFrame:ClearAllPoints()
-	anchorFrame:SetPoint(pivot, target, relativePoint, xOffset + ((iconSize or 0) * xMod), yOffset)
+	anchorFrame:SetPoint(pivot, target, relativePoint, xOffset + ((iconSize or 0) * xOffsetMultiplier), yOffset)
 	anchorFrame:Show()
 
 	if self.OptionsFrame ~= nil and self.OptionsFrame:IsShown() and not anchorFrame.isGlowActive and self.db.global.options.showAnchorHighlight then
