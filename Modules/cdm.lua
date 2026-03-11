@@ -815,13 +815,6 @@ local function OnOrderThrottleTick()
 end
 
 local function OrderCDManagerSpells(updateScope)
-	-- print(updateScope)
-	-- if updateScope == UPDATE_SCOPE.ALL then
-	-- 	if DevTool then
-	-- 		DevTool:AddData({strsplit("\n", debugstack())}, updateScope)
-	-- 	end
-	-- end
-
 	updateScope = updateScope or UPDATE_SCOPE.ALL
 	if updateScope == UPDATE_SCOPE.BUFF then
 		OrderCDManagerSpells_Actual(updateScope)
