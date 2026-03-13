@@ -134,7 +134,7 @@ local function ReleaseCustomIconFrame(frame)
 	GetCustomIconFramePool():Release(frame)
 end
 
-local function SetCustomIconCountText(frame, iconType, id)
+local function SetCustomIconCountText(frame, iconType, config)
 	frame.ChargeCount.Current:SetText("")
 	frame.ChargeCount.Current:Hide()
 
@@ -142,7 +142,12 @@ local function SetCustomIconCountText(frame, iconType, id)
 		return
 	end
 
-	local count = C_Item.GetItemCount(id)
+	local itemID = config.itemID
+	if not itemID then
+		return
+	end
+
+	local count = C_Item.GetItemCount(itemID)
 	if not count or count <= 0 then
 		return
 	end
@@ -218,9 +223,9 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 			if not spellCooldown.isOnGCD then
 				frame.Icon:SetDesaturation(C_Spell.GetSpellCooldownDuration(config.spellID):EvaluateRemainingDuration(desaturationCurve))
 
-				local edgeAlpha = C_CurveUtil.EvaluateColorValueFromBoolean(frame.Icon:IsDesaturated(), 0, 1)
-				frame.Cooldown:SetEdgeColor(1, 1, 1, edgeAlpha)
-				frame.Cooldown:SetSwipeColor(1, 1, 1, edgeAlpha)
+				local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(frame.Icon:IsDesaturated(), 0, 1)
+				frame.Cooldown:SetEdgeColor(1, 1, 1, alpha)
+				frame.Cooldown:SetSwipeColor(1, 1, 1, alpha)
 				frame.Cooldown:SetReverse(frame.Icon:IsDesaturated())
 			end
 		else
@@ -300,7 +305,23 @@ local function DoesItemOrSpellExists(config)
 	end
 end
 
-local function ShouldLoadCustomIconForRole(config)
+local function GetItemOrSlotSpellID(config)
+	local iconType = GetIconType(config)
+	if iconType == "item" then
+		return config.itemID and C_Item.DoesItemExistByID(config.itemID) and select(2, C_Item.GetItemSpell(config.itemID))
+	end
+
+	if iconType == "slot" then
+		if config.slotID then
+			local itemID = GetInventoryItemID("player", config.slotID)
+			if itemID then
+				return C_Item.DoesItemExistByID(itemID) and select(2, C_Item.GetItemSpell(itemID))
+			end
+		end
+	end
+end
+
+local function ShouldLoadCustomIcon(config)
 	local loadRoles = config.loadRoles
 	if loadRoles then
 		if not next(loadRoles) then
@@ -347,18 +368,20 @@ end
 local function ConfigureCustomIconFrame(frame, id, config, viewerScale, anchorGroup, isGlobal)
 	frame:SetScale(viewerScale)
 
-	frame.spellID = config.spellID
-	frame.itemID = config.itemID
-	frame.slotID = config.slotID
-
 	frame.SCMConfig = config
 	frame.SCMOrder = config.order
 	frame.SCMCooldownID = id
-	frame.SCMSpellID = config.spellID
 	frame.SCMIconType = GetIconType(config)
 	frame.SCMGroup = anchorGroup
 	frame.SCMGlobal = isGlobal and true or nil
 	frame.SCMCustom = true
+
+	if config.slotID or config.itemID then
+		frame.SCMSpellID = GetItemOrSlotSpellID(config) or nil
+		config.spellID = frame.SCMSpellID
+	else
+		frame.SCMSpellID = config.spellID
+	end
 end
 
 local function UpdateCustomIconFrameState(frame, config)
@@ -419,7 +442,7 @@ function CustomIcons.CreateIcons(customConfig, isGlobal)
 	for id, config in pairs(customConfig) do
 		local customFrames = CustomIcons.GetCustomIconFrames(config)
 		if customFrames then
-			if DoesItemOrSpellExists(config) and ShouldLoadCustomIconForRole(config) then
+			if DoesItemOrSpellExists(config) and ShouldLoadCustomIcon(config) then
 				local frame = AcquireCustomIconFrame(customFrames, id)
 				ConfigureCustomIconFrame(frame, id, config, viewerScale, config.anchorGroup or 1, isGlobal)
 				UpdateCustomIconFrameState(frame, config)
@@ -437,7 +460,7 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 		local anchorGroup = config.anchorGroup or 1
 		local customFrames = CustomIcons.GetCustomIconFrames(config)
 		if customFrames then
-			if customFrames[id] and DoesItemOrSpellExists(config) and ShouldLoadCustomIconForRole(config) then
+			if customFrames[id] and DoesItemOrSpellExists(config) and ShouldLoadCustomIcon(config) then
 				if SCM.IsScopedAnchorGroupAllowed(anchorGroup, isGlobal) then
 					local frame = customFrames[id]
 					local iconType = frame.SCMIconType
@@ -451,7 +474,7 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 							frame.SCMIconTexture = iconTexture
 							frame.Icon:SetTexture(iconTexture)
 						end
-						local hasCount = SetCustomIconCountText(frame, iconType, config.spellID or config.itemID)
+						local hasCount = SetCustomIconCountText(frame, iconType, config)
 						local isOnCooldown = UpdateCustomIconCooldown(frame, iconType, config)
 						local shouldShow = ShouldShowCustomIcon(config, iconType, hasCount, isOnCooldown)
 
@@ -488,6 +511,29 @@ function CustomIcons.UpdateIcons(customConfig, key)
 				end
 			end
 		end
+	end
+end
+
+local function UpdateCountTextForConfigTable(customConfig, spellID)
+	for id, config in pairs(customConfig) do
+		if not spellID or config.spellID == spellID then
+			local frame = CustomItemFrames[id]
+			if frame and not frame.SCMReleased then
+				SetCustomIconCountText(frame, frame.SCMIconType, config)
+			end
+		end
+	end
+end
+
+function CustomIcons.UpdateItemCountText(spellID)
+	local customConfig = SCM.customConfig
+	if customConfig then
+		UpdateCountTextForConfigTable(customConfig.itemConfig, spellID)
+	end
+
+	local globalCustomConfig = SCM.globalCustomConfig
+	if globalCustomConfig then
+		UpdateCountTextForConfigTable(globalCustomConfig.itemConfig, spellID)
 	end
 end
 

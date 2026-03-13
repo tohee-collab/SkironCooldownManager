@@ -50,9 +50,9 @@ local function OnSpellAlertManagerHideAlert(_, child)
 end
 
 function SCM:SetHooks()
-	--hooksecurefunc(EssentialCooldownViewer, "RefreshLayout", OnEssentialCooldownViewerLayout)
-	--hooksecurefunc(UtilityCooldownViewer, "RefreshLayout", OnUtilityCooldownViewerLayout)
-	--hooksecurefunc(BuffIconCooldownViewer, "RefreshLayout", OnBuffCooldownViewerLayout)
+	hooksecurefunc(EssentialCooldownViewer, "RefreshLayout", OnEssentialCooldownViewerLayout)
+	hooksecurefunc(UtilityCooldownViewer, "RefreshLayout", OnUtilityCooldownViewerLayout)
+	hooksecurefunc(BuffIconCooldownViewer, "RefreshLayout", OnBuffCooldownViewerLayout)
 	hooksecurefunc(CooldownViewerSettings, "RefreshLayout", OnCooldownViewerSettingsRefreshLayout)
 
 	if ActionButtonSpellAlertManager then
@@ -77,8 +77,7 @@ function SCM:PLAYER_ENTERING_WORLD(isInitialLogin, isReload)
 end
 
 function SCM:BAG_UPDATE_DELAYED()
-	--SCM:ApplyAllCDManagerConfigs()
---	SCM.CustomIcons.ProcessIcons()
+	SCM.CustomIcons.UpdateItemCountText()
 end
 
 function SCM:UNIT_SPELLCAST_SUCCEEDED(_, _, spellID)
@@ -90,6 +89,7 @@ function SCM:SPELL_UPDATE_COOLDOWN(spellID)
 		return config.spellID == spellID
 	end
 
+	SCM.CustomIcons.UpdateItemCountText(spellID)
 	SCM:ApplyAnchorGroupByIconTypes(false, predicate, "spell", "item", "slot")
 	SCM:UpdateCustomIconsGCD()
 end

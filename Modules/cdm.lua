@@ -220,10 +220,12 @@ local function OnBuffCooldownSet(self)
 		return
 	end
 
-	ShowChild(parent)
-	UpdateChildDesaturation(parent, false)
-	UpdateChildGlow(parent, false)
-	SCM:ApplyAllCDManagerConfigs()
+	if parent.SCMHidden == nil or parent.SCMHidden then
+		ShowChild(parent)
+		UpdateChildDesaturation(parent, false)
+		UpdateChildGlow(parent, false)
+		SCM:ApplyAllCDManagerConfigs()
+	end
 end
 
 local function OnBuffCooldownEnd(self)
@@ -340,16 +342,20 @@ local function OnRegularCooldownChanged(self)
 	if parent and parent.SCMConfig then
 		local config = parent.SCMConfig
 		if config.hideWhenNotOnCooldown then
-			local viewer = parent.viewerFrame
-			if viewer then
-				local viewerName = viewer:GetName()
-				if viewerName == VIEWER_UPDATE_MAPPING[UPDATE_SCOPE.ESSENTIAL].frameName then
-					RunNextFrame(RequestApplyEssentialCDManagerConfig)
-				elseif viewerName == VIEWER_UPDATE_MAPPING[UPDATE_SCOPE.UTILITY].frameName then
-					RunNextFrame(RequestApplyUtilityCDManagerConfig)
+			local shouldShow = IsChildOnCooldown(parent) and true or false
+			if parent.SCMShouldBeVisible ~= shouldShow then
+				local viewer = parent.viewerFrame
+				if viewer then
+					local viewerName = viewer:GetName()
+					if viewerName == VIEWER_UPDATE_MAPPING[UPDATE_SCOPE.ESSENTIAL].frameName then
+						DevTool:AddData({ strsplit("\n", debugstack()) }, 2)
+						RunNextFrame(RequestApplyEssentialCDManagerConfig)
+					elseif viewerName == VIEWER_UPDATE_MAPPING[UPDATE_SCOPE.UTILITY].frameName then
+						RunNextFrame(RequestApplyUtilityCDManagerConfig)
+					end
+				else
+					RunNextFrame(RequestApplyAllCDManagerConfigs)
 				end
-			else
-				RunNextFrame(RequestApplyAllCDManagerConfigs)
 			end
 		end
 
@@ -936,14 +942,16 @@ function SCM:ApplyAnchorGroupCDManagerConfig(group, isGlobal)
 	self:ReleaseScopedGroupCache(scopedGroups)
 end
 
-local function GetScopeGroupsForConfig(customConfig, scopedGroups, isGlobal)
+local function GetScopeGroupsForConfig(customConfig, scopedGroups, isGlobal, predicate)
 	if not customConfig then
 		return scopedGroups
 	end
 
 	for _, config in pairs(customConfig) do
-		local group = isGlobal and ToGlobalGroup(config.anchorGroup) or config.anchorGroup
-		scopedGroups[group] = true
+		if not predicate or predicate(config) then
+			local group = isGlobal and ToGlobalGroup(config.anchorGroup) or config.anchorGroup
+			scopedGroups[group] = true
+		end
 	end
 
 	return scopedGroups
@@ -980,14 +988,14 @@ function SCM:ApplyAnchorGroupByIconType(iconType, skipGlobal)
 	self:ReleaseScopedGroupCache(scopedGroups)
 end
 
-function SCM:ApplyAnchorGroupByIconTypes(skipGlobal, ...)
+function SCM:ApplyAnchorGroupByIconTypes(skipGlobal, predicate, ...)
 	local scopedGroups = self:AcquireScopedGroupCache()
 	local numIconTypes = select("#", ...)
 	for i = 1, numIconTypes do
 		local iconType = select(i, ...)
-		GetScopeGroupsForConfig(self:GetConfigTable(iconType), scopedGroups)
+		GetScopeGroupsForConfig(self:GetConfigTable(iconType), scopedGroups, false, predicate)
 		if not skipGlobal then
-			GetScopeGroupsForConfig(self:GetConfigTable(iconType, true), scopedGroups, true)
+			GetScopeGroupsForConfig(self:GetConfigTable(iconType, true), scopedGroups, true, predicate)
 		end
 	end
 
@@ -1060,6 +1068,10 @@ function SCM:ApplySuccessfulCastBySpellID(spellID)
 end
 
 function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)
+	if InCombatLockdown() then
+		return
+	end
+
 	self.defaultCooldownViewerConfig = {
 		cooldownIDs = {},
 		spellIDs = {},
@@ -1082,7 +1094,6 @@ function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)
 				local data = displayData[cooldownID]
 				if data then
 					local spellID = data.linkedSpellIDs and data.linkedSpellIDs[1] or data.spellID
-					data.spellID = spellID
 
 					self.defaultCooldownViewerConfig[cooldownCategory][data.cooldownID] = data
 					self.defaultCooldownViewerConfig[cooldownCategory].spellIDs[spellID] = data
@@ -1102,8 +1113,6 @@ function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)
 			end
 		end
 	end
-
-
 end
 
 local function EnsureCustomConfigTables(customConfig)

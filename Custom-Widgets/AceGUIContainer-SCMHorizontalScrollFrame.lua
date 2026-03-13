@@ -231,11 +231,12 @@ local methods = {
 			dataIndex = highestIndex + 1
 		end
 
+		local spellID = info.linkedSpellIDs and info.linkedSpellIDs[1] or info.spellID
 		self.dataProvider:Insert({
-			id = info.spellID,
+			id = spellID,
 			dataIndex = dataIndex,
-			texture = C_Spell.GetSpellTexture(info.spellID),
-			spellID = info.spellID,
+			texture = C_Spell.GetSpellTexture(spellID),
+			spellID = spellID,
 			isKnown = info.isKnown,
 			iconType = "spell",
 			isDisabled = info.isDisabled or (info.category and (info.category < 0 or info.category == 3)),
