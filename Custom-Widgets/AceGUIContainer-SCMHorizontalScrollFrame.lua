@@ -9,6 +9,8 @@ if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then
 	return
 end
 
+local COOLDOWN_CONFIG_KEY_PREFIX = "cooldown:"
+
 -- Lua APIs
 local pairs, ipairs = pairs, ipairs
 local min, max = math.min, math.max
@@ -231,9 +233,17 @@ local methods = {
 			dataIndex = highestIndex + 1
 		end
 
-		local spellID = info.linkedSpellIDs and info.linkedSpellIDs[1] or info.spellID
+		local spellID = info.spellID
+		if info.linkedSpellIDs and #info.linkedSpellIDs == 1 then
+			spellID = info.linkedSpellIDs[1]
+		end
+		local configID = info.configID or (info.cooldownID and (COOLDOWN_CONFIG_KEY_PREFIX .. tostring(info.cooldownID)))
+		if not configID then
+			return dataIndex
+		end
+
 		self.dataProvider:Insert({
-			id = spellID,
+			id = configID,
 			dataIndex = dataIndex,
 			texture = C_Spell.GetSpellTexture(spellID),
 			spellID = spellID,

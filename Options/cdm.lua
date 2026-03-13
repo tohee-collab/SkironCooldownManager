@@ -162,11 +162,52 @@ end
 
 local function GetSpellIDForCooldownInfo(cooldownInfo)
 	if cooldownInfo then
-		if cooldownInfo.linkedSpellIDs and cooldownInfo.linkedSpellIDs[1] then
+		if cooldownInfo.linkedSpellIDs and #cooldownInfo.linkedSpellIDs == 1 then
 			return cooldownInfo.linkedSpellIDs[1]
 		end
 
 		return cooldownInfo.spellID
+	end
+end
+
+local function BuildScrollSpellData(data, configID)
+	return {
+		spellID = data.spellID,
+		linkedSpellIDs = data.linkedSpellIDs,
+		isKnown = data.isKnown,
+		category = data.category,
+		cooldownID = data.cooldownID,
+		configID = configID,
+	}
+end
+
+local function DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID)
+	return scrollFrame.dataProvider:FindByPredicate(function(data)
+		if data.isCustom or data.isAddButton then
+			return false
+		end
+
+		if data.id == configID then
+			return true
+		end
+
+		if cooldownID and data.cooldownID == cooldownID then
+			return true
+		end
+	end)
+end
+
+local function GetDisplayDataForSpellConfig(defaultCooldownViewerConfig, sourceIndex, configID, config)
+	local data = defaultCooldownViewerConfig[sourceIndex]
+	if not data then
+		return
+	end
+
+	local pairData = defaultCooldownViewerConfig[SCM.Constants.SourcePairs[sourceIndex]]
+	local cooldownID = config.cooldownID or tonumber(tostring(configID):match("(%d+)$"))
+
+	if cooldownID then
+		return data.cooldownIDs[cooldownID] or (pairData and pairData.cooldownIDs[cooldownID])
 	end
 end
 
@@ -216,15 +257,19 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 			local data = item.data
 			local cooldownID = item.cooldownID
 			local info = item.info
-			info.cooldownID = item.cooldownID
-			info.isDisabled = data.category < 0
+			local configID = SCM:GetCooldownConfigKey(cooldownID)
+			if configID then
+				info.cooldownID = item.cooldownID
+				info.configID = configID
+				info.isDisabled = data.category < 0
 
-			local activeColor = (data.category < 0 and colorDisabled) or (info.isKnown and colorKnown) or colorUnknown
-			parentButton:CreateButton(string.format("|T%d:0|t |cff%s%s (%d)|r", C_Spell.GetSpellTexture(info.spellID), activeColor, C_Spell.GetSpellName(info.spellID), cooldownID), function(info)
-				local dataIndex = scrollFrame:AddSpellBySpellID(info)
-				SCM:AddSpellToConfig(anchorIndex, dataIndex, info, data, item.targetCategory, isBuffIcon)
-				SCM:ApplyAllCDManagerConfigs()
-			end, info)
+				local activeColor = (data.category < 0 and colorDisabled) or (info.isKnown and colorKnown) or colorUnknown
+				parentButton:CreateButton(string.format("|T%d:0|t |cff%s%s (%d)|r", C_Spell.GetSpellTexture(info.spellID), activeColor, C_Spell.GetSpellName(info.spellID), cooldownID), function(info)
+					local dataIndex = scrollFrame:AddSpellBySpellID(info)
+					SCM:AddSpellToConfig(anchorIndex, dataIndex, info, data, item.targetCategory, isBuffIcon)
+					SCM:ApplyAllCDManagerConfigs()
+				end, info)
+			end
 		end
 	end
 
@@ -236,11 +281,10 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 		if info and data then
 			local spellID = GetSpellIDForCooldownInfo(info)
+			local configID = SCM:GetCooldownConfigKey(cooldownID)
 			info.spellID = spellID
 
-			if not SCM:IsSpellInData(spellID, data.category) and not scrollFrame.dataProvider:FindByPredicate(function(data)
-				return data.spellID == spellID
-			end) then
+			if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
 				table.insert(essentialItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 0 })
 			end
 		end
@@ -257,11 +301,10 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 		if info and data then
 			local spellID = GetSpellIDForCooldownInfo(info)
+			local configID = SCM:GetCooldownConfigKey(cooldownID)
 			info.spellID = spellID
 
-			if not SCM:IsSpellInData(spellID, data.category) and not scrollFrame.dataProvider:FindByPredicate(function(data)
-				return data.spellID == spellID
-			end) then
+			if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
 				table.insert(utilityItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 1 })
 			end
 		end
@@ -280,11 +323,10 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 		if info and data then
 			local spellID = GetSpellIDForCooldownInfo(info)
+			local configID = SCM:GetCooldownConfigKey(cooldownID)
 			info.spellID = spellID
 
-			if not SCM:IsSpellInData(spellID, data.category) and not scrollFrame.dataProvider:FindByPredicate(function(data)
-				return data.spellID == spellID
-			end) then
+			if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
 				table.insert(buffItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 2 })
 			end
 		end
@@ -297,11 +339,10 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 		if info and data and data.category < 3 then
 			local spellID = GetSpellIDForCooldownInfo(info)
+			local configID = SCM:GetCooldownConfigKey(cooldownID)
 			info.spellID = spellID
 
-			if not SCM:IsSpellInData(spellID, data.category) and not scrollFrame.dataProvider:FindByPredicate(function(data)
-				return data.spellID == spellID
-			end) then
+			if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
 				table.insert(buffItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 3 })
 			end
 		end
@@ -604,23 +645,14 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	local spells = {}
 	if not isGlobal and SCM.spellConfig then
 		local defaultCooldownViewerConfig = SCM.defaultCooldownViewerConfig
-		for spellID, info in pairs(SCM.spellConfig) do
+		for configID, info in pairs(SCM.spellConfig) do
 			if info.anchorGroup[anchorIndex] then
 				for sourceIndex, spellAnchorIndex in pairs(info.source) do
 					if anchorIndex == spellAnchorIndex then
-						local data = defaultCooldownViewerConfig[sourceIndex]
+						local data = GetDisplayDataForSpellConfig(defaultCooldownViewerConfig, sourceIndex, configID, info)
 						if data then
-							if not data.spellIDs[spellID] then
-								local pairData = defaultCooldownViewerConfig[SCM.Constants.SourcePairs[sourceIndex]]
-								if pairData and pairData.spellIDs[spellID] then
-									data = pairData
-								end
-							end
-
-							if data.spellIDs[spellID] then
-								tinsert(spells, { info = info, data = data.spellIDs[spellID], isBuffIcon = sourceIndex >= 2 })
-								break
-							end
+							tinsert(spells, { configID = configID, info = info, data = data, isBuffIcon = sourceIndex >= 2 })
+							break
 						end
 					end
 				end
@@ -675,7 +707,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 		if spellInfo.isCustom then
 			horizontalScrollFrame:AddCustomIcon(spellInfo)
 		else
-			horizontalScrollFrame:AddSpellBySpellID(spellInfo.data, spellInfo.info.anchorGroup[anchorIndex].order, spellInfo.isBuffIcon)
+			horizontalScrollFrame:AddSpellBySpellID(BuildScrollSpellData(spellInfo.data, spellInfo.configID), spellInfo.info.anchorGroup[anchorIndex].order, spellInfo.isBuffIcon)
 		end
 	end
 
@@ -713,7 +745,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 			else
 				if not lastButtonFrame or lastButtonFrame ~= buttonFrame then
 					local buttonData = buttonFrame.data
-					local buttonConfig = buttonData.isCustom and SCM:GetConfigTableByID(buttonData.id, buttonData.iconType, isGlobal) or SCM:GetSpellConfigForGroup(buttonData.spellID, anchorIndex)
+					local buttonConfig = buttonData.isCustom and SCM:GetConfigTableByID(buttonData.id, buttonData.iconType, isGlobal) or SCM:GetSpellConfigForGroup(buttonData.id, anchorIndex)
 
 					buttonFrame:SetBackdropBorderColor(0, 1, 0, 1)
 
@@ -950,7 +982,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 					end
 				end
 			elseif entry.spellID and entry.spellID > 0 then
-				local spellConfig = SCM.spellConfig[entry.spellID]
+				local spellConfig = entry.id and SCM.spellConfig[entry.id]
 				if spellConfig and spellConfig.anchorGroup[anchorIndex] then
 					spellConfig.anchorGroup[anchorIndex].order = i
 				end

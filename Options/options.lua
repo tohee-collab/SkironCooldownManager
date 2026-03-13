@@ -157,10 +157,21 @@ function SCM:RemoveRow(anchorIndex, rowIndex)
 end
 
 function SCM:AddSpellToConfig(anchorGroup, order, info, displayData, sourceIndex)
-	local spellID = displayData.linkedSpellIDs and displayData.linkedSpellIDs[1] or displayData.spellID
+	local spellID = displayData.spellID
+	if displayData.linkedSpellIDs and #displayData.linkedSpellIDs == 1 then
+		spellID = displayData.linkedSpellIDs[1]
+	end
 
-	if not self.spellConfig[spellID] then
-		self.spellConfig[spellID] = {
+	local cooldownID = displayData.cooldownID or info.cooldownID
+	local configID = self:GetCooldownConfigKey(cooldownID)
+	if not configID then
+		return
+	end
+
+	if not self.spellConfig[configID] then
+		self.spellConfig[configID] = {
+			spellID = spellID,
+			cooldownID = cooldownID,
 			source = {
 				[sourceIndex] = anchorGroup,
 			},
@@ -171,16 +182,19 @@ function SCM:AddSpellToConfig(anchorGroup, order, info, displayData, sourceIndex
 			},
 		}
 	else
-		self.spellConfig[spellID].source[sourceIndex] = anchorGroup
-		self.spellConfig[spellID].anchorGroup[anchorGroup] = {
+		self.spellConfig[configID].spellID = spellID
+		self.spellConfig[configID].cooldownID = cooldownID or self.spellConfig[configID].cooldownID
+		self.spellConfig[configID].source[sourceIndex] = anchorGroup
+		self.spellConfig[configID].anchorGroup[anchorGroup] = {
 			order = order,
 		}
 	end
 end
 
 function SCM:RemoveSpellFromConfig(anchorIndex, data)
-	if self.spellConfig[data.spellID] then
-		local spellConfig = self.spellConfig[data.spellID]
+	local configID = data.id or self:GetCooldownConfigKey(data.cooldownID)
+	local spellConfig = configID and self.spellConfig[configID]
+	if spellConfig then
 
 		for category, anchorGroup in pairs(spellConfig.source) do
 			if anchorGroup == anchorIndex then
@@ -191,13 +205,15 @@ function SCM:RemoveSpellFromConfig(anchorIndex, data)
 		spellConfig.anchorGroup[anchorIndex] = nil
 
 		if not next(spellConfig.anchorGroup) then
-			self.spellConfig[data.spellID] = nil
+			self.spellConfig[configID] = nil
 		end
 	end
 end
 
-function SCM:IsSpellInData(spellID, source)
-	return self.spellConfig[spellID] and (self.spellConfig[spellID].source[source] or (self.Constants.SourcePairs[source] and self.spellConfig[spellID].source[self.Constants.SourcePairs[source]]))
+function SCM:IsSpellInData(cooldownID, source)
+	local configID = self:GetCooldownConfigKey(cooldownID)
+	local spellConfig = configID and self.spellConfig[configID]
+	return spellConfig and (spellConfig.source[source] or (self.Constants.SourcePairs[source] and spellConfig.source[self.Constants.SourcePairs[source]]))
 end
 
 function SCM:AddTab(tab)

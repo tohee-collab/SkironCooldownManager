@@ -425,16 +425,12 @@ local function CollectScopedAnchorGroups(updateScope, config)
 		return targetGroups
 	end
 
-	local categoryConfig = defaultConfig[categoryIndex]
 	local pairCategory = SCM.Constants.SourcePairs[categoryIndex]
-	local allCooldownIDs = defaultConfig.cooldownIDs
 
 	for _, child in ipairs(GetOrCacheChildren(viewer, viewerData.isBuffIcon)) do
 		if child.GetCooldownID then
 			local cooldownID = child:GetCooldownID()
-			local info = (categoryConfig and categoryConfig[cooldownID]) or (allCooldownIDs and allCooldownIDs[cooldownID])
-			local spellID = info and info.spellID
-			local childData = spellID and spellConfig[spellID]
+			local _, childData = SCM:GetSpellConfigByCooldownID(cooldownID)
 			local group = childData and (childData.source[categoryIndex] or childData.source[pairCategory])
 			if group then
 				targetGroups[group] = true
@@ -470,23 +466,29 @@ local function ProcessSingleChild(child, validChildren, spellConfig, categoryInd
 	local cooldownID = child:GetCooldownID()
 	local categoryConfig = categoryIndex and SCM.defaultCooldownViewerConfig[categoryIndex]
 	local info = categoryConfig and (categoryConfig[cooldownID] or SCM.defaultCooldownViewerConfig.cooldownIDs[cooldownID])
-	local spellID = info and ((info.linkedSpellIDs and info.linkedSpellIDs[1]) or info.spellID)
+	local spellID = info and info.spellID
+	if info and info.linkedSpellIDs and #info.linkedSpellIDs == 1 then
+		spellID = info.linkedSpellIDs[1]
+	end
+
 	child.SCMSpellID = spellID
 
-	if not (cooldownID and spellID and spellConfig[spellID]) then
+	local configID, childData = SCM:GetSpellConfigByCooldownID(cooldownID)
+	if not (cooldownID and spellID and childData) then
 		child.SCMConfig = nil
 		child.SCMOrder = nil
 		child.SCMCooldownID = nil
+		child.SCMConfigID = nil
 
 		SetChildVisibilityState(child, false, true)
 		return
 	end
 
-	local childData = spellConfig[spellID]
 	local group = childData.source[categoryIndex] or childData.source[SCM.Constants.SourcePairs[categoryIndex]]
 	local groupConfig = GetSpellAnchorGroupConfig(childData, group)
 
 	if not group or not groupConfig then
+		child.SCMConfigID = nil
 		SetChildVisibilityState(child, false, true)
 		return
 	end
@@ -497,6 +499,7 @@ local function ProcessSingleChild(child, validChildren, spellConfig, categoryInd
 	child.SCMConfig = groupConfig
 	child.SCMOrder = groupConfig.order
 	child.SCMCooldownID = cooldownID
+	child.SCMConfigID = configID
 	child.SCMGroup = group
 
 	SCM:SkinChild(child, groupConfig)
@@ -1093,14 +1096,17 @@ function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)
 			if info then
 				local data = displayData[cooldownID]
 				if data then
-					local spellID = data.linkedSpellIDs and data.linkedSpellIDs[1] or data.spellID
-
+					local spellID = data.spellID
 					self.defaultCooldownViewerConfig[cooldownCategory][data.cooldownID] = data
 					self.defaultCooldownViewerConfig[cooldownCategory].spellIDs[spellID] = data
 					self.defaultCooldownViewerConfig[cooldownCategory].cooldownIDs[data.cooldownID] = data
 					self.defaultCooldownViewerConfig.cooldownIDs[data.cooldownID] = data
 
 					self.defaultCooldownViewerConfig.spellIDs[spellID] = data
+					for _, linkedSpellID in ipairs(data.linkedSpellIDs or {}) do
+						self.defaultCooldownViewerConfig[cooldownCategory].spellIDs[linkedSpellID] = data
+						self.defaultCooldownViewerConfig.spellIDs[linkedSpellID] = data
+					end
 					if data and data.category >= 0 and data.category <= 2 then
 						order = order + 1
 						self.currentCooldownViewerConfig[spellID] = self.currentCooldownViewerConfig[spellID] or { source = {}, anchorGroup = {} }
@@ -1152,6 +1158,7 @@ function SCM:UpdateDB()
 	self.currentConfig = self.db.profile[class][specID]
 	self.anchorConfig = self.currentConfig.anchorConfig
 	self.spellConfig = self.currentConfig.spellConfig
+	self:MigrateLegacySpellConfigKeys(self.spellConfig, self.defaultCooldownViewerConfig)
 	self.itemConfig = self.currentConfig.itemConfig
 
 	self.currentConfig.customConfig = self.currentConfig.customConfig or {}
@@ -1165,6 +1172,6 @@ function SCM:UpdateDB()
 	self.currentRole = role
 end
 
-function SCM:GetSpellConfigForGroup(spellID, group)
-	return GetSpellAnchorGroupConfig(self.spellConfig and self.spellConfig[spellID], group)
+function SCM:GetSpellConfigForGroup(configID, group)
+	return GetSpellAnchorGroupConfig(self.spellConfig and self.spellConfig[configID], group)
 end
