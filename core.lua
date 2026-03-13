@@ -50,9 +50,9 @@ local function OnSpellAlertManagerHideAlert(_, child)
 end
 
 function SCM:SetHooks()
-	hooksecurefunc(EssentialCooldownViewer, "Layout", OnEssentialCooldownViewerLayout)
-	hooksecurefunc(UtilityCooldownViewer, "Layout", OnUtilityCooldownViewerLayout)
-	hooksecurefunc(BuffIconCooldownViewer, "Layout", OnBuffCooldownViewerLayout)
+	--hooksecurefunc(EssentialCooldownViewer, "RefreshLayout", OnEssentialCooldownViewerLayout)
+	--hooksecurefunc(UtilityCooldownViewer, "RefreshLayout", OnUtilityCooldownViewerLayout)
+	--hooksecurefunc(BuffIconCooldownViewer, "RefreshLayout", OnBuffCooldownViewerLayout)
 	hooksecurefunc(CooldownViewerSettings, "RefreshLayout", OnCooldownViewerSettingsRefreshLayout)
 
 	if ActionButtonSpellAlertManager then
@@ -85,17 +85,17 @@ function SCM:UNIT_SPELLCAST_SUCCEEDED(_, _, spellID)
 	SCM:ApplySuccessfulCastBySpellID(spellID)
 end
 
-function SCM:BAG_UPDATE_COOLDOWN()
-	SCM:ApplyAnchorGroupByIconTypes(false, "item", "slot")
-end
-
 function SCM:SPELL_UPDATE_COOLDOWN(spellID)
-	SCM:ApplyAnchorGroupBySpellID(spellID, "spell")
+	local predicate = function(config)
+		return config.spellID == spellID
+	end
+
+	SCM:ApplyAnchorGroupByIconTypes(false, predicate, "spell", "item", "slot")
 	SCM:UpdateCustomIconsGCD()
 end
 
 function SCM:SPELL_UPDATE_CHARGES()
-	SCM:ApplyAnchorGroupByIconTypes(false, "spell")
+	SCM:ApplyAnchorGroupByIconTypes(false, nil, "spell")
 end
 
 function SCM:PLAYER_EQUIPMENT_CHANGED()
@@ -198,7 +198,6 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 	eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 	eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-	eventFrame:RegisterEvent("BAG_UPDATE_COOLDOWN")
 	eventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
 	eventFrame:RegisterEvent("SPELL_UPDATE_CHARGES")
 	eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")

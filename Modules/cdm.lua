@@ -244,12 +244,14 @@ local function OnBuffCooldownEnd(self)
 		return
 	end
 
-	SCM:ApplyAllCDManagerConfigs()
+	if options.hideBuffsWhenInactive and not parent.SCMHidden then
+		SCM:ApplyAllCDManagerConfigs()
+	end
 end
 
 local function OnBuffTriggerPandemicAlert(self)
 	local options = self.SCMBuffOptions
-	if options and options.pandemicGlowOption ~= "keepPandemicGlow" then
+	if options and options.pandemicGlowOption ~= "keepPandemicGlow" and not self.SCMPandemic then
 		self.SCMPandemic = true
 	end
 end
@@ -270,12 +272,12 @@ local function OnBuffShowPandemicStateFrame(self)
 		return
 	end
 
-	self.PandemicIcon:SetAlpha(0)
-
 	local options = self.SCMBuffOptions
 	if not options or options.pandemicGlowOption ~= "replacePandemicGlow" then
 		return
 	end
+
+	self.PandemicIcon:SetAlpha(0)
 
 	pendingPandemicGlowChildren[self] = true
 	RunNextFrame(StartPendingPandemicGlows)
