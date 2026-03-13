@@ -256,31 +256,21 @@ local function OnBuffTriggerPandemicAlert(self)
 	end
 end
 
-local pendingPandemicGlowChildren = {}
-
-local function StartPendingPandemicGlows()
-	for child in pairs(pendingPandemicGlowChildren) do
-		pendingPandemicGlowChildren[child] = nil
-		if child then
-			SCM:StartCustomGlow(child)
-		end
-	end
-end
-
 local function OnBuffShowPandemicStateFrame(self)
 	if not self.PandemicIcon or self.PandemicIcon:GetAlpha() == 0 then
 		return
 	end
 
 	local options = self.SCMBuffOptions
-	if not options or options.pandemicGlowOption ~= "replacePandemicGlow" then
+	if not options or options.pandemicGlowOption == "keepPandemicGlow" then
 		return
 	end
 
 	self.PandemicIcon:SetAlpha(0)
 
-	pendingPandemicGlowChildren[self] = true
-	RunNextFrame(StartPendingPandemicGlows)
+	if options.pandemicGlowOption == "replacePandemicGlow" then
+		SCM:StartCustomGlow(self.Icon)
+	end
 end
 
 local function OnBuffHidePandemicStateFrame(self)
@@ -290,7 +280,7 @@ local function OnBuffHidePandemicStateFrame(self)
 	end
 
 	if self.SCMPandemic and options.pandemicGlowOption == "replacePandemicGlow" then
-		SCM:StopCustomGlow(self)
+		SCM:StopCustomGlow(self.Icon)
 		self.SCMPandemic = nil
 	end
 end
