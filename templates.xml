@@ -43,7 +43,7 @@
 			<AbsDimension x="35" y="35"/>
 		</Size>
 		<KeyValues>
-			<KeyValue key="cooldownFont" value="Permok_Expressway_Medium" type="string"/>
+			<KeyValue key="cooldownFont" value="GameFontHighlightHugeOutline" type="string"/>
 			<KeyValue key="backdropInfo" value="BACKDROP_SCM_PIXEL" type="global"/>
 			<KeyValue key="backdropBorderColor" value="BLACK_FONT_COLOR" type="global"/>
 		</KeyValues>
@@ -64,7 +64,17 @@
 			</Layer>
 		</Layers>
 		<Frames>
-			<Cooldown parentKey="Cooldown" drawEdge="false">
+			<Cooldown parentKey="Cooldown" drawEdge="true" drawBling="true">
+				<Anchors>
+					<Anchor point="TOPLEFT" x="-1" y="1"/>
+					<Anchor point="BOTTOMRIGHT" x="1" y="-1"/>
+				</Anchors>
+				<SwipeTexture file="Interface\HUD\UI-HUD-CoolDownManager-Icon-Swipe">
+					<Color r="0" g="0" b="0" a="0.7"/>
+				</SwipeTexture>
+				<EdgeTexture file="Interface\Cooldown\UI-HUD-ActionBar-SecondaryCooldown"/>
+			</Cooldown>
+			<Cooldown parentKey="GCDCooldown" drawEdge="false" hideCountdownNumbers="true" reverse="true">
 				<Anchors>
 					<Anchor point="TOPLEFT" x="-1" y="1"/>
 					<Anchor point="BOTTOMRIGHT" x="1" y="-1"/>

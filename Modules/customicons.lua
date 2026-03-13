@@ -79,6 +79,30 @@ local function GetCustomIconFramePool()
 	return CustomIconFramePool
 end
 
+local function OnIconCooldownDone(self)
+	local parent = self:GetParent()
+	if not parent or parent.SCMReleased or not parent.SCMConfig then
+		return
+	end
+
+	if parent.Icon then
+		parent.Icon:SetDesaturated(false)
+	end
+
+	if parent.UpdateCooldown then
+		parent.isOnGCD = nil
+		parent.UpdateCooldown(parent, parent.SCMIconType, parent.SCMConfig)
+	end
+
+	if parent.UpdateCharges then
+		parent.UpdateCharges(parent, parent.spellID)
+	end
+
+	if parent and parent.SCMGroup then
+		SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup, parent.SCMGlobal)
+	end
+end
+
 local function AcquireCustomIconFrame(customFrames, id)
 	local frame = customFrames[id]
 	if frame and not frame.SCMReleased then
@@ -92,7 +116,9 @@ local function AcquireCustomIconFrame(customFrames, id)
 	customFrames[id] = frame
 
 	if not frame.SCMCustomIconInitialized then
-		SCM.SetupCustomIconFrame(frame)
+		frame.Cooldown:SetScript("OnCooldownDone", OnIconCooldownDone)
+		frame.GCDCooldown:SetScript("OnCooldownDone", OnIconCooldownDone)
+		frame.Cooldown:SetCountdownFont("GameFontHighlightHugeOutline")
 		frame.SCMCustomIconInitialized = true
 	end
 
@@ -181,12 +207,21 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 
 	if iconType == "spell" then
 		local spellCooldown = C_Spell.GetSpellCooldown(config.spellID)
+		if config.showGCD and spellCooldown.isOnGCD then
+			frame.GCDCooldown:SetCooldown(spellCooldown.startTime, spellCooldown.duration)
+		end
+
 		local durationObject = C_Spell.GetSpellChargeDuration(config.spellID)
 		if durationObject then
 			frame.Cooldown:SetCooldownFromDurationObject(durationObject)
 
-			if not spellCooldown or not spellCooldown.isOnGCD then
-				frame.Icon:SetDesaturation(durationObject:EvaluateRemainingPercent(desaturationCurve))
+			if not spellCooldown.isOnGCD then
+				frame.Icon:SetDesaturation(C_Spell.GetSpellCooldownDuration(config.spellID):EvaluateRemainingDuration(desaturationCurve))
+
+				local edgeAlpha = C_CurveUtil.EvaluateColorValueFromBoolean(frame.Icon:IsDesaturated(), 0, 1)
+				frame.Cooldown:SetEdgeColor(1, 1, 1, edgeAlpha)
+				frame.Cooldown:SetSwipeColor(1, 1, 1, edgeAlpha)
+				frame.Cooldown:SetReverse(frame.Icon:IsDesaturated())
 			end
 		else
 			durationObject = C_Spell.GetSpellCooldownDuration(config.spellID)
@@ -440,6 +475,22 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 	end
 end
 
+function CustomIcons.UpdateIcons(customConfig, key)
+	for id, config in pairs(customConfig) do
+		if config[key] then
+			local anchorGroup = config.anchorGroup or 1
+			local customFrames = CustomIcons.GetCustomIconFrames(config)
+			if customFrames then
+				if customFrames[id] then
+					local frame = customFrames[id]
+					local iconType = frame.SCMIconType
+					UpdateCustomIconCooldown(frame, iconType, config)
+				end
+			end
+		end
+	end
+end
+
 function SCM:CreateAllCustomIcons()
 	for _, config in pairs(self.customConfig) do
 		CustomIcons.CreateIcons(config)
@@ -447,6 +498,16 @@ function SCM:CreateAllCustomIcons()
 
 	for _, config in pairs(self.globalCustomConfig) do
 		CustomIcons.CreateIcons(config, true)
+	end
+end
+
+function SCM:UpdateCustomIconsGCD()
+	for _, config in pairs(self.customConfig) do
+		CustomIcons.UpdateIcons(config, "showGCD")
+	end
+
+	for _, config in pairs(self.globalCustomConfig) do
+		CustomIcons.UpdateIcons(config, "showGCD")
 	end
 end
 
@@ -475,7 +536,7 @@ function SCM:AddCustomIcon(anchorGroup, iconType, configID, order, uniqueID, isG
 		slotID = iconType == "slot" and configID or nil,
 		anchorGroup = anchorGroup,
 		order = order,
-		loadRoles = {["TANK"] = true, ["HEALER"] = true, ["DAMAGER"] = true}
+		loadRoles = { ["TANK"] = true, ["HEALER"] = true, ["DAMAGER"] = true },
 	}
 
 	self.CustomIcons.CreateIcons(configTable, isGlobal)

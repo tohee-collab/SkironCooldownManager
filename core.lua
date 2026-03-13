@@ -91,6 +91,11 @@ end
 
 function SCM:SPELL_UPDATE_COOLDOWN(spellID)
 	SCM:ApplyAnchorGroupBySpellID(spellID, "spell")
+	SCM:UpdateCustomIconsGCD()
+end
+
+function SCM:SPELL_UPDATE_CHARGES()
+	SCM:ApplyAnchorGroupByIconTypes(false, "spell")
 end
 
 function SCM:PLAYER_EQUIPMENT_CHANGED()
@@ -195,6 +200,7 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 	eventFrame:RegisterEvent("BAG_UPDATE_COOLDOWN")
 	eventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+	eventFrame:RegisterEvent("SPELL_UPDATE_CHARGES")
 	eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
 	eventFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 	eventFrame:RegisterEvent("ACTIVE_PLAYER_SPECIALIZATION_CHANGED")

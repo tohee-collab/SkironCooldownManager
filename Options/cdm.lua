@@ -14,14 +14,11 @@ local iconTypeTabs = {
 		{ value = "general", text = "General" },
 		{ value = "glow", text = "Glow" },
 		{ value = "load", text = "Load Conditions" },
-		--{ value = "load", text = "Load Conditions"},
 	},
 	spell = {},
 	item = {},
 	timer = {},
-	slot = {
-		-- { value = "filter", text = "Filter" },
-	},
+	slot = {},
 }
 for iconType, options in pairs(iconTypeTabs) do
 	if iconType ~= "all" then
@@ -61,14 +58,6 @@ local function ShowNumericInputPopup(key, title, callback)
 	StaticPopup_Show(key)
 end
 
-local function GetSlotTexture(slotID)
-	return GetInventoryItemTexture("player", slotID) or 134400
-end
-
-local function ApplyAnchorGroupUpdate(anchorIndex, isGlobal)
-	SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, isGlobal)
-end
-
 local function BuildSpellIconData(spellID)
 	local texture = C_Spell.GetSpellTexture(spellID)
 	if not texture then
@@ -100,7 +89,7 @@ local function BuildSlotIconData(slotID)
 	end
 
 	return {
-		texture = GetSlotTexture(slotID),
+		texture = GetInventoryItemTexture("player", slotID) or 134400,
 		spellID = 0,
 		slotID = slotID,
 	}
@@ -130,14 +119,13 @@ local customButtonConfigs = {
 	},
 	{
 		text = "Timer",
-		popupKey = "SCM_BUFF_SPELL_ID",
+		popupKey = "SCM_TIMER_SPELL_ID",
 		popupTitle = "Enter Spell ID",
 		iconType = "timer",
 		buildIconData = BuildSpellIconData,
 		tooltip = function(tooltip, elementDescription)
 			GameTooltip_SetTitle(tooltip, MenuUtil.GetElementText(elementDescription))
 			GameTooltip_AddInstructionLine(tooltip, "Timers can only be created based on successful casts.")
-			--GameTooltip_AddNormalLine(tooltip, "Casting Tiger's Lust, can display a custom timer for Tiger's Lust.")
 		end,
 	},
 }
@@ -157,7 +145,7 @@ local function CreateCustomIconButton(rootDescription, scrollFrame, anchorIndex,
 
 			local order = scrollFrame:AddCustomIcon(iconData)
 			SCM:AddCustomIcon(anchorIndex, buttonConfig.iconType, configID, order, uniqueID, isGlobal)
-			ApplyAnchorGroupUpdate(anchorIndex, isGlobal)
+			SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, isGlobal)
 		end)
 	end)
 
@@ -648,7 +636,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 				if iconType == "spell" or iconType == "timer" then
 					texture = config.spellID and C_Spell.GetSpellTexture(config.spellID)
 				elseif iconType == "slot" then
-					texture = config.slotID and GetSlotTexture(config.slotID)
+					texture = config.slotID and GetInventoryItemTexture("player", config.slotID) or 134400
 				elseif iconType == "item" then
 					texture = config.itemID and C_Item.GetItemIconByID(config.itemID)
 				end
@@ -733,7 +721,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 						local function ApplyIconConfigUpdate()
 							if buttonFrame.data.isCustom then
 								SCM.CustomIcons.CreateIcons(SCM:GetConfigTable(buttonData.iconType, isGlobal), isGlobal)
-								ApplyAnchorGroupUpdate(anchorIndex, isGlobal)
+								SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, isGlobal)
 								return
 							end
 							SCM:ApplyAllCDManagerConfigs()
@@ -796,6 +784,16 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 										ApplyIconConfigUpdate()
 									end)
 									iconSettingsTabs:AddChild(hideWhileReady)
+
+									local showGCD = AceGUI:Create("CheckBox")
+									showGCD:SetLabel("Show GCD")
+									showGCD:SetRelativeWidth(0.5)
+									showGCD:SetValue(buttonConfig.showGCD)
+									showGCD:SetCallback("OnValueChanged", function(self, event, value)
+										buttonConfig.showGCD = value or nil
+										ApplyIconConfigUpdate()
+									end)
+									iconSettingsTabs:AddChild(showGCD)
 								end
 
 								if buttonData.isCustom and (buttonData.iconType == "spell" or buttonData.iconType == "timer") then
@@ -924,7 +922,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 					end
 					horizontalScrollFrame:RemoveButton(buttonFrame.data)
 					if buttonFrame.data.isCustom then
-						ApplyAnchorGroupUpdate(anchorIndex, isGlobal)
+						SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, isGlobal)
 						return
 					end
 					SCM:ApplyAllCDManagerConfigs()

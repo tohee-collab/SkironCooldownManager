@@ -472,7 +472,7 @@ local function ProcessSingleChild(child, validChildren, spellConfig, categoryInd
 	local cooldownID = child:GetCooldownID()
 	local categoryConfig = categoryIndex and SCM.defaultCooldownViewerConfig[categoryIndex]
 	local info = categoryConfig and (categoryConfig[cooldownID] or SCM.defaultCooldownViewerConfig.cooldownIDs[cooldownID])
-	local spellID = info and info.spellID
+	local spellID = info and ((info.linkedSpellIDs and info.linkedSpellIDs[1]) or info.spellID)
 	child.SCMSpellID = spellID
 
 	if not (cooldownID and spellID and spellConfig[spellID]) then
@@ -525,35 +525,6 @@ local function ProcessChildren(viewer, validChildren, config, isBuffIcon)
 		ProcessSingleChild(child, validChildren, spellConfig, categoryIndex, isBuffIcon, options)
 	end
 end
-
-local function OnIconCooldownDone(self)
-	local parent = self:GetParent()
-	if not parent or parent.SCMReleased or not parent.SCMConfig then
-		return
-	end
-
-	if parent.Icon then
-		parent.Icon:SetDesaturated(false)
-	end
-
-	if parent.UpdateCooldown then
-		parent.UpdateCooldown(parent, parent.SCMIconType, parent.SCMConfig)
-	end
-
-	if parent.UpdateCharges then
-		parent.UpdateCharges(parent, parent.spellID)
-	end
-
-	if parent and parent.SCMGroup then
-		SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup, parent.SCMGlobal)
-	end
-end
-
-local function SetupCustomIconFrame(frame)
-	frame.Cooldown:SetScript("OnCooldownDone", OnIconCooldownDone)
-	--SetupChildHooks(frame)
-end
-SCM.SetupCustomIconFrame = SetupCustomIconFrame
 
 local function ApplyManagedAnchorPoint(child)
 	local anchorFrame = child.SCMAnchorFrame
