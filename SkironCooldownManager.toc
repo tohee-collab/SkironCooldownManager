@@ -46,6 +46,7 @@ Modules\cdmanchors.lua
 Modules\update.lua
 Modules\cdmconfig.lua
 Modules\anchors.lua
+Modules\castbar.lua
 Modules\uid.lua
 Modules\profiles.lua
 
@@ -54,6 +55,7 @@ api.lua
 
 Options\cdm.lua
 Options\general.lua
+Options\castbar.lua
 Options\options.lua
 Options\profiles.lua
 Options\temporary.lua

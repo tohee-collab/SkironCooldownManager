@@ -83,6 +83,29 @@ SCM.DefaultDB = {
 					glowColor = {0.95, 0.95, 0.32, 1},
 				},
 			},
+			castBar = {
+				enable = true,
+				width = 270,
+				height = 24,
+				texture = "Minimalist",
+				font = "Expressway",
+				fontSize = 12,
+				fontOutline = "OUTLINE",
+				matchParentWidth = true,
+				fgColor = {r = 0.5, g = 0.5, b = 1, a = 1},
+				bgColor = {r = 0, g = 0, b = 0, a = 0.8},
+				interruptColor = {r = 1, g = 0.25, b = 0.25, a = 1},
+				borderColor = {r = 0, g = 0, b = 0, a = 1},
+				anchors = { "BOTTOM", "ANCHOR:1", "TOP", 0, 1 },
+				spellName = {
+					enable = true,
+					anchors = { "LEFT", "LEFT", 3, 0 },
+				},
+				castDuration = {
+					enable = true,
+					anchors = { "RIGHT", "RIGHT", -3, 0 },
+				}
+			},
 			testSetting = {
 				[193063] = true
 			}
