@@ -1,6 +1,5 @@
 local SCM = select(2, ...)
 
-SCM.Cache = {}
 local Cache = SCM.Cache
 
 Cache.cachedViewerScale = 1
@@ -12,7 +11,7 @@ Cache.cachedActiveItemFrames = {}
 Cache.cachedVisitedAnchorGroups = {}
 Cache.reusableCustomIconContext = {}
 Cache.reusableScopedGroupTables = {}
-Cache.cachedScopedAnchorGroups = Cache.cachedScopedAnchorGroups or {
+Cache.cachedScopedAnchorGroups = {
 	essential = {},
 	utility = {},
 	buff = {},

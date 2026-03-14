@@ -1,8 +1,8 @@
 local SCM = select(2, ...)
 
-SCM.CustomIcons = SCM.CustomIcons or {}
-
 local CustomIcons = SCM.CustomIcons
+local CDM = SCM.CDM
+local Icons = SCM.Icons
 local GetIconType = SCM.Utils.GetIconType
 
 local CustomItemFrames = {}
@@ -130,7 +130,7 @@ local function ReleaseCustomIconFrame(frame)
 		return
 	end
 
-	SCM.SetChildVisibilityState(frame, false, true)
+	Icons.SetChildVisibilityState(frame, false, true)
 	GetCustomIconFramePool():Release(frame)
 end
 
@@ -411,11 +411,11 @@ end
 
 function CustomIcons.HideIcons()
 	for _, customFrame in pairs(CustomItemFrames) do
-		SCM.SetChildVisibilityState(customFrame, false, true)
+		Icons.SetChildVisibilityState(customFrame, false, true)
 	end
 
 	for _, customFrame in pairs(CustomSpellFrames) do
-		SCM.SetChildVisibilityState(customFrame, false, true)
+		Icons.SetChildVisibilityState(customFrame, false, true)
 	end
 end
 
@@ -446,7 +446,7 @@ function CustomIcons.CreateIcons(customConfig, isGlobal)
 				local frame = AcquireCustomIconFrame(customFrames, id)
 				ConfigureCustomIconFrame(frame, id, config, viewerScale, config.anchorGroup or 1, isGlobal)
 				UpdateCustomIconFrameState(frame, config)
-				SCM.SetChildVisibilityState(frame, false, true)
+				Icons.SetChildVisibilityState(frame, false, true)
 				SCM:SkinChild(frame, config)
 			elseif customFrames[id] then
 				ReleaseCustomIconFrame(customFrames[id])
@@ -461,7 +461,7 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 		local customFrames = CustomIcons.GetCustomIconFrames(config)
 		if customFrames then
 			if customFrames[id] and DoesItemOrSpellExists(config) and ShouldLoadCustomIcon(config) then
-				if SCM.IsScopedAnchorGroupAllowed(anchorGroup, isGlobal) then
+				if CDM.IsScopedAnchorGroupAllowed(anchorGroup, isGlobal) then
 					local frame = customFrames[id]
 					local iconType = frame.SCMIconType
 					local iconTexture = ResolveCustomIconTexture(config, iconType)
@@ -478,21 +478,21 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 						local isOnCooldown = UpdateCustomIconCooldown(frame, iconType, config)
 						local shouldShow = ShouldShowCustomIcon(config, iconType, hasCount, isOnCooldown)
 
-						SCM.SetChildVisibilityState(frame, shouldShow, true)
+						Icons.SetChildVisibilityState(frame, shouldShow, true)
 
 						if shouldShow then
 							if iconType == "spell" then
 								UpdateCustomIconCharges(frame, config.spellID)
 							end
 
-							SCM.AddChildToScopedGroup(validChildren, anchorGroup, frame, isGlobal)
+							CDM.AddChildToScopedGroup(validChildren, anchorGroup, frame, isGlobal)
 						end
 					else
-						SCM.SetChildVisibilityState(frame, false, true)
+						Icons.SetChildVisibilityState(frame, false, true)
 					end
 				end
 			elseif customFrames[id] then
-				SCM.SetChildVisibilityState(customFrames[id], false, true)
+				Icons.SetChildVisibilityState(customFrames[id], false, true)
 			end
 		end
 	end
@@ -501,7 +501,6 @@ end
 function CustomIcons.UpdateIcons(customConfig, key)
 	for id, config in pairs(customConfig) do
 		if config[key] then
-			local anchorGroup = config.anchorGroup or 1
 			local customFrames = CustomIcons.GetCustomIconFrames(config)
 			if customFrames then
 				if customFrames[id] then
@@ -585,7 +584,7 @@ function SCM:AddCustomIcon(anchorGroup, iconType, configID, order, uniqueID, isG
 		loadRoles = { ["TANK"] = true, ["HEALER"] = true, ["DAMAGER"] = true },
 	}
 
-	self.CustomIcons.CreateIcons(configTable, isGlobal)
+	CustomIcons.CreateIcons(configTable, isGlobal)
 
 	return uniqueID
 end
@@ -596,6 +595,6 @@ function SCM:RemoveCustomIcon(id, isGlobal, iconType)
 		local config = configTable[id]
 		configTable[id] = nil
 
-		SCM.CustomIcons.ReleaseIcon(id, config)
+		CustomIcons.ReleaseIcon(id, config)
 	end
 end

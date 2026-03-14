@@ -30,6 +30,8 @@ Database\defaults.lua
 Database\sharedmedia.lua
 Database\loader.lua
 
+core.lua
+
 
 Modules\glow.lua
 Modules\cache.lua
@@ -37,12 +39,16 @@ Modules\skinning.lua
 Modules\utils.lua
 Modules\customicons.lua
 Modules\migration.lua
+Modules\cooldowns.lua
+Modules\icons.lua
 Modules\cdm.lua
+Modules\cdmanchors.lua
+Modules\update.lua
+Modules\cdmconfig.lua
 Modules\anchors.lua
 Modules\uid.lua
 Modules\profiles.lua
 
-core.lua
 api.lua
 
 

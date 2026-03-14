@@ -7,7 +7,6 @@ local colorUnknown = "808080"
 local colorDisabled = "ff0000"
 
 SCM.MainTabs.CDM = { value = "CDM", text = "Cooldown Manager", order = 2, subgroups = {} }
-SCM.CustomEntries = {}
 
 local iconTypeTabs = {
 	all = {

@@ -1,5 +1,19 @@
 local addonName, SCM = ...
 
+SCM.CDM = {}
+SCM.Cache = {}
+SCM.Utils = {}
+SCM.CustomIcons = {}
+SCM.Cooldowns = {}
+SCM.Icons = {}
+SCM.anchorFrames = {}
+SCM.itemFrames = {}
+SCM.MainTabs = {}
+SCM.OptionsCallbacks = {}
+SCM.Skins = {}
+SCM.CustomAnchors = {}
+SCM.CustomEntries = {}
+
 local function OnEssentialCooldownViewerLayout()
 	SCM:ApplyEssentialCDManagerConfig()
 end

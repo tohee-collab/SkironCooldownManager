@@ -5,14 +5,6 @@ local LSM = LibStub("LibSharedMedia-3.0")
 
 SCM.MainTabs.General = { value = "General", text = "Global Settings", order = 1, subgroups = {} }
 
-local function GetFontList()
-	local list = {}
-	for fontName in pairs(LSM:HashTable("font")) do
-		list[fontName] = fontName
-	end
-	return list
-end
-
 local function AddInfoText(widget, text)
 	local label = AceGUI:Create("Label")
 	label:SetRelativeWidth(1.0)

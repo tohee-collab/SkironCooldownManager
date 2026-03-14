@@ -1,7 +1,5 @@
 local _, SCM = ...
 
-SCM.Utils = SCM.Utils or {}
-
 local Utils = SCM.Utils
 local GLOBAL_GROUP_OFFSET = 100
 
