@@ -179,15 +179,24 @@ local function AddCastBarTextAnchorControls(parent, title, anchors, refreshFn)
 	anchorGroup:AddChild(yOffset)
 end
 
+local function RefreshCastBar()
+	SCM:CreateCastBar()
+	SCM:UpdateCastBar()
+end
+
+local function UpdateIconControlStates(iconOptions, iconPosition, matchBarHeight, iconZoom, iconSize)
+	local iconEnabled = not not iconOptions.enable
+	iconPosition:SetDisabled(not iconEnabled)
+	matchBarHeight:SetDisabled(not iconEnabled)
+	iconZoom:SetDisabled(not iconEnabled)
+	iconSize:SetDisabled((not iconEnabled) or iconOptions.matchBarHeight)
+end
+
 local function CastBar(self)
 	self:ReleaseChildren()
 
 	local options = SCM.db.global.options.castBar
 	local iconOptions = EnsureIconOptions(options)
-	local function RefreshCastBar()
-		SCM:CreateCastBar()
-		SCM:UpdateCastBar()
-	end
 
 	local rootGroup = AceGUI:Create("InlineGroup")
 	rootGroup:SetLayout("fill")
@@ -346,23 +355,15 @@ local function CastBar(self)
 	end)
 	iconGroup:AddChild(iconZoom)
 
-	local function UpdateIconControlStates()
-		local iconEnabled = not not iconOptions.enable
-		iconPosition:SetDisabled(not iconEnabled)
-		matchBarHeight:SetDisabled(not iconEnabled)
-		iconZoom:SetDisabled(not iconEnabled)
-		iconSize:SetDisabled((not iconEnabled) or iconOptions.matchBarHeight)
-	end
-
 	iconEnable:SetCallback("OnValueChanged", function(_, _, value)
 		iconOptions.enable = value
-		UpdateIconControlStates()
+		UpdateIconControlStates(iconOptions, iconPosition, matchBarHeight, iconZoom, iconSize)
 		RefreshCastBar()
 	end)
 
 	matchBarHeight:SetCallback("OnValueChanged", function(_, _, value)
 		iconOptions.matchBarHeight = value
-		UpdateIconControlStates()
+		UpdateIconControlStates(iconOptions, iconPosition, matchBarHeight, iconZoom, iconSize)
 		RefreshCastBar()
 	end)
 
@@ -427,7 +428,7 @@ local function CastBar(self)
 	AddCastBarTextAnchorControls(anchorsGroup, "Spell Name Anchor", options.spellName, RefreshCastBar)
 	AddCastBarTextAnchorControls(anchorsGroup, "Cast Duration Anchor", options.castDuration, RefreshCastBar)
 
-	UpdateIconControlStates()
+	UpdateIconControlStates(iconOptions, iconPosition, matchBarHeight, iconZoom, iconSize)
 	scrollFrame:DoLayout()
 	scrollFrame:FixScroll()
 	scrollFrame:SetScroll(0)
