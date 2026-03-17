@@ -161,7 +161,9 @@ local function SetCustomIconCountText(frame, iconType, config)
 
 	local count = C_Item.GetItemCount(itemID)
 	if not count or count <= 0 then
-		frame.Icon:SetDesaturated(true)
+		frame.ChargeCount.Current:SetText(0)
+		frame.ChargeCount.Current:Show()
+		frame.Icon:SetVertexColor(0.4, 0.4, 0.4)
 		return
 	end
 
@@ -169,6 +171,7 @@ local function SetCustomIconCountText(frame, iconType, config)
 	frame.ChargeCount.Current:Show()
 
 	if not frame.isOnCooldown then
+		frame.Icon:SetVertexColor(1, 1, 1)
 		frame.Icon:SetDesaturated(false)
 	end
 
@@ -320,6 +323,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 			else
 				frame.Cooldown:SetCooldown(startTime, duration)
 			end
+			frame.Icon:SetVertexColor(1, 1, 1)
 			frame.Icon:SetDesaturated(true)
 			frame.isOnCooldown = true
 			UpdateCustomIconGlow(frame, false)
@@ -327,7 +331,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 		elseif C_Item.GetItemCount(config.itemID) == 0 then
 			frame.isOnCooldown = false
 			frame.Cooldown:Clear()
-			frame.Icon:SetDesaturated(true)
+			frame.Icon:SetVertexColor(0.4, 0.4, 0.4)
 			UpdateCustomIconGlow(frame, false)
 			return
 		end
@@ -344,6 +348,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 	end
 
 	frame.Cooldown:Clear()
+	frame.Icon:SetVertexColor(1, 1, 1)
 	frame.Icon:SetDesaturated(false)
 	UpdateCustomIconGlow(frame, false)
 end
