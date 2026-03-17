@@ -182,7 +182,7 @@ SCM.DefaultDB = {
 				bgColor = {r = 0, g = 0, b = 0, a = 0.8},
 				interruptColor = {r = 1, g = 0.25, b = 0.25, a = 1},
 				borderColor = {r = 0, g = 0, b = 0, a = 1},
-				anchors = { "BOTTOM", "ANCHOR:1", "TOP", 0, 1 },
+				anchors = { "BOTTOM", "SCM_SecondaryResourceBar,SCM_PrimaryResourceBar,ANCHOR:1", "TOP", 0, 1 },
 				icon = {
 					enable = true,
 					matchBarHeight = true,

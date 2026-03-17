@@ -61,19 +61,8 @@ local function AddAnchorControls(parent, title, anchors, refreshFn, relativeFram
 	anchorGroup:SetLayout("flow")
 	parent:AddChild(anchorGroup)
 
-	local point = AceGUI:Create("Dropdown")
-	point:SetRelativeWidth(0.33)
-	point:SetLabel("Point")
-	point:SetList(SCM.Constants.AnchorPoints)
-	point:SetValue(anchors[1])
-	point:SetCallback("OnValueChanged", function(_, _, value)
-		anchors[1] = value
-		refreshFn()
-	end)
-	anchorGroup:AddChild(point)
-
 	local relativeTo = AceGUI:Create("EditBox")
-	relativeTo:SetRelativeWidth(0.33)
+	relativeTo:SetRelativeWidth(1)
 	relativeTo:SetLabel(relativeFrameHelp or "Anchor Frame")
 	relativeTo:SetText(anchors[2] or "")
 	relativeTo:SetCallback("OnEnterPressed", function(self, _, text)
@@ -83,8 +72,19 @@ local function AddAnchorControls(parent, title, anchors, refreshFn, relativeFram
 	end)
 	anchorGroup:AddChild(relativeTo)
 
+	local point = AceGUI:Create("Dropdown")
+	point:SetRelativeWidth(0.5)
+	point:SetLabel("Point")
+	point:SetList(SCM.Constants.AnchorPoints)
+	point:SetValue(anchors[1])
+	point:SetCallback("OnValueChanged", function(_, _, value)
+		anchors[1] = value
+		refreshFn()
+	end)
+	anchorGroup:AddChild(point)
+
 	local relativePoint = AceGUI:Create("Dropdown")
-	relativePoint:SetRelativeWidth(0.33)
+	relativePoint:SetRelativeWidth(0.5)
 	relativePoint:SetLabel("Relative Point")
 	relativePoint:SetList(SCM.Constants.AnchorPoints)
 	relativePoint:SetValue(anchors[3])
