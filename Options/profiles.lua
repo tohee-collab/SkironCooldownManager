@@ -22,7 +22,9 @@ local function GetSpecList(classFileName)
 end
 
 local function GetClassList()
-	local classes = {}
+	local classes = {
+		ALL = "ALL",
+	}
 
 	for classIndex = 1, GetNumClasses() do
 		local className, classFile, classID = GetClassInfo(classIndex)

@@ -100,6 +100,10 @@ local function MergeConfig(destDB, sourceData, defaultAnchor)
 end
 
 local function GetProfileExportData(db, exportType, classFileName, specID)
+	if not classFileName and not specID then
+		return {}
+	end
+
 	if exportType == EXPORT_TYPE_ALL then
 		local profileData = {}
 		for key, value in pairs(db) do
@@ -147,8 +151,8 @@ local function BuildProfileExportPayload(self, exportType, classFileName, specID
 end
 
 local function GetExportString(self, classFileName, specID, exportOptions)
-	local exportType = specID
-	if classFileName == "ALL" or (not classFileName and not specID) then
+	local exportType = specID or EXPORT_TYPE_ALL
+	if classFileName == "ALL" then
 		exportType = EXPORT_TYPE_ALL
 	elseif classFileName and not specID then
 		exportType = EXPORT_TYPE_CLASS
