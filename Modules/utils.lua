@@ -1,11 +1,9 @@
 local _, SCM = ...
 
-SCM.Utils = SCM.Utils or {}
-
 local Utils = SCM.Utils
 local GLOBAL_GROUP_OFFSET = 100
 
-local function EnsureDisabledTooltipOverlay(widget)
+local function CreateDisabledTooltipOverlay(widget)
 	if not widget or not widget.frame then
 		return
 	end
@@ -54,7 +52,7 @@ local function EnsureDisabledTooltipOverlay(widget)
 end
 
 function Utils.RefreshDisabledTooltip(widget)
-	local overlay = EnsureDisabledTooltipOverlay(widget)
+	local overlay = CreateDisabledTooltipOverlay(widget)
 	if not overlay then
 		return
 	end
@@ -126,28 +124,18 @@ function Utils.SortBySCMOrder(a, b)
 	return (a.SCMOrder or 0) < (b.SCMOrder or 0)
 end
 
-function Utils.GetOrCreateBucket(container, key)
-	local bucket = container[key]
-	if bucket then
-		return bucket
-	end
-
-	bucket = {}
-	container[key] = bucket
-	return bucket
-end
-
 function Utils.AddChildToGroup(validChildren, group, child, isGlobal)
 	if isGlobal then
 		group = Utils.ToGlobalGroup(group)
 		child.SCMGlobal = true
 	end
 
-	local groupChildren = Utils.GetOrCreateBucket(validChildren, group)
+	local groupChildren = GetOrCreateTableEntry(validChildren, group)
 	groupChildren[#groupChildren + 1] = child
 	return group
 end
 
-function Utils.NormalizeIconType(config)
+function Utils.GetIconType(config)
+	if not config or not (type(config) == "table") then return end
 	return config.iconType or (config.spellID and "spell") or "item"
 end

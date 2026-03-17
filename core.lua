@@ -1,5 +1,18 @@
 local addonName, SCM = ...
-local CustomIcons = SCM.CustomIcons
+
+SCM.CDM = {}
+SCM.Cache = {}
+SCM.Utils = {}
+SCM.CustomIcons = {}
+SCM.Cooldowns = {}
+SCM.Icons = {}
+SCM.anchorFrames = {}
+SCM.itemFrames = {}
+SCM.MainTabs = {}
+SCM.OptionsCallbacks = {}
+SCM.Skins = {}
+SCM.CustomAnchors = {}
+SCM.CustomEntries = {}
 
 local function OnEssentialCooldownViewerLayout()
 	SCM:ApplyEssentialCDManagerConfig()
@@ -21,16 +34,6 @@ local function OnCooldownViewerSettingsRefreshLayout(self)
 end
 
 local pendingCustomGlowChildren = {}
-
-local function StartPendingCustomGlows()
-	for child in pairs(pendingCustomGlowChildren) do
-		pendingCustomGlowChildren[child] = nil
-		if child and child.SCMActiveGlow then
-			SCM:StartCustomGlow(child)
-		end
-	end
-end
-
 local function OnSpellAlertManagerShowAlert(_, child)
 	local options = SCM.db.global.options
 	if not child.SCMConfig or not options.useCustomGlow or child.SCMActiveGlow then
@@ -39,87 +42,93 @@ local function OnSpellAlertManagerShowAlert(_, child)
 
 	child.SCMActiveGlow = true
 	child.SpellActivationAlert:Hide()
-	pendingCustomGlowChildren[child] = true
-	RunNextFrame(StartPendingCustomGlows)
+
+	-- The size of the glow is too large when you start the glow immediately if anyone is wondering why I do that
+	pendingCustomGlowChildren[child] = C_Timer.NewTimer(0, function()
+		SCM:StartCustomGlow(child)
+	end)
 end
 
 local function OnSpellAlertManagerHideAlert(_, child)
 	if child.SCMConfig and child.SCMActiveGlow then
+		if pendingCustomGlowChildren[child] then
+			pendingCustomGlowChildren[child]:Cancel()
+			pendingCustomGlowChildren[child] = nil
+		end
+
 		child.SCMActiveGlow = nil
 		SCM:StopCustomGlow(child)
 	end
 end
 
+local function RefreshCooldownViewerData(releaseCustomIcons)
+	SCM:ClearViewerChildrenCache()
+	SCM:UpdateCooldownInfo(true, CooldownViewerSettings:GetDataProvider())
+	SCM:UpdateDB()
+
+	if releaseCustomIcons then
+		SCM.CustomIcons.ReleaseAllIcons()
+	end
+	SCM:CreateAllCustomIcons()
+	SCM:ApplyAllCDManagerConfigs()
+end
+
 function SCM:SetHooks()
-	hooksecurefunc(EssentialCooldownViewer, "Layout", OnEssentialCooldownViewerLayout)
-	hooksecurefunc(UtilityCooldownViewer, "Layout", OnUtilityCooldownViewerLayout)
-	hooksecurefunc(BuffIconCooldownViewer, "Layout", OnBuffCooldownViewerLayout)
+	hooksecurefunc(EssentialCooldownViewer, "RefreshLayout", OnEssentialCooldownViewerLayout)
+	hooksecurefunc(UtilityCooldownViewer, "RefreshLayout", OnUtilityCooldownViewerLayout)
+	hooksecurefunc(BuffIconCooldownViewer, "RefreshLayout", OnBuffCooldownViewerLayout)
 	hooksecurefunc(CooldownViewerSettings, "RefreshLayout", OnCooldownViewerSettingsRefreshLayout)
 
 	if ActionButtonSpellAlertManager then
 		hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", OnSpellAlertManagerShowAlert)
 		hooksecurefunc(ActionButtonSpellAlertManager, "HideAlert", OnSpellAlertManagerHideAlert)
 	end
+
+	hooksecurefunc(UIParent, "SetScale", function() RefreshCooldownViewerData(true) end)
 end
 
 function SCM:PLAYER_ENTERING_WORLD(isInitialLogin, isReload)
 	if isInitialLogin or isReload then
+		--SCM.Cache.cachedViewerScale = SCM:PixelPerfect()
 		SCM:UpdateCooldownInfo(true, CooldownViewerSettings:GetDataProvider())
 		SCM:UpdateDB()
 
+		SCM:CreateAllCustomIcons()
 		SCM:ApplyAllCDManagerConfigs()
 		SCM:SetHooks()
-		SCM:GetAnchor(1)
+		SCM:InitializeResourceBars()
 	elseif self.isInInstance ~= IsInInstance() then
-		SCM:ApplyAllCDManagerConfigs()
+		RefreshCooldownViewerData(true)
+		SCM:RefreshResourceBarConfig()
 	end
 
 	self.isInInstance = IsInInstance()
 end
 
 function SCM:BAG_UPDATE_DELAYED()
-	SCM:ApplyAllCDManagerConfigs()
+	SCM.CustomIcons.UpdateItemCountText()
 end
 
-local function SetItemCooldownVisual(frame, start, duration)
-	if start and start > 0 then
-		frame.Cooldown:SetCooldown(start, duration)
-		frame.Icon:SetDesaturated(true)
-		return true
-	end
-
-	frame.Cooldown:Clear()
-	frame.Icon:SetDesaturated(false)
-	return false
-end
-
-local function SetSpellCooldownVisual(frame, durationObject) end
-
-local function UpdateBagCooldownFrames()
-	local GetItemCooldown = C_Item.GetItemCooldown
-	for _, frame in pairs(SCM.itemFrames) do
-		local start, duration = GetItemCooldown(frame.itemID)
-		SetItemCooldownVisual(frame, start, duration)
-	end
-
-	CustomIcons.UpdateBagIcons(SetItemCooldownVisual, SCM.SetChildVisibilityState)
-end
-
-function SCM:BAG_UPDATE_COOLDOWN()
-	RunNextFrame(UpdateBagCooldownFrames)
+function SCM:UNIT_SPELLCAST_SUCCEEDED(_, _, spellID)
+	SCM:ApplySuccessfulCastBySpellID(spellID)
 end
 
 function SCM:SPELL_UPDATE_COOLDOWN(spellID)
-	for _, data in pairs(self.db.global.globalSpellConfig) do
-		if data.spellID and data.spellID == spellID then
-			SetSpellCooldownVisual()
-
-			break
-		end
+	local predicate = function(config)
+		return config.spellID == spellID
 	end
+
+	SCM.CustomIcons.UpdateItemCountText(spellID)
+	SCM:ApplyAnchorGroupByIconTypes(false, predicate, "spell", "item", "slot")
+	SCM:UpdateCustomIconsGCD()
+end
+
+function SCM:SPELL_UPDATE_CHARGES()
+	SCM:ApplyAnchorGroupByIconTypes(false, nil, "spell")
 end
 
 function SCM:PLAYER_EQUIPMENT_CHANGED()
+	SCM:CreateAllCustomIcons()
 	SCM:ApplyAllCDManagerConfigs()
 end
 
@@ -137,24 +146,24 @@ function SCM:EDIT_MODE_LAYOUTS_UPDATED()
 	SCM:ApplyOptions()
 end
 
-local function RefreshCooldownViewerData()
-	SCM:ClearViewerChildrenCache()
-	SCM:UpdateCooldownInfo(true, CooldownViewerSettings:GetDataProvider())
-	SCM:UpdateDB()
-	SCM:ApplyAllCDManagerConfigs()
-end
-
 local function RefreshPixelPerfectLayout()
 	SCM:InvalidatePixelPerfectCache()
 	SCM:ApplyAllCDManagerConfigs()
 end
 
 function SCM:TRAIT_CONFIG_UPDATED()
-	C_Timer.After(0.2, RefreshCooldownViewerData)
+	C_Timer.After(0.2, function() 
+		RefreshCooldownViewerData()
+		SCM:RefreshResourceBarConfig()
+	end)
 end
 
 function SCM:ACTIVE_PLAYER_SPECIALIZATION_CHANGED()
-	C_Timer.After(0.2, RefreshCooldownViewerData)
+	C_Timer.After(0.2, function()
+
+		RefreshCooldownViewerData(true)
+		SCM:RefreshResourceBarConfig()
+	end)
 end
 
 function SCM:UI_SCALE_CHANGED()
@@ -177,9 +186,7 @@ local function OnProfileChanged(_, _, _, skipReset)
 		SCM.DB:ResetData()
 	end
 
-	SCM:UpdateCooldownInfo(true, CooldownViewerSettings:GetDataProvider())
-	SCM:UpdateDB()
-	SCM:ApplyAllCDManagerConfigs()
+	RefreshCooldownViewerData(true)
 
 	if SCM.OptionsFrame and SCM.OptionsFrame:IsShown() and SCM.db.global.options.showAnchorHighlight then
 		for _, anchorFrame in pairs(SCM.anchorFrames) do
@@ -210,8 +217,8 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 	eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 	eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-	eventFrame:RegisterEvent("BAG_UPDATE_COOLDOWN")
 	eventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+	eventFrame:RegisterEvent("SPELL_UPDATE_CHARGES")
 	eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
 	eventFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 	eventFrame:RegisterEvent("ACTIVE_PLAYER_SPECIALIZATION_CHANGED")
@@ -219,7 +226,30 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	eventFrame:RegisterEvent("UI_SCALE_CHANGED")
 	eventFrame:RegisterEvent("DISPLAY_SIZE_CHANGED")
 	eventFrame:RegisterEvent("CVAR_UPDATE")
+	eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 	eventFrame:SetScript("OnEvent", OnEventFrameEvent)
 
 	SCM:GetAnchor(1)
+	C_CVar.SetCVar("cooldownViewerEnabled", "1")
 end)
+
+function SCM:GetConfigTable(iconType, isGlobal)
+	if iconType == "spell" then
+		return isGlobal and self.globalCustomConfig.spellConfig or self.customConfig.spellConfig
+	end
+
+	if iconType == "slot" then
+		return isGlobal and self.globalCustomConfig.slotConfig or self.customConfig.slotConfig
+	end
+
+	if iconType == "timer" then
+		return isGlobal and self.globalCustomConfig.timerConfig or self.customConfig.timerConfig
+	end
+
+	return isGlobal and self.globalCustomConfig.itemConfig or self.customConfig.itemConfig
+end
+
+function SCM:GetConfigTableByID(configID, iconType, isGlobal)
+	local configTable = self:GetConfigTable(iconType, isGlobal)
+	return configTable and configTable[configID]
+end

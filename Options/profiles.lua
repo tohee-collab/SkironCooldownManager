@@ -68,6 +68,32 @@ local function CreateImportEditBox(Profiles, widget, frame, group, hasProfileNam
 	return editBox, profileName
 end
 
+local function CreateExportEditBox(Profiles, widget, frame, group, exportString)
+	if not exportString then
+		return
+	end
+
+	widget:ReleaseChildren()
+
+	local editGroup = AceGUI:Create("InlineGroup")
+	editGroup:SetFullWidth(true)
+	editGroup:SetFullHeight(true)
+	editGroup:SetLayout("fill")
+	widget:AddChild(editGroup)
+
+	local editBox = AceGUI:Create("MultiLineEditBox")
+	editBox:SetLabel("Export")
+	editBox:SetText(exportString)
+	editBox:SetFocus()
+	editBox.editBox:HighlightText()
+	editBox.editBox:SetScript("OnEscapePressed", function()
+		Profiles(widget, frame, group)
+	end)
+	editBox.button:Hide()
+	editBox.frame:SetClipsChildren(true)
+	editGroup:AddChild(editBox)
+end
+
 local function Profiles(widget, frame, group)
 	widget:ReleaseChildren()
 
@@ -85,7 +111,7 @@ local function Profiles(widget, frame, group)
 
 	local importButton = AceGUI:Create("Button")
 	importButton:SetText("Import Profile")
-	importButton:SetRelativeWidth(0.5)
+	importButton:SetRelativeWidth(0.33)
 	importButton:SetCallback("OnClick", function()
 		local editBox, profileName = CreateImportEditBox(Profiles, widget, frame, group, true)
 		editBox:SetCallback("OnEnterPressed", function(self, event, text)
@@ -97,7 +123,7 @@ local function Profiles(widget, frame, group)
 
 	local importButton = AceGUI:Create("Button")
 	importButton:SetText("Import Global Settings")
-	importButton:SetRelativeWidth(0.5)
+	importButton:SetRelativeWidth(0.33)
 	importButton:SetCallback("OnClick", function()
 		local editBox = CreateImportEditBox(Profiles, widget, frame, group)
 		editBox:SetCallback("OnEnterPressed", function(self, event, text)
@@ -106,6 +132,18 @@ local function Profiles(widget, frame, group)
 		end)
 	end)
 	importGroup:AddChild(importButton)
+
+	local importGlobalAnchors = AceGUI:Create("Button")
+	importGlobalAnchors:SetText("Import Global Anchors")
+	importGlobalAnchors:SetRelativeWidth(0.33)
+	importGlobalAnchors:SetCallback("OnClick", function()
+		local editBox = CreateImportEditBox(Profiles, widget, frame, group)
+		editBox:SetCallback("OnEnterPressed", function(self, event, text)
+			SCM:ImportGlobalAnchors(text)
+			Profiles(widget, frame, group)
+		end)
+	end)
+	importGroup:AddChild(importGlobalAnchors)
 
 	local exportGroup = AceGUI:Create("InlineGroup")
 	exportGroup:SetTitle("Export Profile")
@@ -134,29 +172,7 @@ local function Profiles(widget, frame, group)
 	exportButton:SetCallback("OnClick", function()
 		local selectedClass = classDropdown:GetValue()
 		local selectedSpec = specDropdown:GetValue()
-
-		local exportString = SCM:ExportProfile(widget, selectedClass, selectedSpec)
-		if exportString then
-			widget:ReleaseChildren()
-
-			local editGroup = AceGUI:Create("InlineGroup")
-			editGroup:SetFullWidth(true)
-			editGroup:SetFullHeight(true)
-			editGroup:SetLayout("fill")
-			widget:AddChild(editGroup)
-
-			local editBox = AceGUI:Create("MultiLineEditBox")
-			editBox:SetLabel("Export")
-			editBox:SetText(exportString)
-			editBox:SetFocus()
-			editBox.editBox:HighlightText()
-			editBox.editBox:SetScript("OnEscapePressed", function()
-				Profiles(widget, frame, group)
-			end)
-			editBox.button:Hide()
-			editBox.frame:SetClipsChildren(true)
-			editGroup:AddChild(editBox)
-		end
+		CreateExportEditBox(Profiles, widget, frame, group, SCM:ExportProfile(widget, selectedClass, selectedSpec))
 	end)
 	exportButton:SetDisabled(classDropdown:GetValue() ~= nil)
 	exportGroup:AddChild(exportButton)
@@ -174,30 +190,17 @@ local function Profiles(widget, frame, group)
 	exportGlobalSettings:SetText("Export Global Settings")
 	exportGlobalSettings:SetRelativeWidth(0.33)
 	exportGlobalSettings:SetCallback("OnClick", function()
-		local exportString = SCM:ExportGlobalSettings()
-		if exportString then
-			widget:ReleaseChildren()
-
-			local editGroup = AceGUI:Create("InlineGroup")
-			editGroup:SetFullWidth(true)
-			editGroup:SetFullHeight(true)
-			editGroup:SetLayout("fill")
-			widget:AddChild(editGroup)
-
-			local editBox = AceGUI:Create("MultiLineEditBox")
-			editBox:SetLabel("Export")
-			editBox:SetText(exportString)
-			editBox:SetFocus()
-			editBox.editBox:HighlightText()
-			editBox.editBox:SetScript("OnEscapePressed", function()
-				Profiles(widget, frame, group)
-			end)
-			editBox.button:Hide()
-			editBox.frame:SetClipsChildren(true)
-			editGroup:AddChild(editBox)
-		end
+		CreateExportEditBox(Profiles, widget, frame, group, SCM:ExportGlobalSettings())
 	end)
 	exportGroup:AddChild(exportGlobalSettings)
+
+	local exportGlobalAnchors = AceGUI:Create("Button")
+	exportGlobalAnchors:SetText("Export Global Anchors")
+	exportGlobalAnchors:SetRelativeWidth(0.33)
+	exportGlobalAnchors:SetCallback("OnClick", function()
+		CreateExportEditBox(Profiles, widget, frame, group, SCM:ExportGlobalAnchors())
+	end)
+	exportGroup:AddChild(exportGlobalAnchors)
 
 	local dbOptionsGroup = AceGUI:Create("InlineGroup")
 	dbOptionsGroup:SetTitle("Profile Management")

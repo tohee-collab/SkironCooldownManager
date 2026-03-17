@@ -15,3 +15,17 @@ function SCM:UID(prefix)
 	end
 	return rawUID
 end
+
+function SCM:GetUniqueID(configID, iconType, isGlobal)
+	local configTable = self:GetConfigTable(iconType, isGlobal)
+	local basePrefix = iconType .. ":"
+	local baseID = basePrefix .. configID
+	local uniqueID = self:UID(baseID)
+
+	if configTable[uniqueID] then
+		sessionSeed = math.floor(GetTimePreciseSec() * 1000000) % 0xFFFFFF
+		return self:UID(baseID)
+	end
+
+	return self:UID(baseID)
+end

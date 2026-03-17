@@ -38,12 +38,12 @@
 		</Scripts>
 	</Frame>
 
-	<Frame name="PermokItemIconTemplate" inherits="BackdropTemplate" virtual="true">
+	<Frame name="SCMItemIconTemplate" inherits="BackdropTemplate" virtual="true">
 		<Size>
 			<AbsDimension x="35" y="35"/>
 		</Size>
 		<KeyValues>
-			<KeyValue key="cooldownFont" value="Permok_Expressway_Medium" type="string"/>
+			<KeyValue key="cooldownFont" value="GameFontHighlightHugeOutline" type="string"/>
 			<KeyValue key="backdropInfo" value="BACKDROP_SCM_PIXEL" type="global"/>
 			<KeyValue key="backdropBorderColor" value="BLACK_FONT_COLOR" type="global"/>
 		</KeyValues>
@@ -61,10 +61,26 @@
 				<Texture parentKey="OutOfRange" setAllPoints="true" atlas="UI-CooldownManager-OORshadow" hidden="true">
 					<Color r="1" g="1" b="1" a="0.5"/>
 				</Texture>
+				<Texture parentKey="CraftQuality" hidden="true">
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeKey="$parentIcon"/>
+						<Anchor point="BOTTOMRIGHT" relativeKey="$parentIcon"/>
+					</Anchors>
+				</Texture>
 			</Layer>
 		</Layers>
 		<Frames>
-			<Cooldown parentKey="Cooldown" drawEdge="false">
+			<Cooldown parentKey="Cooldown" drawEdge="true" drawBling="true">
+				<Anchors>
+					<Anchor point="TOPLEFT" x="-1" y="1"/>
+					<Anchor point="BOTTOMRIGHT" x="1" y="-1"/>
+				</Anchors>
+				<SwipeTexture file="Interface\HUD\UI-HUD-CoolDownManager-Icon-Swipe">
+					<Color r="0" g="0" b="0" a="0.7"/>
+				</SwipeTexture>
+				<EdgeTexture file="Interface\Cooldown\UI-HUD-ActionBar-SecondaryCooldown"/>
+			</Cooldown>
+			<Cooldown parentKey="GCDCooldown" drawEdge="false" hideCountdownNumbers="true" reverse="true">
 				<Anchors>
 					<Anchor point="TOPLEFT" x="-1" y="1"/>
 					<Anchor point="BOTTOMRIGHT" x="1" y="-1"/>
@@ -134,8 +150,67 @@
 			</Layer>
 		</Layers>
 		<Frames>
+			<Frame parentKey="CustomText" setAllPoints="true">
+				<Layers>
+					<Layer level="OVERLAY">
+						<FontString parentKey="Text" inherits="NumberFontNormalLarge">
+							<FontHeight val="10"/>
+							<Anchors>
+								<Anchor point="BOTTOM" x="0" y="0"/>
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
 		</Frames>
 		<Scripts>
 		</Scripts>
 	</Button>
+
+	<StatusBar name="SCMResourceBarTemplate" inherits="BackdropTemplate" virtual="true">
+		<Size>
+			<AbsDimension x="240" y="14"/>
+		</Size>
+		<KeyValues>
+			<KeyValue key="backdropInfo" value="BACKDROP_SCM_PIXEL" type="global"/>
+			<KeyValue key="backdropBorderColor" value="BLACK_FONT_COLOR" type="global"/>
+		</KeyValues>
+		<BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentBackground" parentKey="Background" setAllPoints="true"/>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame parentKey="Text" setAllPoints="true">
+				<Layers>
+					<Layer level="OVERLAY">
+						<FontString parentKey="Value" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+							<Anchors>
+								<Anchor point="CENTER" x="0" y="0"/>
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+		</Frames>
+	</StatusBar>
+
+	<Frame name="SCM_ResourceBarContainer" hidden="true" parent="UIParent" frameStrata="BACKGROUND">
+		<Size>
+			<AbsDimension x="1" y="30"/>
+		</Size>
+		<Frames>
+			<StatusBar name="SCM_PrimaryResourceBar" parentKey="PrimaryBar" inherits="SCMResourceBarTemplate">
+				<Anchors>
+					<Anchor point="BOTTOM"/>
+				</Anchors>
+			</StatusBar>
+			<StatusBar name="SCM_SecondaryResourceBar" parentKey="SecondaryBar" inherits="SCMResourceBarTemplate">
+				<Anchors>
+					<Anchor point="BOTTOM" relativeTo="SCM_PrimaryResourceBar" relativePoint="TOP" x="0" y="2"/>
+				</Anchors>
+			</StatusBar>
+		</Frames>
+	</Frame>
 </Ui>

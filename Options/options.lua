@@ -3,6 +3,8 @@ local addonName, SCM = ...
 local AceGUI = LibStub("AceGUI-3.0")
 local LibEditModeOverride = LibStub("LibEditModeOverride-1.0")
 local LibCustomGlow = LibStub("LibCustomGlow-1.0")
+local Utils = SCM.Utils
+local ToGlobalGroup = Utils.ToGlobalGroup
 
 function SCM.Encode(table)
 	local serialized = C_EncodingUtil.SerializeCBOR(table)
@@ -41,8 +43,17 @@ function SCM:RemoveGlobalAnchor(anchorIndex, anchorTabsTbl)
 		tremove(self.db.global.globalAnchorConfig, anchorIndex)
 	end
 
-	for _, globalConfig in pairs({ self.db.global.globalSpellConfig, self.db.global.globalItemConfig, self.db.global.globalSlotConfig }) do
-		for id, config in pairs(globalConfig or {}) do
+	local globalAnchorIndex = ToGlobalGroup(#anchorTabsTbl)
+	self.anchorFrames[globalAnchorIndex]:Hide()
+	self.anchorFrames[globalAnchorIndex] = nil
+
+	for _, globalConfig in pairs({
+		self.db.global.globalCustomConfig.spellConfig,
+		self.db.global.globalCustomConfig.itemConfig,
+		self.db.global.globalCustomConfig.slotConfig,
+		self.db.global.globalCustomConfig.timerConfig,
+	}) do
+		for id, config in pairs(globalConfig) do
 			if config.anchorGroup == anchorIndex then
 				globalConfig[id] = nil
 			elseif config.anchorGroup and config.anchorGroup > anchorIndex then
@@ -60,10 +71,11 @@ function SCM:RemoveGlobalAnchor(anchorIndex, anchorTabsTbl)
 		tab.value = i
 		tab.text = "Anchor " .. i
 	end
+
 	SCM:ApplyAllCDManagerConfigs()
 end
 
-function SCM:AddAnchor(anchorTabsTbl, frame)
+function SCM:AddAnchor(anchorTabsTbl)
 	local nextIndex = #SCM.anchorConfig + 1
 	self.anchorConfig[nextIndex] = {
 		anchor = { "CENTER", "UIParent", "CENTER", 0, 0 },
@@ -82,12 +94,10 @@ function SCM:AddAnchor(anchorTabsTbl, frame)
 
 	SCM:ApplyAllCDManagerConfigs()
 
-	SCM:ApplyAllCDManagerConfigs()
-
 	return nextIndex
 end
 
-function SCM:RemoveAnchor(anchorIndex, anchorTabsTbl, frame)
+function SCM:RemoveAnchor(anchorIndex, anchorTabsTbl)
 	if self.anchorConfig[anchorIndex] then
 		tremove(self.anchorConfig, anchorIndex)
 	end
@@ -146,83 +156,22 @@ function SCM:RemoveRow(anchorIndex, rowIndex)
 	end
 end
 
-local function GetGlobalConfigTable(self, iconType)
-	if iconType == "spell" then
-		return self.db.global.globalSpellConfig
-	end
-
-	if iconType == "slot" then
-		return self.db.global.globalSlotConfig
-	end
-
-	return self.db.global.globalItemConfig
-end
-
-local function HideRemovedCustomIconFrame(id)
-	local frame = SCM.customIconFrames and SCM.customIconFrames[id]
-	if frame and SCM.SetChildVisibilityState then
-		SCM.SetChildVisibilityState(frame, false, true)
-	end
-end
-
-function SCM:AddCustomIcon(anchorGroup, iconType, idValue, isGlobal)
-	local dbTable = isGlobal and GetGlobalConfigTable(self, iconType) or self.customConfig
-	if not dbTable then
-		return
-	end
-
-	local basePrefix = iconType == "spell" and "spell:" or (iconType == "slot" and "slot:" or "item:")
-	local baseID = basePrefix .. idValue
-	local uniqueID = self:UID(baseID)
-
-	local nextOrder = 1
-	for _, entry in pairs(dbTable) do
-		if entry.anchorGroup == anchorGroup and (entry.order or 0) >= nextOrder then
-			nextOrder = (entry.order or 0) + 1
-		end
-	end
-
-	dbTable[uniqueID] = {
-		id = uniqueID,
-		iconType = iconType,
-		spellID = iconType == "spell" and idValue or nil,
-		itemID = iconType == "item" and idValue or nil,
-		slotID = iconType == "slot" and idValue or nil,
-		anchorGroup = anchorGroup,
-		order = nextOrder,
-	}
-
-	return uniqueID
-end
-
-function SCM:RemoveCustomIcon(anchorGroup, id, isGlobal, iconType)
-	if isGlobal then
-		local globalTables = iconType and { GetGlobalConfigTable(self, iconType) } or {
-			self.db.global.globalSpellConfig,
-			self.db.global.globalItemConfig,
-			self.db.global.globalSlotConfig,
-		}
-		for _, tableRef in pairs(globalTables) do
-			local entry = tableRef and tableRef[id]
-			if entry and (not anchorGroup or entry.anchorGroup == anchorGroup) then
-				tableRef[id] = nil
-				HideRemovedCustomIconFrame(id)
-				return
-			end
-		end
-		return
-	end
-
-	local entry = self.customConfig and self.customConfig[id]
-	if entry and (not anchorGroup or entry.anchorGroup == anchorGroup) then
-		self.customConfig[id] = nil
-		HideRemovedCustomIconFrame(id)
-	end
-end
-
 function SCM:AddSpellToConfig(anchorGroup, order, info, displayData, sourceIndex)
-	if not self.spellConfig[displayData.spellID] then
-		self.spellConfig[displayData.spellID] = {
+	local spellID = displayData.spellID
+	if displayData.linkedSpellIDs and #displayData.linkedSpellIDs == 1 then
+		spellID = displayData.linkedSpellIDs[1]
+	end
+
+	local cooldownID = displayData.cooldownID or info.cooldownID
+	local configID = self:GetCooldownConfigKey(cooldownID)
+	if not configID then
+		return
+	end
+
+	if not self.spellConfig[configID] then
+		self.spellConfig[configID] = {
+			spellID = spellID,
+			cooldownID = cooldownID,
 			source = {
 				[sourceIndex] = anchorGroup,
 			},
@@ -233,34 +182,38 @@ function SCM:AddSpellToConfig(anchorGroup, order, info, displayData, sourceIndex
 			},
 		}
 	else
-		self.spellConfig[displayData.spellID].source[sourceIndex] = anchorGroup
-		self.spellConfig[displayData.spellID].anchorGroup[anchorGroup] = {
+		self.spellConfig[configID].spellID = spellID
+		self.spellConfig[configID].cooldownID = cooldownID or self.spellConfig[configID].cooldownID
+		self.spellConfig[configID].source[sourceIndex] = anchorGroup
+		self.spellConfig[configID].anchorGroup[anchorGroup] = {
 			order = order,
 		}
 	end
 end
 
 function SCM:RemoveSpellFromConfig(anchorIndex, data)
-	if self.spellConfig[data.spellID] then
-		local spellConfig = self.spellConfig[data.spellID]
+	local configID = data.id or self:GetCooldownConfigKey(data.cooldownID)
+	local spellConfig = configID and self.spellConfig[configID]
+	if spellConfig then
 
 		for category, anchorGroup in pairs(spellConfig.source) do
 			if anchorGroup == anchorIndex then
 				spellConfig.source[category] = nil
-				break
 			end
 		end
 
 		spellConfig.anchorGroup[anchorIndex] = nil
 
 		if not next(spellConfig.anchorGroup) then
-			self.spellConfig[data.spellID] = nil
+			self.spellConfig[configID] = nil
 		end
 	end
 end
 
-function SCM:IsSpellInData(spellID, source)
-	return self.spellConfig[spellID] and (self.spellConfig[spellID].source[source] or (self.Constants.SourcePairs[source] and self.spellConfig[spellID].source[self.Constants.SourcePairs[source]]))
+function SCM:IsSpellInData(cooldownID, source)
+	local configID = self:GetCooldownConfigKey(cooldownID)
+	local spellConfig = configID and self.spellConfig[configID]
+	return spellConfig and (spellConfig.source[source] or (self.Constants.SourcePairs[source] and spellConfig.source[self.Constants.SourcePairs[source]]))
 end
 
 function SCM:AddTab(tab)
@@ -271,6 +224,11 @@ function SCM:AddTab(tab)
 	if self.OptionsFrame and self.OptionsFrame:IsShown() then
 		self.OptionsFrame:DoLayout()
 	end
+end
+
+function SCM:GetHideWhenInactive()
+	LibEditModeOverride:LoadLayouts()
+	return LibEditModeOverride:GetFrameSetting(BuffIconCooldownViewer, Enum.EditModeCooldownViewerSetting.HideWhenInactive)
 end
 
 function SCM:SetHideWhenInactive(value)
@@ -286,6 +244,20 @@ function SCM:SetHideWhenInactive(value)
 	end
 end
 
+function SCM:ApplyHideWhileMountedSettings(value)
+	if value then
+		RegisterAttributeDriver(EssentialCooldownViewer, "state-visibility", "[combat]show;[mounted][stance:3]hide;show")
+		RegisterAttributeDriver(UtilityCooldownViewer, "state-visibility", "[combat]show;[mounted][stance:3]hide;show")
+		RegisterAttributeDriver(BuffIconCooldownViewer, "state-visibility", "[combat]show;[mounted][stance:3]hide;show")
+	else
+		UnregisterAttributeDriver(EssentialCooldownViewer, "state-visibility")
+		UnregisterAttributeDriver(UtilityCooldownViewer, "state-visibility")
+		UnregisterAttributeDriver(BuffIconCooldownViewer, "state-visibility")
+	end
+
+	self:ApplyResourceBarHideWhileMountedSettings(value)
+end
+
 function SCM:ApplyOptions()
 	if InCombatLockdown() or self.appliedOptions then
 		return
@@ -294,6 +266,7 @@ function SCM:ApplyOptions()
 
 	local options = self.db.global.options
 	self:SetHideWhenInactive(options.hideBuffsWhenInactive)
+	self:ApplyHideWhileMountedSettings(options.hideWhileMounted)
 end
 
 local function OpenOptions()
@@ -307,6 +280,9 @@ local function OpenOptions()
 	frame:SetTitle(addonName)
 	frame:SetLayout("flow")
 	SCM.OptionsFrame = frame
+
+	frame:SetHeight(1000)
+	frame:SetWidth(800)
 
 	local tabsTbl = {}
 	for _, tab in pairs(SCM.MainTabs) do
@@ -347,6 +323,9 @@ local function OpenOptions()
 			anchorFrame.debugText:Hide()
 		end
 		SCM:ApplyAllCDManagerConfigs()
+		RunNextFrame(function()
+			SCM:RestoreBlizzardGlows()
+		end)
 	end)
 
 	if SCM.db.global.options.showAnchorHighlight then
@@ -355,8 +334,6 @@ local function OpenOptions()
 			anchorFrame.debugText:Show()
 		end
 	end
-
-	frame:SetHeight(800)
 end
 
 SLASH_SCM1 = "/scm"

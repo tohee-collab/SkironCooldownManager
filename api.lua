@@ -19,6 +19,16 @@ function SCMAPI.ImportGlobalSettings(importString)
 	SCM:ImportGlobalSettings(importString)
 end
 
+function SCMAPI.AddCustomIcon(anchorGroup, iconType, configID, order, uniqueID, isGlobal)
+	local uniqueID = SCM:AddCustomIcon(anchorGroup, iconType, configID, order, uniqueID, isGlobal)
+	if not uniqueID then
+		return
+	end
+
+	SCM:ApplyAnchorGroupCDManagerConfig(anchorGroup, isGlobal)
+	return uniqueID, SCM:GetConfigTableByID(uniqueID, iconType, isGlobal)
+end
+
 function SCMAPI.RegisterAndLoadConfig(profileName, classFileName, config, specID)
 	SCM.DB:RegisterAndLoadConfig(profileName, classFileName, config, specID)
 end
@@ -39,4 +49,20 @@ end
 
 function SCMAPI.RegisterCustomEntry(customEntry)
 	tinsert(SCM.CustomEntries, customEntry)
+end
+
+function SCMAPI.SetPrimaryResourceBarColorOverride(r, g, b)
+	return SCM:SetPrimaryResourceBarColorOverride(r, g, b)
+end
+
+function SCMAPI.ClearPrimaryResourceBarColorOverride()
+	return SCM:ClearPrimaryResourceBarColorOverride()
+end
+
+function SCMAPI.SetPrimaryResourceBarTextOverride(text)
+	return SCM:SetPrimaryResourceBarTextOverride(text)
+end
+
+function SCMAPI.ClearPrimaryResourceBarTextOverride()
+	return SCM:ClearPrimaryResourceBarTextOverride()
 end

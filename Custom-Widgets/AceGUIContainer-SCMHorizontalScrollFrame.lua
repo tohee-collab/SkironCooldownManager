@@ -9,6 +9,8 @@ if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then
 	return
 end
 
+local COOLDOWN_CONFIG_KEY_PREFIX = "cooldown:"
+
 -- Lua APIs
 local pairs, ipairs = pairs, ipairs
 local min, max = math.min, math.max
@@ -171,8 +173,8 @@ local function Button_OnDragStop(self)
 				end
 			end
 
-			dataProvider:SetSortComparator(sortComparator)
 			self.obj:Fire("OnDragStop", dataProvider:GetCollection())
+			dataProvider:SetSortComparator(sortComparator)
 		end
 	end
 
@@ -231,14 +233,23 @@ local methods = {
 			dataIndex = highestIndex + 1
 		end
 
+		local spellID = info.spellID
+		if info.linkedSpellIDs and #info.linkedSpellIDs == 1 then
+			spellID = info.linkedSpellIDs[1]
+		end
+		local configID = info.configID or (info.cooldownID and (COOLDOWN_CONFIG_KEY_PREFIX .. tostring(info.cooldownID)))
+		if not configID then
+			return dataIndex
+		end
+
 		self.dataProvider:Insert({
-			id = info.spellID,
+			id = configID,
 			dataIndex = dataIndex,
-			texture = C_Spell.GetSpellTexture(info.spellID),
-			spellID = info.spellID,
+			texture = C_Spell.GetSpellTexture(spellID),
+			spellID = spellID,
 			isKnown = info.isKnown,
 			iconType = "spell",
-			isDisabled = info.isDisabled or (info.category and info.category < 0),
+			isDisabled = info.isDisabled or (info.category and (info.category < 0 or info.category == 3)),
 			isBuffIcon = isBuffIcon or info.category >= 2,
 			cooldownID = info.cooldownID,
 		})
@@ -305,6 +316,7 @@ local methods = {
 		button:SetScript("OnClick", Button_OnClick)
 
 		if data.isAddButton then
+			button.CustomText.Text:Hide()
 			button.Icon:SetAtlas("cdm-empty")
 			button.Icon:SetVertexColor(1, 1, 1, 1)
 			button:SetMovable(false)
@@ -314,8 +326,12 @@ local methods = {
 			end
 
 			button.Icon:SetDesaturated(not data.isKnown)
+			button.CustomText.Text:Hide()
 			if data.isDisabled then
 				button.Icon:SetVertexColor(0.7, 0, 0, 1)
+			elseif data.isCustom then
+				button.CustomText.Text:SetText(button.data.iconType:gsub("^%l", string.upper))
+				button.CustomText.Text:Show()
 			else
 				button.Icon:SetVertexColor(1, 1, 1, 1)
 			end

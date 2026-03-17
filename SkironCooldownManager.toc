@@ -1,4 +1,4 @@
-## Interface: 120000
+## Interface: 120001
 ## Title: SkironCooldownManager
 ## Author: Permok
 ## Version @project-version@
@@ -7,7 +7,6 @@
 ## X-Curse-Project-ID: 1453035
 ## X-Wago-ID: O67DaZK3
 
-templates.xml
 Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
 Libs\AceGUI-3.0\AceGUI-3.0.xml
@@ -16,6 +15,7 @@ Libs\AceDBOptions-3.0\AceDBOptions-3.0.xml
 Libs\AceConfig-3.0\AceConfig-3.0.xml
 Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.xml
 Libs\LibSharedMedia-3.0\lib.xml
+Libs\AceGUI-3.0-SharedMediaWidgets\widget.xml
 Libs\LibEditModeOverride\LibEditModeOverride.xml
 Libs\TaintLess\TaintLess.xml
 
@@ -29,22 +29,32 @@ Database\defaults.lua
 Database\sharedmedia.lua
 Database\loader.lua
 
-
-glow.lua
-cache.lua
-skinning.lua
-utils.lua
-custom_icons.lua
-cdm.lua
 core.lua
-anchors.lua
-profiles.lua
-uid.lua
+
+Modules\glow.lua
+Modules\cache.lua
+Modules\skinning.lua
+Modules\utils.lua
+Modules\customicons.lua
+Modules\migration.lua
+Modules\cooldowns.lua
+Modules\icons.lua
+Modules\cdm.lua
+Modules\cdmanchors.lua
+Modules\update.lua
+Modules\cdmconfig.lua
+Modules\anchors.lua
+Modules\uid.lua
+Modules\profiles.lua
+Modules\resourcebar.lua
+
+api.lua
 
 Options\cdm.lua
 Options\general.lua
 Options\options.lua
+Options\resourcebar.lua
 Options\profiles.lua
 Options\temporary.lua
 
-api.lua
+templates.xml

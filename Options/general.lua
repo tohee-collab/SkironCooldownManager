@@ -5,14 +5,6 @@ local LSM = LibStub("LibSharedMedia-3.0")
 
 SCM.MainTabs.General = { value = "General", text = "Global Settings", order = 1, subgroups = {} }
 
-local function GetFontList()
-	local list = {}
-	for fontName in pairs(LSM:HashTable("font")) do
-		list[fontName] = fontName
-	end
-	return list
-end
-
 local function AddInfoText(widget, text)
 	local label = AceGUI:Create("Label")
 	label:SetRelativeWidth(1.0)
@@ -208,6 +200,18 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		end)
 		skinningSettings:AddChild(showAnchorHighlight)
 
+		local hideWhileMounted = AceGUI:Create("CheckBox")
+		hideWhileMounted:SetRelativeWidth(0.5)
+		hideWhileMounted:SetLabel("Hide While Mounted")
+		hideWhileMounted:SetValue(options.hideWhileMounted)
+		hideWhileMounted:SetCallback("OnValueChanged", function(_, _, value)
+			options.hideWhileMounted = value
+
+			SCM:ApplyHideWhileMountedSettings(value)
+			SCM:CreateAllCustomIcons()
+		end)
+		skinningSettings:AddChild(hideWhileMounted)
+
 		local borderSettings = AceGUI:Create("InlineGroup")
 		borderSettings:SetLayout("flow")
 		borderSettings:SetFullWidth(true)
@@ -324,7 +328,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		enableCooldownFont:SetLabel("Custom Cooldown Font")
 		enableCooldownFont:SetValue(options.changeCooldownFont)
 		enableCooldownFont:SetCallback("OnValueChanged", function(_, _, value)
-			options.enableCustomCooldownFont = value
+			options.changeCooldownFont = value
 			SCM:ApplyAllCDManagerConfigs()
 		end)
 		cooldownTextSettings:AddChild(enableCooldownFont)
@@ -335,7 +339,8 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		cooldownFont:SetList(LSM:HashTable("font"))
 		cooldownFont:SetValue(options.cooldownFont)
 		cooldownFont:SetCallback("OnValueChanged", function(self, event, value)
-			options.changeCooldownFont = value
+			options.cooldownFont = value
+			self:SetValue(value)
 			SCM:ApplyAllCDManagerConfigs()
 		end)
 		cooldownTextSettings:AddChild(cooldownFont)
@@ -379,20 +384,54 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			AddInfoText(auraSettings, "Enable a custom edit mode profile to use this feature. Reopen the opens once you did")
 		end
 
-		local swipeSettings = AceGUI:Create("InlineGroup")
-		swipeSettings:SetLayout("flow")
-		swipeSettings:SetFullWidth(true)
-		swipeSettings:SetTitle("Active Swipe")
-		tabWidget:AddChild(swipeSettings)
+		local normalSwipeSettings = AceGUI:Create("InlineGroup")
+		normalSwipeSettings:SetLayout("flow")
+		normalSwipeSettings:SetFullWidth(true)
+		normalSwipeSettings:SetTitle("Normal Swipe")
+		tabWidget:AddChild(normalSwipeSettings)
+
+		local recolorNormalSwipe = AceGUI:Create("CheckBox")
+		recolorNormalSwipe:SetRelativeWidth(0.33)
+		recolorNormalSwipe:SetLabel("Recolor Swipe")
+		recolorNormalSwipe:SetValue(options.recolorNormalSwipe)
+		recolorNormalSwipe:SetCallback("OnValueChanged", function(_, _, value)
+			options.recolorNormalSwipe = value
+		end)
+		normalSwipeSettings:AddChild(recolorNormalSwipe)
+
+		local normalSwipeColor = AceGUI:Create("ColorPicker")
+		normalSwipeColor:SetRelativeWidth(0.33)
+		normalSwipeColor:SetLabel("Swipe Color")
+		normalSwipeColor:SetHasAlpha(true)
+		normalSwipeColor:SetColor(unpack(options.normalSwipeColor))
+		normalSwipeColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
+			options.normalSwipeColor = { r, g, b, a }
+		end)
+		normalSwipeSettings:AddChild(normalSwipeColor)
+
+		local activeSwipeSettings = AceGUI:Create("InlineGroup")
+		activeSwipeSettings:SetLayout("flow")
+		activeSwipeSettings:SetFullWidth(true)
+		activeSwipeSettings:SetTitle("Active Swipe")
+		tabWidget:AddChild(activeSwipeSettings)
 
 		local recolorActiveSwipe = AceGUI:Create("CheckBox")
 		recolorActiveSwipe:SetRelativeWidth(0.33)
-		recolorActiveSwipe:SetLabel("Recolor Active Swipe")
+		recolorActiveSwipe:SetLabel("Recolor Swipe")
 		recolorActiveSwipe:SetValue(options.recolorActiveSwipe)
 		recolorActiveSwipe:SetCallback("OnValueChanged", function(_, _, value)
 			options.recolorActiveSwipe = value
 		end)
-		swipeSettings:AddChild(recolorActiveSwipe)
+		activeSwipeSettings:AddChild(recolorActiveSwipe)
+
+		local disableRegularIconActiveSwipe = AceGUI:Create("CheckBox")
+		disableRegularIconActiveSwipe:SetRelativeWidth(0.33)
+		disableRegularIconActiveSwipe:SetLabel("Disable On Regular Icons")
+		disableRegularIconActiveSwipe:SetValue(options.disableRegularIconActiveSwipe)
+		disableRegularIconActiveSwipe:SetCallback("OnValueChanged", function(_, _, value)
+			options.disableRegularIconActiveSwipe = value
+		end)
+		activeSwipeSettings:AddChild(disableRegularIconActiveSwipe)
 
 		local activeSwipeColor = AceGUI:Create("ColorPicker")
 		activeSwipeColor:SetRelativeWidth(0.33)
@@ -402,7 +441,16 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		activeSwipeColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
 			options.activeSwipeColor = { r, g, b, a }
 		end)
-		swipeSettings:AddChild(activeSwipeColor)
+		activeSwipeSettings:AddChild(activeSwipeColor)
+
+		local reverseActiveSwipe = AceGUI:Create("CheckBox")
+		reverseActiveSwipe:SetRelativeWidth(0.33)
+		reverseActiveSwipe:SetLabel("Reverse Active Swipe")
+		reverseActiveSwipe:SetValue(options.reverseActiveSwipe)
+		reverseActiveSwipe:SetCallback("OnValueChanged", function(_, _, value)
+			options.reverseActiveSwipe = value
+		end)
+		activeSwipeSettings:AddChild(reverseActiveSwipe)
 	elseif group == "Glow" then
 		local glowSettings = AceGUI:Create("InlineGroup")
 		glowSettings:SetLayout("flow")

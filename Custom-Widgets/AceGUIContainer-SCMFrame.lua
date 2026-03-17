@@ -124,11 +124,11 @@ local function Constructor()
 	--frame:SetFrameLevel(100) -- Lots of room to draw under it
 	--frame:SetBackdrop(FrameBackdrop)
 	--frame:SetBackdropColor(0, 0, 0, 1)
-	if frame.SetResizeBounds then -- WoW 10.0
-		frame:SetResizeBounds(400, 200)
-	else
-		frame:SetMinResize(400, 200)
-	end
+	-- if frame.SetResizeBounds then -- WoW 10.0
+	-- 	frame:SetResizeBounds(400, 200)
+	-- else
+	-- 	frame:SetMinResize(400, 200)
+	-- end
 	--frame:SetToplevel(true)
 	frame:SetScript("OnShow", Frame_OnShow)
 	frame:SetScript("OnHide", Frame_OnClose)
@@ -137,6 +137,8 @@ local function Constructor()
 	frame.TitleContainer:SetScript("OnMouseDown", Title_OnMouseDown)
 	frame.TitleContainer:SetScript("OnMouseUp", Title_OnMouseUp)
 
+	frame.NineSlice:SetFrameStrata("LOW")
+	frame.NineSlice:SetFrameLevel(1)
 	--Container Support
 	local content = CreateFrame("Frame", nil, frame)
 	content:SetPoint("TOPLEFT", 17, -27)
