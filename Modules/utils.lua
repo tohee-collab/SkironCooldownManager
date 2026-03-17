@@ -3,7 +3,7 @@ local _, SCM = ...
 local Utils = SCM.Utils
 local GLOBAL_GROUP_OFFSET = 100
 
-local function EnsureDisabledTooltipOverlay(widget)
+local function CreateDisabledTooltipOverlay(widget)
 	if not widget or not widget.frame then
 		return
 	end
@@ -52,7 +52,7 @@ local function EnsureDisabledTooltipOverlay(widget)
 end
 
 function Utils.RefreshDisabledTooltip(widget)
-	local overlay = EnsureDisabledTooltipOverlay(widget)
+	local overlay = CreateDisabledTooltipOverlay(widget)
 	if not overlay then
 		return
 	end

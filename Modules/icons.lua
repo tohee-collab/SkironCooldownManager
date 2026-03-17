@@ -87,11 +87,13 @@ function Icons.SetChildVisibilityState(child, shouldShow, applyNow)
 		return
 	end
 
-	child:SetShown(shouldShow)
+	if child.SCMCustom and not child:GetAttribute("statehidden") then
+		child:SetShown(shouldShow)
+	end
 end
 
 function Icons.UpdateChildDesaturation(child, shouldDesaturate)
-	if child.Icon and child.SCMConfig and child.SCMSpellID and not SCM.db.global.options.testSetting[child.SCMSpellID] then
+	if child.Icon and child.SCMConfig and child.SCMSpellID then
 		if child.SCMConfig.desaturate then
 			child.Icon:SetDesaturated(shouldDesaturate)
 		else
@@ -101,11 +103,16 @@ function Icons.UpdateChildDesaturation(child, shouldDesaturate)
 end
 
 function Icons.UpdateChildGlow(child, isInactive)
-	if child.SCMConfig and child.SCMConfig.glowWhileActive then
-		if not isInactive then
-			SCM:StartCustomGlow(child)
-		else
-			SCM:StopCustomGlow(child)
+	if child.SCMConfig then
+		if child.SCMConfig.glowWhileActive then
+			if not isInactive then
+				SCM:StartCustomGlow(child)
+				return
+			end
+
+			if child.SCMGlow then
+				SCM:StopCustomGlow(child)
+			end
 		end
 	end
 end
@@ -141,7 +148,6 @@ function Icons.SetupRegularIconHooks(child)
 	Icons.SetupIconHooks(child)
 	Cooldowns.SetupCooldownHooks(child)
 end
-
 
 local function GetOrCacheChildren(viewer, isBuffIcon)
 	if isBuffIcon then
@@ -228,9 +234,9 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 	local cooldownID = child:GetCooldownID()
 	local categoryConfig = categoryIndex and SCM.defaultCooldownViewerConfig[categoryIndex]
 	local info = categoryConfig and (categoryConfig[cooldownID] or SCM.defaultCooldownViewerConfig.cooldownIDs[cooldownID])
-	local spellID = info and info.spellID
+	local spellID = info and (info.overrideSpellID or info.spellID)
 	if info and info.linkedSpellIDs and #info.linkedSpellIDs == 1 then
-		spellID = info.linkedSpellIDs[1]
+		child.SCMLinkedSpellID = info.linkedSpellIDs[1]
 	end
 
 	child.SCMSpellID = spellID
@@ -269,6 +275,14 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 		ProcessBuffIcon(child, groupConfig, options)
 	else
 		ProcessRegularIcon(child, groupConfig)
+	end
+
+	if not InCombatLockdown() then
+		if childData.hideWhileMounted then
+			RegisterAttributeDriver(child, "state-visibility", "[combat]show;[mounted][stance:3]hide;show")
+		else
+			UnregisterAttributeDriver(child, "state-visibility")
+		end
 	end
 end
 

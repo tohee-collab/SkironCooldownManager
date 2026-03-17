@@ -244,6 +244,20 @@ function SCM:SetHideWhenInactive(value)
 	end
 end
 
+function SCM:ApplyHideWhileMountedSettings(value)
+	if value then
+		RegisterAttributeDriver(EssentialCooldownViewer, "state-visibility", "[combat]show;[mounted][stance:3]hide;show")
+		RegisterAttributeDriver(UtilityCooldownViewer, "state-visibility", "[combat]show;[mounted][stance:3]hide;show")
+		RegisterAttributeDriver(BuffIconCooldownViewer, "state-visibility", "[combat]show;[mounted][stance:3]hide;show")
+	else
+		UnregisterAttributeDriver(EssentialCooldownViewer, "state-visibility")
+		UnregisterAttributeDriver(UtilityCooldownViewer, "state-visibility")
+		UnregisterAttributeDriver(BuffIconCooldownViewer, "state-visibility")
+	end
+
+	self:ApplyResourceBarHideWhileMountedSettings(value)
+end
+
 function SCM:ApplyOptions()
 	if InCombatLockdown() or self.appliedOptions then
 		return
@@ -252,6 +266,7 @@ function SCM:ApplyOptions()
 
 	local options = self.db.global.options
 	self:SetHideWhenInactive(options.hideBuffsWhenInactive)
+	self:ApplyHideWhileMountedSettings(options.hideWhileMounted)
 end
 
 local function OpenOptions()
@@ -308,6 +323,9 @@ local function OpenOptions()
 			anchorFrame.debugText:Hide()
 		end
 		SCM:ApplyAllCDManagerConfigs()
+		RunNextFrame(function()
+			SCM:RestoreBlizzardGlows()
+		end)
 	end)
 
 	if SCM.db.global.options.showAnchorHighlight then

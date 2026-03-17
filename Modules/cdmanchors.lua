@@ -28,7 +28,14 @@ local function ApplyManagedAnchorPoint(child)
 	end
 
 	anchorFrame.ClearAllPoints(child)
-	anchorFrame.SetPoint(child, anchorData[1], anchorData[2], anchorData[3], anchorData[4], anchorData[5])
+	anchorFrame.SetPoint(
+		child,
+		anchorData[1],
+		anchorData[2],
+		anchorData[3],
+		SCM:PixelPerfect(anchorData[4]),
+		SCM:PixelPerfect(anchorData[5])
+	)
 end
 
 local function OnManagedAnchorChildSetSize(child)
@@ -56,7 +63,7 @@ function SCM:UpdateManagedAnchorChild(child, groupAnchor, startPoint, offsetX, o
 	child.width = width
 	child.height = height
 	child.SCMAnchorFrame = groupAnchor
-	child:SetScale(Cache.cachedViewerScale)
+	child:SetScale(Cache.cachedViewerScale or 1)
 	child:SetSize(self:PixelPerfect(width), self:PixelPerfect(height))
 
 	if not child.SCMSizeHook and not child.SCMCustom then
@@ -104,16 +111,12 @@ local function OnAnchorDebugTextureHide(self)
 end
 
 function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, growDir, iconSize, resetSize)
-	if group > 100 and not self.db.global.options.enableCustomIcons then
-		return
-	end
-
 	local anchorFrame = self.anchorFrames[group]
 	if not anchorFrame then
 		anchorFrame = CreateFrame("Frame", "SCM_GroupAnchor_" .. group, UIParent)
 		anchorFrame:SetFrameStrata("HIGH")
 		anchorFrame.debugTexture = anchorFrame:CreateTexture(nil, "BACKGROUND")
-		anchorFrame:SetScale(Cache.cachedViewerScale)
+		anchorFrame:SetScale(Cache.cachedViewerScale or 1)
 
 		anchorFrame.debugTexture:SetAllPoints()
 		anchorFrame.debugTexture:SetColorTexture(8 / 255, 8 / 255, 8 / 255, 0.4)
@@ -168,6 +171,7 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 	else
 		anchorFrame:SetSize(SCM:PixelPerfect(max(anchorFrame:GetWidth(), iconSize)), SCM:PixelPerfect(max(anchorFrame:GetHeight(), iconSize)))
 	end
+	anchorFrame:SetScale(Cache.cachedViewerScale or 1)
 	anchorFrame:ClearAllPoints()
 	anchorFrame:SetPoint(pivot, target, relativePoint, xOffset + ((iconSize or 0) * xOffsetMultiplier), yOffset)
 	anchorFrame:Show()

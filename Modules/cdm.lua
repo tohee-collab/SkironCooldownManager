@@ -77,10 +77,12 @@ local function UpdateEmptyAnchorGroup(group, anchorConfig, scopedAnchorGroups)
 	local groupAnchor = SCM:GetAnchor(group, p, a, r, x, y, growDir, initialIconWidth, true)
 
 	if group == 1 then
-		if SCRB and SCRB.registerCustomFrame then
-			SCRB.registerCustomFrame(groupAnchor)
-		else
-			SCM:UpdateResourceBarWidth(initialIconWidth)
+		if C_AddOns.IsAddOnLoaded("SenseiClassResourceBar") then
+			if SCRB and SCRB.registerCustomFrame then
+				SCRB.registerCustomFrame(groupAnchor)
+			else
+				SCM:UpdateResourceBarWidth(initialIconWidth)
+			end
 		end
 
 		if not InCombatLockdown() then
@@ -108,9 +110,12 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options)
 	local maxGroupWidth = 0
 	local startPoint = (growDir == "CENTER" and "TOP") or (growDir == "LEFT" and "TOPRIGHT") or "TOPLEFT"
 
-	while childIndex <= #visibleChildren do
+	local totalChildren = #visibleChildren
+	while childIndex <= totalChildren do
 		local currentRowConfig = rowConfig[rowIndex] or lastRowConfig
-		local rowLimit = currentRowConfig.limit or 8
+		totalChildren = (currentRowConfig.hardLimit and (childIndex + currentRowConfig.limit - 1)) or totalChildren
+
+		local rowLimit = min(totalChildren, currentRowConfig.limit or 8)
 		local rowIconWidth = currentRowConfig.iconWidth or currentRowConfig.size or 47
 		local rowIconHeight = currentRowConfig.iconHeight or currentRowConfig.size or 47
 
@@ -128,7 +133,7 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options)
 		local numInRow = endIndex - childIndex + 1
 
 		local rowWidth = (numInRow * rowIconWidth) + ((numInRow - 1) * baseSpacing)
-		maxGroupWidth = math.max(maxGroupWidth, rowWidth)
+		maxGroupWidth = math.max(maxGroupWidth, (currentRowConfig.useFixedWidth and currentRowConfig.fixedWidth) or rowWidth)
 
 		for i = 0, numInRow - 1 do
 			local child = visibleChildren[childIndex + i]
@@ -149,11 +154,17 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options)
 		rowIndex = rowIndex + 1
 	end
 
+	if totalChildren < #visibleChildren then
+		for childIndex = totalChildren + 1, #visibleChildren do
+			Icons.SetChildVisibilityState(visibleChildren[childIndex], false, true)
+		end
+	end
+
 	if group == 1 then
 		if not InCombatLockdown() then
 			groupAnchor:SetSize(SCM:PixelPerfect(max(initialWidth, maxGroupWidth, 1)), SCM:PixelPerfect(max(initialHeight, accumulatedY - baseSpacing, 1)))
 
-			if options.adjustResourceWidth then
+			if options.adjustResourceWidth and C_AddOns.IsAddOnLoaded("SenseiClassResourceBar") then
 				if SCRB and SCRB.registerCustomFrame then
 					SCRB.registerCustomFrame(SCM:GetAnchor(1))
 				else
@@ -165,7 +176,7 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options)
 		end
 
 		SCM:ApplyCustomAnchors(maxGroupWidth, rowConfig)
-	elseif not InCombatLockdown() then
+	elseif not InCombatLockdown() and groupAnchor then
 		groupAnchor:SetSize(SCM:PixelPerfect(max(initialWidth, maxGroupWidth, 1)), SCM:PixelPerfect(max(initialHeight, accumulatedY - baseSpacing, 1)))
 	end
 end
@@ -200,16 +211,12 @@ local function OrderCDManagerSpells_Actual(updateScope, scopedAnchorGroupsOverri
 		end
 	end
 
-	if options.enableCustomIcons then
-		for _, customConfig in pairs(SCM.customConfig) do
-			CustomIcons.ProcessIcons(customConfig, Cache.cachedCooldownFrameTbl)
-		end
+	for _, customConfig in pairs(SCM.customConfig) do
+		CustomIcons.ProcessIcons(customConfig, Cache.cachedCooldownFrameTbl)
+	end
 
-		for _, customConfig in pairs(SCM.globalCustomConfig) do
-			CustomIcons.ProcessIcons(customConfig, Cache.cachedCooldownFrameTbl, true)
-		end
-	else
-		CustomIcons.HideIcons()
+	for _, customConfig in pairs(SCM.globalCustomConfig) do
+		CustomIcons.ProcessIcons(customConfig, Cache.cachedCooldownFrameTbl, true)
 	end
 
 	for group, visibleChildren in pairs(Cache.cachedCooldownFrameTbl) do

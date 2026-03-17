@@ -200,6 +200,18 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		end)
 		skinningSettings:AddChild(showAnchorHighlight)
 
+		local hideWhileMounted = AceGUI:Create("CheckBox")
+		hideWhileMounted:SetRelativeWidth(0.5)
+		hideWhileMounted:SetLabel("Hide While Mounted")
+		hideWhileMounted:SetValue(options.hideWhileMounted)
+		hideWhileMounted:SetCallback("OnValueChanged", function(_, _, value)
+			options.hideWhileMounted = value
+
+			SCM:ApplyHideWhileMountedSettings(value)
+			SCM:CreateAllCustomIcons()
+		end)
+		skinningSettings:AddChild(hideWhileMounted)
+
 		local borderSettings = AceGUI:Create("InlineGroup")
 		borderSettings:SetLayout("flow")
 		borderSettings:SetFullWidth(true)

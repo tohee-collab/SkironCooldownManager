@@ -57,12 +57,15 @@ local function ApplyCooldownStyle(child, options)
 		cooldownFrame:SetSwipeTexture("Interface\\Buttons\\WHITE8x8")
 
 		hooksecurefunc(cooldownFrame, "SetCooldown", function(self)
-			if options.recolorActiveSwipe and self:GetUseAuraDisplayTime() then
+			local parent = self:GetParent()
+			if options.recolorActiveSwipe and self:GetUseAuraDisplayTime() and (not options.disableRegularIconActiveSwipe or (parent.SCMConfig and parent.SCMConfig.forceActiveSwipe)) then
 				self:SetSwipeColor(unpack(options.activeSwipeColor))
 				self:SetReverse(options.reverseActiveSwipe)
 			elseif options.recolorNormalSwipe then
 				self:SetReverse(false)
 				self:SetSwipeColor(unpack(options.normalSwipeColor))
+			else
+				--self:SetSwipeColor(0, 0, 0, 0.7)
 			end
 
 			ApplyCooldownFont(self, options)
@@ -70,7 +73,7 @@ local function ApplyCooldownStyle(child, options)
 
 		hooksecurefunc(cooldownFrame, "Clear", function(self)
 			if options.recolorActiveSwipe then
-				self:SetSwipeColor(0, 0, 0, 0.8)
+				--self:SetSwipeColor(0, 0, 0, 0.7)
 			end
 		end)
 
@@ -118,17 +121,18 @@ function SCM:SkinChild(child, childConfig)
 		child.Icon:SetPoint("BOTTOMRIGHT", child, "BOTTOMRIGHT", -borderSize, borderSize)
 		child.Icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)
 
-		if not child.customBorder then
-			child.customBorder = CreateFrame("Frame", nil, child, "BackdropTemplate")
-			child.customBorder:SetFrameLevel(child:GetFrameLevel() + 1)
-			child.customBorder:SetAllPoints(child)
-			child.customBorder:SetBackdrop({
-				edgeFile = "Interface\\Buttons\\WHITE8x8",
-				edgeSize = borderSize,
-			})
-			child.customBorder:SetBackdropBorderColor(0, 0, 0, 1)
+		child.customBorder = CreateFrame("Frame", nil, child, "BackdropTemplate")
+		child.customBorder:SetFrameLevel(child:GetFrameLevel() + 1)
+		child.customBorder:SetAllPoints(child)
+		child.customBorder:SetBackdrop({
+			edgeFile = "Interface\\Buttons\\WHITE8x8",
+			edgeSize = borderSize,
+		})
+		child.customBorder:SetBackdropBorderColor(0, 0, 0, 1)
+
+		if borderSize == 0 then
+			child.customBorder:Hide()
 		else
-			child.customBorder:SetAlpha(1)
 			child.customBorder:Show()
 		end
 

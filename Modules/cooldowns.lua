@@ -112,12 +112,7 @@ function Cooldowns.IsChildOnCooldown(child)
 end
 
 function Cooldowns.OverrideRegularAuraCooldown(self, parent)
-	local options = SCM.db.global.options
-	if self.SCMSettingRegularSpellCooldown or not options.disableRegularIconActiveSwipe then
-		return
-	end
-
-	if not parent.SCMSpellID or not self:GetUseAuraDisplayTime() then
+	if not parent.SCMSpellID or not self:GetUseAuraDisplayTime() or parent.SCMConfig.forceActiveSwipe then
 		return
 	end
 
@@ -125,6 +120,7 @@ function Cooldowns.OverrideRegularAuraCooldown(self, parent)
 	self.SCMSettingRegularSpellCooldown = true
 
 	local durationObject
+
 	if cooldownData.charges then
 		durationObject = C_Spell.GetSpellChargeDuration(parent.SCMSpellID)
 	else
@@ -141,31 +137,36 @@ function Cooldowns.OverrideRegularAuraCooldown(self, parent)
 end
 
 local function OnRegularCooldownChanged(self)
-	local parent = self:GetParent()
-	if not (parent and parent.SCMConfig) or self.SCMSettingRegularSpellCooldown then
-		return
-	end
+	RunNextFrame(function()
+		local parent = self:GetParent()
+		if not (parent and parent.SCMConfig) or self.SCMSettingRegularSpellCooldown then
+			return
+		end
 
-	Cooldowns.OverrideRegularAuraCooldown(self, parent)
+		local options = SCM.db.global.options
+		if options.disableRegularIconActiveSwipe and not parent.SCMConfig.forceActiveSwipe then
+			Cooldowns.OverrideRegularAuraCooldown(self, parent)
+		end
 
-	local config = parent.SCMConfig
-	if config.hideWhenNotOnCooldown then
-		local shouldShow = Cooldowns.IsChildOnCooldown(parent) and true or false
-		if parent.SCMShouldBeVisible ~= shouldShow then
-			local viewer = parent.viewerFrame
-			if viewer then
-				if viewer == EssentialCooldownViewer then
-					SCM:ApplyEssentialCDManagerConfig()
-				elseif viewer == UtilityCooldownViewer then
-					SCM:ApplyUtilityCDManagerConfig()
+		local config = parent.SCMConfig
+		if config.hideWhenNotOnCooldown then
+			local shouldShow = Cooldowns.IsChildOnCooldown(parent) and true or false
+			if parent.SCMShouldBeVisible ~= shouldShow then
+				local viewer = parent.viewerFrame
+				if viewer then
+					if viewer == EssentialCooldownViewer then
+						SCM:ApplyEssentialCDManagerConfig()
+					elseif viewer == UtilityCooldownViewer then
+						SCM:ApplyUtilityCDManagerConfig()
+					end
+				else
+					SCM:ApplyAllCDManagerConfigs()
 				end
-			else
-				SCM:ApplyAllCDManagerConfigs()
 			end
 		end
-	end
 
-	Icons.UpdateChildGlow(parent, not self:GetUseAuraDisplayTime())
+		Icons.UpdateChildGlow(parent, not self:GetUseAuraDisplayTime())
+	end)
 end
 
 function Cooldowns.SetupCooldownHooks(child)
@@ -217,8 +218,7 @@ function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)
 					end
 					if data and data.category >= 0 and data.category <= 2 then
 						order = order + 1
-						self.currentCooldownViewerConfig[spellID] = self.currentCooldownViewerConfig[spellID]
-							or { source = {}, anchorGroup = {} }
+						self.currentCooldownViewerConfig[spellID] = self.currentCooldownViewerConfig[spellID] or { source = {}, anchorGroup = {} }
 						self.currentCooldownViewerConfig[spellID].source[data.category] = data.category + 1
 						self.currentCooldownViewerConfig[spellID].anchorGroup[data.category + 1] = {
 							order = order,

@@ -1,4 +1,4 @@
-## Interface: 120000
+## Interface: 120001
 ## Title: SkironCooldownManager
 ## Author: Permok
 ## Version @project-version@
@@ -7,7 +7,6 @@
 ## X-Curse-Project-ID: 1453035
 ## X-Wago-ID: O67DaZK3
 
-templates.xml
 Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
 Libs\AceGUI-3.0\AceGUI-3.0.xml
@@ -32,7 +31,6 @@ Database\loader.lua
 
 core.lua
 
-
 Modules\glow.lua
 Modules\cache.lua
 Modules\skinning.lua
@@ -46,16 +44,19 @@ Modules\cdmanchors.lua
 Modules\update.lua
 Modules\cdmconfig.lua
 Modules\anchors.lua
-Modules\castbar.lua
 Modules\uid.lua
 Modules\profiles.lua
+Modules\resourcebar.lua
+Modules\castbar.lua
 
 api.lua
-
 
 Options\cdm.lua
 Options\general.lua
 Options\castbar.lua
 Options\options.lua
+Options\resourcebar.lua
 Options\profiles.lua
 Options\temporary.lua
+
+templates.xml

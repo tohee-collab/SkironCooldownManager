@@ -169,7 +169,7 @@ local function RefreshImportedGlobalAnchors(self, previousAnchorCount)
 	local currentAnchorCount = #self.db.global.globalAnchorConfig
 	for index = currentAnchorCount + 1, previousAnchorCount do
 		local globalGroup = self.Utils.ToGlobalGroup(index)
-		local anchorFrame = self.anchorFrames[globalGroup]
+		local anchorFrame = SCM:GetAnchor(globalGroup)
 		if anchorFrame then
 			anchorFrame:Hide()
 			self.anchorFrames[globalGroup] = nil
@@ -261,6 +261,7 @@ function SCM:ImportProfile(profileName, importString)
 
 	SCM:UpdateDB()
 	SCM:ApplyAllCDManagerConfigs()
+	SCM:RefreshResourceBarConfig()
 end
 
 function SCM:ImportGlobalSettings(importString)

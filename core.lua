@@ -34,16 +34,6 @@ local function OnCooldownViewerSettingsRefreshLayout(self)
 end
 
 local pendingCustomGlowChildren = {}
-
-local function StartPendingCustomGlows()
-	for child in pairs(pendingCustomGlowChildren) do
-		pendingCustomGlowChildren[child] = nil
-		if child and child.SCMActiveGlow then
-			SCM:StartCustomGlow(child)
-		end
-	end
-end
-
 local function OnSpellAlertManagerShowAlert(_, child)
 	local options = SCM.db.global.options
 	if not child.SCMConfig or not options.useCustomGlow or child.SCMActiveGlow then
@@ -52,15 +42,35 @@ local function OnSpellAlertManagerShowAlert(_, child)
 
 	child.SCMActiveGlow = true
 	child.SpellActivationAlert:Hide()
-	pendingCustomGlowChildren[child] = true
-	RunNextFrame(StartPendingCustomGlows)
+
+	-- The size of the glow is too large when you start the glow immediately if anyone is wondering why I do that
+	pendingCustomGlowChildren[child] = C_Timer.NewTimer(0, function()
+		SCM:StartCustomGlow(child)
+	end)
 end
 
 local function OnSpellAlertManagerHideAlert(_, child)
 	if child.SCMConfig and child.SCMActiveGlow then
+		if pendingCustomGlowChildren[child] then
+			pendingCustomGlowChildren[child]:Cancel()
+			pendingCustomGlowChildren[child] = nil
+		end
+
 		child.SCMActiveGlow = nil
 		SCM:StopCustomGlow(child)
 	end
+end
+
+local function RefreshCooldownViewerData(releaseCustomIcons)
+	SCM:ClearViewerChildrenCache()
+	SCM:UpdateCooldownInfo(true, CooldownViewerSettings:GetDataProvider())
+	SCM:UpdateDB()
+
+	if releaseCustomIcons then
+		SCM.CustomIcons.ReleaseAllIcons()
+	end
+	SCM:CreateAllCustomIcons()
+	SCM:ApplyAllCDManagerConfigs()
 end
 
 function SCM:SetHooks()
@@ -73,18 +83,23 @@ function SCM:SetHooks()
 		hooksecurefunc(ActionButtonSpellAlertManager, "ShowAlert", OnSpellAlertManagerShowAlert)
 		hooksecurefunc(ActionButtonSpellAlertManager, "HideAlert", OnSpellAlertManagerHideAlert)
 	end
+
+	hooksecurefunc(UIParent, "SetScale", function() RefreshCooldownViewerData(true) end)
 end
 
 function SCM:PLAYER_ENTERING_WORLD(isInitialLogin, isReload)
 	if isInitialLogin or isReload then
+		--SCM.Cache.cachedViewerScale = SCM:PixelPerfect()
 		SCM:UpdateCooldownInfo(true, CooldownViewerSettings:GetDataProvider())
 		SCM:UpdateDB()
 
 		SCM:CreateAllCustomIcons()
 		SCM:ApplyAllCDManagerConfigs()
 		SCM:SetHooks()
+		SCM:InitializeResourceBars()
 	elseif self.isInInstance ~= IsInInstance() then
-		SCM:ApplyAllCDManagerConfigs()
+		RefreshCooldownViewerData(true)
+		SCM:RefreshResourceBarConfig()
 	end
 
 	self.isInInstance = IsInInstance()
@@ -131,31 +146,23 @@ function SCM:EDIT_MODE_LAYOUTS_UPDATED()
 	SCM:ApplyOptions()
 end
 
-local function RefreshCooldownViewerData(releaseCustomIcons)
-	SCM:ClearViewerChildrenCache()
-	SCM:UpdateCooldownInfo(true, CooldownViewerSettings:GetDataProvider())
-	SCM:UpdateDB()
-
-	--SCM.CustomIcons.HideIcons()
-	if releaseCustomIcons then
-		SCM.CustomIcons.ReleaseAllIcons()
-	end
-	SCM:CreateAllCustomIcons()
-	SCM:ApplyAllCDManagerConfigs()
-end
-
 local function RefreshPixelPerfectLayout()
 	SCM:InvalidatePixelPerfectCache()
 	SCM:ApplyAllCDManagerConfigs()
 end
 
 function SCM:TRAIT_CONFIG_UPDATED()
-	C_Timer.After(0.2, RefreshCooldownViewerData)
+	C_Timer.After(0.2, function() 
+		RefreshCooldownViewerData()
+		SCM:RefreshResourceBarConfig()
+	end)
 end
 
 function SCM:ACTIVE_PLAYER_SPECIALIZATION_CHANGED()
 	C_Timer.After(0.2, function()
+
 		RefreshCooldownViewerData(true)
+		SCM:RefreshResourceBarConfig()
 	end)
 end
 
@@ -179,9 +186,7 @@ local function OnProfileChanged(_, _, _, skipReset)
 		SCM.DB:ResetData()
 	end
 
-	SCM:UpdateCooldownInfo(true, CooldownViewerSettings:GetDataProvider())
-	SCM:UpdateDB()
-	SCM:ApplyAllCDManagerConfigs()
+	RefreshCooldownViewerData(true)
 
 	if SCM.OptionsFrame and SCM.OptionsFrame:IsShown() and SCM.db.global.options.showAnchorHighlight then
 		for _, anchorFrame in pairs(SCM.anchorFrames) do
@@ -225,6 +230,7 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	eventFrame:SetScript("OnEvent", OnEventFrameEvent)
 
 	SCM:GetAnchor(1)
+	C_CVar.SetCVar("cooldownViewerEnabled", "1")
 end)
 
 function SCM:GetConfigTable(iconType, isGlobal)

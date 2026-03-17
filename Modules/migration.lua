@@ -66,6 +66,8 @@ function SCM:MigrateLegacySpellConfigKeys(spellConfig, defaultCooldownViewerConf
 				spellConfig[migratedID] = config
 				spellConfig[legacyID] = nil
 			end
+		else
+			spellConfig[legacyID] = nil
 		end
 	end
 end

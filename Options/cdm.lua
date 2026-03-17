@@ -27,6 +27,31 @@ for iconType, options in pairs(iconTypeTabs) do
 	end
 end
 
+local customIconClassList
+local function GetCustomIconClassList()
+	if not customIconClassList then
+		customIconClassList = {}
+		for classIndex = 1, GetNumClasses() do
+			local className, classFile = GetClassInfo(classIndex)
+			if className and classFile then
+				local classColor = GetClassColorObj(classFile)
+				local classAtlas = GetClassAtlas(classFile)
+				customIconClassList[classFile] = classAtlas and ("|A:%s:0:0|a %s"):format(classAtlas, classColor:WrapTextInColorCode(className)) or classColor:WrapTextInColorCode(className)
+			end
+		end
+	end
+
+	return customIconClassList
+end
+
+local function GetDefaultCustomIconLoadClasses()
+	local loadClasses = {}
+	for classFile in pairs(GetCustomIconClassList()) do
+		loadClasses[classFile] = true
+	end
+	return loadClasses
+end
+
 local function SortByIndex(a, b)
 	return a.dataIndex < b.dataIndex
 end
@@ -136,14 +161,17 @@ local function CreateCustomIconButton(rootDescription, scrollFrame, anchorIndex,
 			if not iconData then
 				return
 			end
-
-			local uniqueID = SCM:GetUniqueID(configID, buttonConfig.iconType, isGlobal)
+			
 			iconData.iconType = buttonConfig.iconType
-			iconData.id = uniqueID
 			iconData.isCustom = true
-
-			local order = scrollFrame:AddCustomIcon(iconData)
-			SCM:AddCustomIcon(anchorIndex, buttonConfig.iconType, configID, order, uniqueID, isGlobal)
+			
+			local uniqueID = SCM:AddCustomIcon(anchorIndex, buttonConfig.iconType, configID, nil, nil, isGlobal)
+			if not uniqueID then
+				return
+			end
+			
+			iconData.id = uniqueID
+			scrollFrame:AddCustomIcon(iconData)
 			SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, isGlobal)
 		end)
 	end)
@@ -214,10 +242,8 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 	rootDescription:CreateTitle("Add Icon")
 
 	if isGlobal then
-		if SCM.db.global.options.enableCustomIcons then
-			local customButton = rootDescription:CreateButton("Custom")
-			CreateCustomIconButtons(customButton, scrollFrame, anchorIndex, true, customButtonConfigs)
-		end
+		local customButton = rootDescription:CreateButton("Custom")
+		CreateCustomIconButtons(customButton, scrollFrame, anchorIndex, true, customButtonConfigs)
 		return
 	end
 
@@ -351,15 +377,13 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 	ProcessAndCreateButtons(buffButton, buffItems, true)
 
-	if SCM.db.global.options.enableCustomIcons then
-		rootDescription:CreateDivider()
+	rootDescription:CreateDivider()
 
-		local customButton = rootDescription:CreateButton("Custom")
-		CreateCustomIconButtons(customButton, scrollFrame, anchorIndex, false, customButtonConfigs)
+	local customButton = rootDescription:CreateButton("Custom")
+	CreateCustomIconButtons(customButton, scrollFrame, anchorIndex, false, customButtonConfigs)
 
-		for _, customEntry in pairs(SCM.CustomEntries) do
-			customEntry(rootDescription, scrollFrame, anchorIndex)
-		end
+	for _, customEntry in pairs(SCM.CustomEntries) do
+		customEntry(rootDescription, scrollFrame, anchorIndex)
 	end
 end
 
@@ -370,24 +394,52 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 		return
 	end
 
+	local rowConfig = data.rowConfig[rowIndex]
 	local iconWidth = AceGUI:Create("Slider")
 	iconWidth:SetRelativeWidth(0.33)
 	iconWidth:SetSliderValues(10, 200, 0.1)
 	iconWidth:SetLabel("Icon Width")
-	iconWidth:SetValue(data.rowConfig[rowIndex].iconWidth or data.rowConfig[rowIndex].size)
-	iconWidth:SetCallback("OnValueChanged", function(self, event, value)
-		data.rowConfig[rowIndex].iconWidth = value
-		SCM:ApplyAllCDManagerConfigs()
-	end)
+	iconWidth:SetValue(rowConfig.iconWidth or rowConfig.size)
+
 	self:AddChild(iconWidth)
 
 	local iconHeight = AceGUI:Create("Slider")
 	iconHeight:SetRelativeWidth(0.33)
 	iconHeight:SetSliderValues(10, 200, 0.1)
 	iconHeight:SetLabel("Icon Height")
-	iconHeight:SetValue(data.rowConfig[rowIndex].iconHeight or data.rowConfig[rowIndex].size)
+	iconHeight:SetValue(rowConfig.iconHeight or rowConfig.size)
 	iconHeight:SetCallback("OnValueChanged", function(self, event, value)
-		data.rowConfig[rowIndex].iconHeight = value
+		if rowConfig.keepAspectRatio then
+			local newWidth
+			if (rowConfig.iconHeight or rowConfig.size) == (rowConfig.iconWidth or rowConfig.size) then
+				newWidth = value
+			else
+				local ratio = (rowConfig.iconWidth or rowConfig.size) / (rowConfig.iconHeight or rowConfig.size)
+				newWidth = ceil((ratio * value) * 10) / 10
+			end
+
+			rowConfig.iconWidth = newWidth
+			iconWidth:SetValue(rowConfig.iconWidth)
+		end
+
+		rowConfig.iconHeight = value
+		SCM:ApplyAllCDManagerConfigs()
+	end)
+	iconWidth:SetCallback("OnValueChanged", function(self, event, value)
+		if rowConfig.keepAspectRatio then
+			local newHeight
+			if (rowConfig.iconHeight or rowConfig.size) == (rowConfig.iconWidth or rowConfig.size) then
+				newHeight = value
+			else
+				local ratio = (rowConfig.iconHeight or rowConfig.size) / (rowConfig.iconWidth or rowConfig.size)
+				newHeight = ceil((ratio * value) * 10) / 10
+			end
+
+			rowConfig.iconHeight = newHeight
+			iconHeight:SetValue(rowConfig.iconHeight)
+		end
+		rowConfig.iconWidth = value
+
 		SCM:ApplyAllCDManagerConfigs()
 	end)
 	self:AddChild(iconHeight)
@@ -396,12 +448,66 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 	limit:SetRelativeWidth(0.33)
 	limit:SetSliderValues(1, 20, 1)
 	limit:SetLabel("Limit")
-	limit:SetValue(data.rowConfig[rowIndex].limit)
+	limit:SetValue(rowConfig.limit)
 	limit:SetCallback("OnValueChanged", function(self, event, value)
-		data.rowConfig[rowIndex].limit = value
+		rowConfig.limit = value
 		SCM:ApplyAllCDManagerConfigs()
 	end)
 	self:AddChild(limit)
+
+	local advancedRowSettings = AceGUI:Create("InlineGroup")
+	advancedRowSettings:SetFullWidth(true)
+	advancedRowSettings:SetLayout("flow")
+	self:AddChild(advancedRowSettings)
+
+	local keepAspectRatio = AceGUI:Create("CheckBox")
+	keepAspectRatio:SetLabel("Lock Aspect Ratio")
+	keepAspectRatio:SetRelativeWidth(0.5)
+	keepAspectRatio:SetValue(rowConfig.keepAspectRatio)
+	keepAspectRatio:SetCallback("OnValueChanged", function(_, _, value)
+		rowConfig.keepAspectRatio = value
+	end)
+	advancedRowSettings:AddChild(keepAspectRatio)
+
+	local hardLimit = AceGUI:Create("CheckBox")
+	hardLimit:SetLabel("Hard Limit")
+	hardLimit:SetRelativeWidth(0.5)
+	hardLimit:SetValue(rowConfig.hardLimit)
+	hardLimit:SetCallback("OnValueChanged", function(_, _, value)
+		rowConfig.hardLimit = value
+		SCM:ApplyAllCDManagerConfigs()
+	end)
+	advancedRowSettings:AddChild(hardLimit)
+
+	if rowIndex == 1 then
+		local fixedWidth
+		local useFixedWidth = AceGUI:Create("CheckBox")
+		useFixedWidth:SetLabel("Use Fixed Width")
+		useFixedWidth:SetRelativeWidth(0.5)
+		useFixedWidth:SetValue(rowConfig.useFixedWidth)
+		useFixedWidth:SetCallback("OnValueChanged", function(_, _, value)
+			rowConfig.useFixedWidth = value
+			SCM:ApplyAllCDManagerConfigs()
+
+			if fixedWidth then
+				rowConfig.fixedWidth = rowConfig.fixedWidth or 200
+				fixedWidth:SetDisabled(not value)
+			end
+		end)
+		advancedRowSettings:AddChild(useFixedWidth)
+
+		fixedWidth = AceGUI:Create("Slider")
+		fixedWidth:SetRelativeWidth(0.5)
+		fixedWidth:SetSliderValues(100, 1000, 0.1)
+		fixedWidth:SetLabel("Fixed Width")
+		fixedWidth:SetValue(rowConfig.fixedWidth or 200)
+		fixedWidth:SetDisabled(not rowConfig.useFixedWidth)
+		fixedWidth:SetCallback("OnValueChanged", function(_, _, value)
+			rowConfig.fixedWidth = value
+			SCM:ApplyAllCDManagerConfigs()
+		end)
+		advancedRowSettings:AddChild(fixedWidth)
+	end
 
 	local buttonGroup = AceGUI:Create("SimpleGroup")
 	buttonGroup:SetFullWidth(true)
@@ -458,6 +564,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 		SCM:ApplyAllCDManagerConfigs()
 	end)
 	buttonGroup:AddChild(deleteRowButton)
+	self:DoLayout()
 end
 
 local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isGlobal)
@@ -774,7 +881,8 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 									iconSettings:SetTitle("Slot ID " .. buttonData.slotID)
 								end
 
-								if buttonFrame.data.isBuffIcon then
+								local desaturate
+								if buttonFrame.data.isBuffIcon or buttonData.isCustom then
 									local alwaysShow = AceGUI:Create("CheckBox")
 									alwaysShow:SetLabel("Show Always")
 									alwaysShow:SetRelativeWidth(0.5)
@@ -782,8 +890,28 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 									alwaysShow:SetDisabled(not options.hideBuffsWhenInactive)
 									SCM.Utils.SetDisabledTooltip(alwaysShow, "Enable 'Hide Inactive Auras' in Global Settings > General > Auras first.")
 									iconSettingsTabs:AddChild(alwaysShow)
+									alwaysShow:SetCallback("OnValueChanged", function(self, event, value)
+										buttonConfig.alwaysShow = value or nil
+										ApplyIconConfigUpdate()
 
-									local desaturate
+										if desaturate then
+											desaturate:SetDisabled(not value)
+										end
+									end)
+								end
+
+								if buttonFrame.data.isBuffIcon then
+									local hideWhileMounted = AceGUI:Create("CheckBox")
+									hideWhileMounted:SetRelativeWidth(0.5)
+									hideWhileMounted:SetValue(buttonConfig.hideWhileMounted)
+									hideWhileMounted:SetLabel("Hilde While Mounted")
+									hideWhileMounted:SetDisabled(not options.hideWhileMounted)
+									hideWhileMounted:SetCallback("OnValueChanged", function(self, event, value)
+										buttonConfig.hideWhileMounted = value or nil
+										ApplyIconConfigUpdate()
+									end)
+									iconSettingsTabs:AddChild(hideWhileMounted)
+
 									if not options.testSetting[buttonFrame.data.spellID] then
 										desaturate = AceGUI:Create("CheckBox")
 										desaturate:SetLabel("Desaturate While Inactive")
@@ -797,14 +925,6 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 										end)
 										iconSettingsTabs:AddChild(desaturate)
 									end
-									alwaysShow:SetCallback("OnValueChanged", function(self, event, value)
-										buttonConfig.alwaysShow = value or nil
-										ApplyIconConfigUpdate()
-
-										if desaturate then
-											desaturate:SetDisabled(not value)
-										end
-									end)
 								elseif buttonData.iconType ~= "timer" then
 									local hideWhileReady = AceGUI:Create("CheckBox")
 									hideWhileReady:SetLabel("Hide While Ready")
@@ -816,15 +936,38 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 									end)
 									iconSettingsTabs:AddChild(hideWhileReady)
 
-									local showGCD = AceGUI:Create("CheckBox")
-									showGCD:SetLabel("Show GCD")
-									showGCD:SetRelativeWidth(0.5)
-									showGCD:SetValue(buttonConfig.showGCD)
-									showGCD:SetCallback("OnValueChanged", function(self, event, value)
-										buttonConfig.showGCD = value or nil
-										ApplyIconConfigUpdate()
-									end)
-									iconSettingsTabs:AddChild(showGCD)
+									if buttonData.isCustom then
+										local showGCD = AceGUI:Create("CheckBox")
+										showGCD:SetLabel("Show GCD")
+										showGCD:SetRelativeWidth(0.5)
+										showGCD:SetValue(buttonConfig.showGCD)
+										showGCD:SetCallback("OnValueChanged", function(self, event, value)
+											buttonConfig.showGCD = value or nil
+											ApplyIconConfigUpdate()
+										end)
+										iconSettingsTabs:AddChild(showGCD)
+										if buttonData.iconType == "item" then
+											local showCraftQuality = AceGUI:Create("CheckBox")
+											showCraftQuality:SetLabel("Show Craft Quality")
+											showCraftQuality:SetRelativeWidth(0.5)
+											showCraftQuality:SetValue(buttonConfig.showCraftQuality)
+											showCraftQuality:SetCallback("OnValueChanged", function(self, event, value)
+												buttonConfig.showCraftQuality = value or nil
+												ApplyIconConfigUpdate()
+											end)
+											iconSettingsTabs:AddChild(showCraftQuality)
+										end
+									else
+										local forceActiveSwipe = AceGUI:Create("CheckBox")
+										forceActiveSwipe:SetLabel("Force Active Swipe")
+										forceActiveSwipe:SetRelativeWidth(0.5)
+										forceActiveSwipe:SetValue(buttonConfig.forceActiveSwipe)
+										forceActiveSwipe:SetCallback("OnValueChanged", function(self, event, value)
+											buttonConfig.forceActiveSwipe = value or nil
+											ApplyIconConfigUpdate()
+										end)
+										iconSettingsTabs:AddChild(forceActiveSwipe)
+									end
 								end
 
 								if buttonData.isCustom and (buttonData.iconType == "spell" or buttonData.iconType == "timer") then
@@ -842,76 +985,100 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 								end
 							elseif group == "load" then
 								if buttonData.isCustom then
-									local loadRole = AceGUI:Create("Dropdown")
-									loadRole:SetRelativeWidth(0.5)
-									loadRole:SetLabel("Roles")
-									loadRole:SetList(SCM.Constants.Roles)
-									loadRole:SetMultiselect(true)
-									loadRole:SetCallback("OnValueChanged", function(_, _, key, value)
-										buttonConfig.loadRoles = buttonConfig.loadRoles or {}
-										buttonConfig.loadRoles[key] = value
+									if isGlobal then
+										local loadClass = AceGUI:Create("Dropdown")
+										loadClass:SetRelativeWidth(0.5)
+										loadClass:SetLabel("Classes")
+										loadClass:SetList(GetCustomIconClassList())
+										loadClass:SetMultiselect(true)
+										loadClass:SetCallback("OnValueChanged", function(_, _, key, value)
+											buttonConfig.loadClasses = buttonConfig.loadClasses or GetDefaultCustomIconLoadClasses()
+											buttonConfig.loadClasses[key] = value
+											ApplyIconConfigUpdate()
+										end)
+
+										if not buttonConfig.loadClasses then
+											buttonConfig.loadClasses = GetDefaultCustomIconLoadClasses()
+										end
+
+										for key, value in pairs(buttonConfig.loadClasses) do
+											loadClass:SetItemValue(key, value)
+										end
+
+										iconSettingsTabs:AddChild(loadClass)
+
+										local loadRole = AceGUI:Create("Dropdown")
+										loadRole:SetRelativeWidth(0.5)
+										loadRole:SetLabel("Roles")
+										loadRole:SetList(SCM.Constants.Roles)
+										loadRole:SetMultiselect(true)
+										loadRole:SetCallback("OnValueChanged", function(_, _, key, value)
+											buttonConfig.loadRoles = buttonConfig.loadRoles or {}
+											buttonConfig.loadRoles[key] = value
+											ApplyIconConfigUpdate()
+										end)
+
+										if not buttonConfig.loadRoles then
+											buttonConfig.loadRoles = { ["TANK"] = true, ["HEALER"] = true, ["DAMAGER"] = true }
+										end
+
+										for key, value in pairs(buttonConfig.loadRoles) do
+											loadRole:SetItemValue(key, value)
+										end
+
+										iconSettingsTabs:AddChild(loadRole)
+										return
+									end
+								end
+
+								local label = AceGUI:Create("Label")
+								label:SetRelativeWidth(1.0)
+								label:SetHeight(24)
+								label:SetJustifyH("CENTER")
+								label:SetJustifyV("MIDDLE")
+								label:SetText("|TInterface\\common\\help-i:40:40:0:0|tLoad conditions are only available for global custom icons (for now).")
+								label:SetFontObject("Game12Font")
+								iconSettingsTabs:AddChild(label)
+							elseif group == "glow" then
+								if not buttonData.isCustom and buttonData.iconType == "spell" then
+									local useCustomGlowColor = AceGUI:Create("CheckBox")
+									useCustomGlowColor:SetLabel("Use Custom Glow Color")
+									useCustomGlowColor:SetRelativeWidth(0.5)
+									useCustomGlowColor:SetValue(buttonConfig.useCustomGlowColor)
+									useCustomGlowColor:SetDisabled(not options.useCustomGlow)
+									SCM.Utils.SetDisabledTooltip(useCustomGlowColor, "Enable 'Use Custom Glow' in Global Settings > Glow first.")
+									useCustomGlowColor:SetCallback("OnValueChanged", function(self, event, value)
+										buttonConfig.useCustomGlowColor = value or nil
 										ApplyIconConfigUpdate()
 									end)
+									iconSettingsTabs:AddChild(useCustomGlowColor)
 
-									if not buttonConfig.loadRoles then
-										buttonConfig.loadRoles = { ["TANK"] = true, ["HEALER"] = true, ["DAMAGER"] = true }
+									local customGlowColor = AceGUI:Create("ColorPicker")
+									customGlowColor:SetRelativeWidth(0.33)
+									customGlowColor:SetLabel("Glow Color")
+									customGlowColor:SetHasAlpha(true)
+									customGlowColor:SetDisabled(not options.useCustomGlow)
+									if buttonConfig.customGlowColor then
+										customGlowColor:SetColor(unpack(buttonConfig.customGlowColor))
 									end
+									customGlowColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
+										buttonConfig.customGlowColor = { r, g, b, a }
+									end)
+									iconSettingsTabs:AddChild(customGlowColor)
+								end
 
-									for key, value in pairs(buttonConfig.loadRoles) do
-										loadRole:SetItemValue(key, value)
-									end
-
-									iconSettingsTabs:AddChild(loadRole)
-								elseif group == "glow" then
-									if not buttonData.isCustom and buttonData.iconType == "spell" then
-										local useCustomGlowColor = AceGUI:Create("CheckBox")
-										useCustomGlowColor:SetLabel("Use Custom Glow Color")
-										useCustomGlowColor:SetRelativeWidth(0.5)
-										useCustomGlowColor:SetValue(buttonConfig.useCustomGlowColor)
-										useCustomGlowColor:SetDisabled(not options.useCustomGlow)
-										SCM.Utils.SetDisabledTooltip(useCustomGlowColor, "Enable 'Use Custom Glow' in Global Settings > Glow first.")
-										useCustomGlowColor:SetCallback("OnValueChanged", function(self, event, value)
-											buttonConfig.useCustomGlowColor = value or nil
-											ApplyIconConfigUpdate()
-										end)
-										iconSettingsTabs:AddChild(useCustomGlowColor)
-
-										local customGlowColor = AceGUI:Create("ColorPicker")
-										customGlowColor:SetRelativeWidth(0.33)
-										customGlowColor:SetLabel("Glow Color")
-										customGlowColor:SetHasAlpha(true)
-										customGlowColor:SetDisabled(not options.useCustomGlow)
-										if buttonConfig.customGlowColor then
-											customGlowColor:SetColor(unpack(buttonConfig.customGlowColor))
-										end
-										customGlowColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
-											buttonConfig.customGlowColor = { r, g, b, a }
-										end)
-										iconSettingsTabs:AddChild(customGlowColor)
-									end
-
-									if buttonData.iconType == "spell" or buttonData.iconType == "timer" then
-										local glowWhileActive = AceGUI:Create("CheckBox")
-										glowWhileActive:SetLabel("Glow While Active")
-										glowWhileActive:SetRelativeWidth(0.5)
-										glowWhileActive:SetValue(buttonConfig.glowWhileActive)
-										glowWhileActive:SetDisabled(not options.useCustomGlow)
-										SCM.Utils.SetDisabledTooltip(glowWhileActive, "Enable 'Use Custom Glow' in Global Settings > Glow first.")
-										glowWhileActive:SetCallback("OnValueChanged", function(self, event, value)
-											buttonConfig.glowWhileActive = value or nil
-											ApplyIconConfigUpdate()
-										end)
-										iconSettingsTabs:AddChild(glowWhileActive)
-									end
-								else
-									local label = AceGUI:Create("Label")
-									label:SetRelativeWidth(1.0)
-									label:SetHeight(24)
-									label:SetJustifyH("CENTER")
-									label:SetJustifyV("MIDDLE")
-									label:SetText("|TInterface\\common\\help-i:40:40:0:0|tLoad conditions are available for custom icons only (for now).")
-									label:SetFontObject("Game12Font")
-									iconSettingsTabs:AddChild(label)
+								if buttonData.iconType == "spell" or buttonData.iconType == "timer" then
+									local glowWhileActive = AceGUI:Create("CheckBox")
+									glowWhileActive:SetLabel("Glow While Active")
+									glowWhileActive:SetRelativeWidth(0.5)
+									glowWhileActive:SetValue(buttonConfig.glowWhileActive)
+									glowWhileActive:SetDisabled(not options.useCustomGlow)
+									SCM.Utils.SetDisabledTooltip(glowWhileActive, "Enable 'Use Custom Glow' in Global Settings > Glow first.")
+									glowWhileActive:SetCallback("OnValueChanged", function(self, event, value)
+										buttonConfig.glowWhileActive = value or nil
+										ApplyIconConfigUpdate()
+									end)
+									iconSettingsTabs:AddChild(glowWhileActive)
 								end
 							end
 
@@ -1040,11 +1207,8 @@ local function CDM(self, frame, group)
 
 	local tabs = {
 		{ value = "spec", text = "Spec Anchors" },
+		{ value = "global", text = "Global Anchors" },
 	}
-
-	if SCM.db.global.options.enableCustomIcons then
-		tinsert(tabs, { value = "global", text = "Global Anchors" })
-	end
 
 	modeTabs:SetTabs(tabs)
 	modeTabs:SetCallback("OnGroupSelected", function(widget, event, mode)

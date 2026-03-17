@@ -4,7 +4,7 @@ local function GetSpellAnchorGroupConfig(spellConfig, group)
 	return spellConfig and spellConfig.anchorGroup and spellConfig.anchorGroup[group]
 end
 
-local function EnsureCustomConfigTables(customConfig)
+local function CreateCustomConfigTables(customConfig)
 	customConfig = customConfig or {}
 	customConfig.spellConfig = GetOrCreateTableEntry(customConfig, "spellConfig")
 	customConfig.itemConfig = GetOrCreateTableEntry(customConfig, "itemConfig")
@@ -45,12 +45,13 @@ function SCM:UpdateDB()
 	self.itemConfig = self.currentConfig.itemConfig
 
 	self.currentConfig.customConfig = self.currentConfig.customConfig or {}
-	self.customConfig = EnsureCustomConfigTables(self.currentConfig.customConfig)
+	self.customConfig = CreateCustomConfigTables(self.currentConfig.customConfig)
 
 	self.globalAnchorConfig = self.db.global.globalAnchorConfig
-	self.globalCustomConfig = EnsureCustomConfigTables(self.db.global.globalCustomConfig)
+	self.globalCustomConfig = CreateCustomConfigTables(self.db.global.globalCustomConfig)
 
 	self.isHideWhenInactiveEnabled = self:GetHideWhenInactive() == 1
+	self.currentClass = class
 	self.currentSpecID = specID
 	self.currentRole = role
 end
