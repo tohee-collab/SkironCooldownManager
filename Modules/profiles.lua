@@ -113,7 +113,7 @@ local function NormalizeAnchorEntry(anchorConfig)
 	if type(anchorConfig.rowConfig) ~= "table" or #anchorConfig.rowConfig == 0 then
 		anchorConfig.rowConfig = {
 			{
-				size = 55,
+				size = 40,
 				limit = 8,
 			},
 		}

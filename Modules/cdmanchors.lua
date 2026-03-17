@@ -151,7 +151,7 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 		target = anchorID and self:GetAnchor(tonumber(anchorID)) or _G[target] or SCM[target]
 
 		if anchorID and target then
-			anchorFrame:SetScale(target:GetEffectiveScale())
+			anchorFrame:SetScale(target:GetScale())
 		end
 	end
 

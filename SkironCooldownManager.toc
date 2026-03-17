@@ -47,11 +47,13 @@ Modules\anchors.lua
 Modules\uid.lua
 Modules\profiles.lua
 Modules\resourcebar.lua
+Modules\castbar.lua
 
 api.lua
 
 Options\cdm.lua
 Options\general.lua
+Options\castbar.lua
 Options\options.lua
 Options\resourcebar.lua
 Options\profiles.lua
