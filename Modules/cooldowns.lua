@@ -9,10 +9,11 @@ local function OnBuffCooldownSet(self)
 		return
 	end
 
-	if parent.SCMHidden == nil or parent.SCMHidden then
-		Icons.ShowChild(parent)
+	if not parent.SCMHidden then
 		Icons.UpdateChildDesaturation(parent, false)
 		Icons.UpdateChildGlow(parent, false)
+	elseif parent.SCMHidden == nil or parent.SCMHidden then
+		Icons.ShowChild(parent)
 		SCM:ApplyAllCDManagerConfigs()
 	end
 end
