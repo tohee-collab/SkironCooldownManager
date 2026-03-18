@@ -1238,10 +1238,6 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	end)
 end
 
-canaccesssecrets = function()
-   return true
-end
-
 local function CreateAnchorTabGroup(parent, frame, isGlobal)
 	parent:ReleaseChildren()
 

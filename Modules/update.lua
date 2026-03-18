@@ -30,7 +30,7 @@ function SCM:ApplyAllCDManagerConfigs()
 	end
 end
 
-function SCM:ApplyAnchorGroupCDManagerConfig(group, isGlobal)
+function SCM:ApplyAnchorGroupCDManagerConfig(group, isGlobal, updateScope)
 	if C_CVar.GetCVar("cooldownViewerEnabled") ~= "1" or not SCM.currentConfig then
 		return
 	end

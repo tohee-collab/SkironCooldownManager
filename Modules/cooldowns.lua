@@ -9,7 +9,7 @@ local function OnBuffCooldownSet(self)
 		return
 	end
 
-	if not parent.SCMHidden then
+	if parent.SCMHidden == false then
 		Icons.UpdateChildDesaturation(parent, false)
 		Icons.UpdateChildGlow(parent, false)
 	elseif parent.SCMHidden == nil or parent.SCMHidden then
