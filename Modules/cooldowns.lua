@@ -9,10 +9,10 @@ local function OnBuffCooldownSet(self)
 		return
 	end
 
-	if parent.SCMHidden == false then
+	if not parent.SCMHidden then
 		Icons.UpdateChildDesaturation(parent, false)
 		Icons.UpdateChildGlow(parent, false)
-	elseif parent.SCMHidden == nil or parent.SCMHidden then
+	elseif parent.SCMHidden or parent.SCMHidden then
 		Icons.ShowChild(parent)
 		SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup)
 	end
@@ -26,16 +26,13 @@ local function OnBuffCooldownEnd(self)
 
 	Icons.UpdateChildGlow(parent, true)
 
-	local options = parent.SCMBuffOptions
-	if not options or not options.hideBuffsWhenInactive then
-		return
-	end
 
 	if parent.SCMConfig.alwaysShow then
 		Icons.UpdateChildDesaturation(parent, true)
 		return
 	end
 
+	--local options = parent.SCMBuffOptions
 	if not parent.SCMHidden then
 		SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup)
 	end
