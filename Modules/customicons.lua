@@ -234,6 +234,11 @@ desaturationCurve:SetType(Enum.LuaCurveType.Step)
 desaturationCurve:AddPoint(0, 0)
 desaturationCurve:AddPoint(0.001, 1)
 
+local alphaCurve = C_CurveUtil.CreateCurve()
+alphaCurve:SetType(Enum.LuaCurveType.Step)
+alphaCurve:AddPoint(0, 0)
+alphaCurve:AddPoint(0.001, 0.7)
+
 local function UpdateCustomIconGlow(frame, isActive)
 	if not frame or not frame.SCMConfig then
 		return
@@ -293,12 +298,11 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 			frame.Cooldown:SetCooldownFromDurationObject(durationObject)
 
 			if not spellCooldown.isOnGCD then
-				frame.Icon:SetDesaturation(C_Spell.GetSpellCooldownDuration(config.spellID):EvaluateRemainingDuration(desaturationCurve))
-
-				local alpha = C_CurveUtil.EvaluateColorValueFromBoolean(frame.Icon:IsDesaturated(), 0, 1)
-				frame.Cooldown:SetEdgeColor(1, 1, 1, alpha)
-
-				alpha = C_CurveUtil.EvaluateColorValueFromBoolean(frame.Icon:IsDesaturated(), 0, 0.7)
+				local spellDurationObject = C_Spell.GetSpellCooldownDuration(config.spellID)
+				local desaturation = spellDurationObject:EvaluateRemainingDuration(desaturationCurve)
+				local alpha = spellDurationObject:EvaluateRemainingDuration(alphaCurve)
+				frame.Icon:SetDesaturation(desaturation)
+				frame.Cooldown:SetEdgeColor(1, 1, 1, desaturation)
 				frame.Cooldown:SetSwipeColor(0, 0, 0, alpha)
 				--frame.Cooldown:SetReverse(frame.Icon:IsDesaturated())
 			end

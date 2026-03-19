@@ -46,7 +46,7 @@ local function OnBuffTriggerPandemicAlert(self)
 end
 
 local function OnBuffShowPandemicStateFrame(self)
-	if not self.PandemicIcon or self.PandemicIcon:GetAlpha() == 0 then
+	if not self.PandemicIcon or not self.PandemicIcon:IsVisible() then
 		return
 	end
 
