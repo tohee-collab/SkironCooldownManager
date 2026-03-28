@@ -88,6 +88,7 @@ SCM.DefaultDB = {
 			},
 			resourceBar = {
 				enabled = true,
+				hideWhileMounted = false,
 				anchorFrame = "ANCHOR:1",
 				point = "BOTTOM",
 				relativePoint = "TOP",

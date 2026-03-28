@@ -339,6 +339,7 @@ function SCM:ImportProfile(profileName, importString)
 		return
 	end
 
+
 	if typeID == EXPORT_TYPE_GLOBAL_SETTINGS then
 		self:ImportGlobalSettingsFromData(data)
 		return
