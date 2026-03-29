@@ -307,7 +307,7 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	local width = GetMatchedCastBarWidth() or options.width or 270
 
 	castBar.CurrentFillColor = foregroundColor
-	castBar:SetSize(SCM:PixelPerfect(width), SCM:PixelPerfect(options.height or 24))
+	castBar:SetSize(width, options.height or 24)
 	ApplyAnchors(castBar, options.anchors)
 
 	castBar:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = borderSize })
