@@ -389,7 +389,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 	end
 end
 
-local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex)
+local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, options)
 	self:ReleaseChildren()
 
 	if tabGroup == "general" then
@@ -446,7 +446,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex)
 		chargeRelativePoint:SetRelativeWidth(0.5)
 		chargeRelativePoint:SetLabel("Point")
 		chargeRelativePoint:SetList(SCM.Constants.AnchorPoints)
-		chargeRelativePoint:SetValue(rowConfig.chargePoint)
+		chargeRelativePoint:SetValue(rowConfig.chargePoint or options.chargePoint)
 		chargeRelativePoint:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.chargePoint = value
 			SCM:ApplyAllCDManagerConfigs()
@@ -457,7 +457,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex)
 		chargeRelativePoint:SetRelativeWidth(0.5)
 		chargeRelativePoint:SetLabel("Relative Point")
 		chargeRelativePoint:SetList(SCM.Constants.AnchorPoints)
-		chargeRelativePoint:SetValue(rowConfig.chargeRelativePoint)
+		chargeRelativePoint:SetValue(rowConfig.chargeRelativePoint or options.chargeRelativePoint)
 		chargeRelativePoint:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.chargeRelativePoint = value
 			SCM:ApplyAllCDManagerConfigs()
@@ -468,7 +468,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex)
 		xOffset:SetRelativeWidth(0.33)
 		xOffset:SetSliderValues(-50, 50, 0.1)
 		xOffset:SetLabel("X Offset")
-		xOffset:SetValue(rowConfig.chargeXOffset or 0)
+		xOffset:SetValue(rowConfig.chargeXOffset or options.chargeXOffset)
 		xOffset:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.chargeXOffset = value
 			SCM:ApplyAllCDManagerConfigs()
@@ -479,7 +479,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex)
 		yOffset:SetRelativeWidth(0.33)
 		yOffset:SetSliderValues(-50, 50, 0.1)
 		yOffset:SetLabel("Y Offset")
-		yOffset:SetValue(rowConfig.chargeYOffset or 0)
+		yOffset:SetValue(rowConfig.chargeYOffset or options.chargeYOffset)
 		yOffset:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.chargeYOffset = value
 			SCM:ApplyAllCDManagerConfigs()
@@ -490,7 +490,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex)
 		chargeFontSize:SetRelativeWidth(0.33)
 		chargeFontSize:SetLabel("Font Size")
 		chargeFontSize:SetSliderValues(1, 50, 1)
-		chargeFontSize:SetValue(rowConfig.chargeFontSize or 24)
+		chargeFontSize:SetValue(rowConfig.chargeFontSize or options.chargeFontSize)
 		chargeFontSize:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.chargeFontSize = value
 			SCM:ApplyAllCDManagerConfigs()
@@ -501,7 +501,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex)
 	self:DoLayout()
 end
 
-local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal)
+local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal, options)
 	self:ReleaseChildren()
 
 	if not data.rowConfig[rowIndex] then
@@ -574,7 +574,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 	advancedRowSettings:SetFullWidth(true)
 	advancedRowSettings:SetTabs({ { value = "general", text = "General" }, { value = "charges", text = "Charges/Stacks" } })
 	advancedRowSettings:SetCallback("OnGroupSelected", function(self, event, tabGroup)
-		SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex)
+		SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, options)
 	end)
 	advancedRowSettings:SelectTab("general")
 	self:AddChild(advancedRowSettings)
@@ -793,7 +793,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	rowTabs:SetFullWidth(true)
 	rowTabs:SetTabs(rowTabsTbl)
 	rowTabs:SetCallback("OnGroupSelected", function(self, event, rowIndex)
-		SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal)
+		SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal, options)
 	end)
 	rowTabs:SelectTab(1)
 	anchorOptions:AddChild(rowTabs)

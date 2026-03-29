@@ -15,8 +15,15 @@ end
 local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 	local rowConfig = child.SCMRowConfig or {}
 	if child.ChargeCount and child.ChargeCount.Current then
+		local size = rowConfig.chargeFontSize or options.chargeFontSize
+
 		if fontPath then
-			child.ChargeCount.Current:SetFont(fontPath, rowConfig.chargeFontSize or options.chargeFontSize, "OUTLINE")
+			child.ChargeCount.Current:SetFont(fontPath, size, "OUTLINE")
+		end
+
+		if child.SCMCustom then
+			child.ChargeCount:SetWidth(child.ChargeCount.Current:GetWidth())
+			child.ChargeCount:SetHeight(child.ChargeCount.Current:GetStringHeight() - 10)
 		end
 
 		child.ChargeCount.Current:ClearAllPoints()
@@ -30,12 +37,20 @@ local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 	end
 
 	if child.Applications and child.Applications.Applications then
+		local size = rowConfig.chargeFontSize or options.chargeFontSize
 		if fontPath then
-			child.Applications.Applications:SetFont(fontPath, options.chargeFontSize, "OUTLINE")
+			child.Applications.Applications:SetFont(fontPath, size, "OUTLINE")
 		end
 
+
 		child.Applications.Applications:ClearAllPoints()
-		child.Applications.Applications:SetPoint(options.chargePoint, child.Icon, options.chargeRelativePoint, options.chargeXOffset, options.chargeYOffset)
+		child.Applications.Applications:SetPoint(
+			rowConfig.chargePoint or options.chargePoint,
+			child.Icon,
+			rowConfig.chargeRelativePoint or options.chargeRelativePoint,
+			rowConfig.chargeXOffset or options.chargeXOffset,
+			rowConfig.chargeYOffset or options.chargeYOffset
+		)
 	end
 end
 
