@@ -42,7 +42,6 @@ local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 			child.Applications.Applications:SetFont(fontPath, size, "OUTLINE")
 		end
 
-
 		child.Applications.Applications:ClearAllPoints()
 		child.Applications.Applications:SetPoint(
 			rowConfig.chargePoint or options.chargePoint,
@@ -141,9 +140,11 @@ function SCM:SkinChild(child, childConfig)
 		if borderSize == 0 then
 			child.customBorder:Hide()
 		else
+			child.customBorder:SetBackdrop({
+				edgeFile = "Interface\\Buttons\\WHITE8x8",
+				edgeSize = borderSize,
+			})
 			child.customBorder:Show()
-			child.customBorder.backdropInfo.edgeSize = borderSize
-			child.customBorder:ApplyBackdrop()
 
 			child.customBorder:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a)
 		end
