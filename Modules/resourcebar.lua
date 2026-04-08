@@ -560,8 +560,8 @@ local function UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues
 		segmentBar:ClearAllPoints()
 		segmentBar:SetStatusBarTexture(texturePath)
 		segmentBar:SetPoint("LEFT", (segmentIndex - 1) * segmentWidth, 0)
-		PixelUtil.SetWidth(segmentBar, segmentWidth, segmentWidth)
-		PixelUtil.SetHeight(segmentBar, segmentHeight - borderSize, segmentHeight - borderSize)
+		segmentBar:SetWidth(segmentWidth)
+		segmentBar:SetHeight(segmentHeight - borderSize)
 		if chargedSegments and chargedSegments[segmentIndex] then
 			if bar.resourceKind == "maelstromWeapon" then
 				segmentBar:SetStatusBarColor(overflowR, overflowG, overflowB)
