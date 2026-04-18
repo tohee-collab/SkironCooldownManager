@@ -146,6 +146,15 @@ function SCM:PLAYER_EQUIPMENT_CHANGED()
 	SCM:ApplyAllCDManagerConfigs()
 end
 
+function SCM:PLAYER_EQUIPED_SPELLS_CHANGED()
+	C_Timer.After(0.1, function()
+		SCM:CreateAllCustomIcons("slot")
+		SCM:ApplyAllCDManagerConfigs()
+	end)
+	
+	eventFrame:UnregisterEvent("PLAYER_EQUIPED_SPELLS_CHANGED")
+end
+
 function SCM:PLAYER_REGEN_ENABLED()
 	if not self.appliedOptions then
 		self:ApplyOptions()
@@ -227,9 +236,9 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	SCM.db.RegisterCallback(SCM, "OnProfileCopied", OnProfileChanged)
 	SCM.db.RegisterCallback(SCM, "OnProfileReset", OnProfileChanged)
 
-	local eventFrame = CreateFrame("Frame")
 	eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+	eventFrame:RegisterEvent("PLAYER_EQUIPED_SPELLS_CHANGED")
 	eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 	eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 	eventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")

@@ -289,9 +289,9 @@ local function OnOrderThrottleTick()
 	end
 end
 
-local function OrderCDManagerSpells(updateScope)
+local function OrderCDManagerSpells(updateScope, isInit)
 	updateScope = updateScope or UPDATE_SCOPE.ALL
-	if updateScope == UPDATE_SCOPE.BUFF then
+	if updateScope == UPDATE_SCOPE.BUFF or isInit then
 		OrderCDManagerSpells_Actual(updateScope)
 		return
 	end

@@ -24,9 +24,9 @@ function SCM:ApplyBuffIconCDManagerConfig()
 	end
 end
 
-function SCM:ApplyAllCDManagerConfigs()
+function SCM:ApplyAllCDManagerConfigs(isInit)
 	if C_CVar.GetCVar("cooldownViewerEnabled") == "1" and SCM.currentConfig then
-		OrderCDManagerSpells(UPDATE_SCOPE.ALL)
+		OrderCDManagerSpells(UPDATE_SCOPE.ALL, isInit)
 	end
 end
 
