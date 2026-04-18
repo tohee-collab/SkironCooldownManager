@@ -321,7 +321,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 
 	if iconType == "item" then
 		local startTime, duration, _, modRate = C_Item.GetItemCooldown(config.itemID)
-		if startTime and startTime > 0 then
+		if duration and duration > 0 and (startTime + duration) - GetTime() >= 0.1 then
 			if modRate then
 				frame.Cooldown:SetCooldown(startTime, duration, modRate)
 			else
@@ -343,7 +343,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 
 	if iconType == "slot" and config.slotID then
 		local startTime, duration = GetInventoryItemCooldown("player", config.slotID)
-		if startTime and startTime > 0 then
+		if startTime and startTime > 0 and (startTime + duration) - GetTime() >= 0.1 then
 			frame.Cooldown:SetCooldown(startTime, duration)
 			frame.Icon:SetDesaturated(true)
 			UpdateCustomIconGlow(frame, false)
@@ -553,13 +553,13 @@ function CustomIcons.ReleaseAllIcons()
 	end
 end
 
-function CustomIcons.CreateIcons(customConfig, isGlobal)
+function CustomIcons.CreateIcons(customConfig, isGlobal, iconType)
 	local viewerScale = 1
 
 	for id, config in pairs(customConfig) do
 		local customFrames = CustomIcons.GetCustomIconFrames(config)
 		if customFrames then
-			if DoesItemOrSpellExists(config) and ShouldLoadCustomIcon(config) then
+			if DoesItemOrSpellExists(config) and ShouldLoadCustomIcon(config) and (not iconType or GetIconType(config) == iconType) then
 				local frame = AcquireCustomIconFrame(customFrames, id)
 				ConfigureCustomIconFrame(frame, id, config, viewerScale, config.anchorGroup or 1, isGlobal)
 				UpdateCustomIconFrameState(frame, config)
@@ -654,13 +654,13 @@ function CustomIcons.UpdateItemCountText(spellID)
 	end
 end
 
-function SCM:CreateAllCustomIcons()
+function SCM:CreateAllCustomIcons(iconType)
 	for _, config in pairs(self.customConfig) do
-		CustomIcons.CreateIcons(config)
+		CustomIcons.CreateIcons(config, false, iconType)
 	end
 
 	for _, config in pairs(self.globalCustomConfig) do
-		CustomIcons.CreateIcons(config, true)
+		CustomIcons.CreateIcons(config, true, iconType)
 	end
 end
 
@@ -723,4 +723,3 @@ function SCM:RemoveCustomIcon(id, isGlobal, iconType)
 
 		CustomIcons.ReleaseIcon(id, config)
 	end
-end
