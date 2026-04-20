@@ -39,14 +39,16 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 
 			mainAnchor.SetPoint(UUF_Player, "TOPRIGHT", mainAnchor, "TOPLEFT", offset, 0)
 
+			local height = rowConfig[1].iconHeight or rowConfig[1].size
 			UUF_Player.SCMOffset = offset
-			UUF_Player.SCMHeight = rowConfig[1].size
+			UUF_Player.SCMHeight = height
 			UUF_Player.SCMAnchor = mainAnchor
 			UUF_Player.SCMCustomAnchor = true
 
-			UUF_Player:SetHeight(rowConfig[1].size)
-			UUF_Player_HealthBar:SetHeight(rowConfig[1].size - 2)
-			UUF_Player_HealthBackground:SetHeight(rowConfig[1].size - 2)
+			UUF_Player:SetHeight(height)
+			UUF_Player_HealthBar:SetHeight(height - 2)
+			UUF_Player_HealthBackground:SetHeight(height - 2)
+			UUF_Player_HealAbsorbBar:SetHeight(height - 2)
 
 			if not UUF_Player.SCMHook then
 				UUF_Player.SCMHook = true
@@ -56,6 +58,7 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 						self.SCMAnchor.SetHeight(self, self.SCMHeight)
 						self.SCMAnchor.SetHeight(UUF_Player_HealthBar, self.SCMHeight - 2)
 						self.SCMAnchor.SetHeight(UUF_Player_HealthBackground, self.SCMHeight - 2)
+						self.SCMAnchor.SetHeight(UUF_Player_HealAbsorbBar, self.SCMHeight - 2)
 					end
 				end)
 
@@ -64,6 +67,7 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 						self.SCMAnchor.SetHeight(self, self.SCMHeight)
 						self.SCMAnchor.SetHeight(UUF_Player_HealthBar, self.SCMHeight - 2)
 						self.SCMAnchor.SetHeight(UUF_Player_HealthBackground, self.SCMHeight - 2)
+						self.SCMAnchor.SetHeight(UUF_Player_HealAbsorbBar, self.SCMHeight - 2)
 					end
 				end)
 			end
@@ -73,6 +77,7 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 			UUF_Player.SCMAnchor.SetHeight(UUF_Player, UUF_Player.SCMOriginalHeight)
 			UUF_Player.SCMAnchor.SetHeight(UUF_Player_HealthBar, UUF_Player.SCMOriginalHeight - 2)
 			UUF_Player.SCMAnchor.SetHeight(UUF_Player_HealthBackground, UUF_Player.SCMOriginalHeight - 2)
+			UUF_Player.SCMAnchor.SetHeight(UUF_Player_HealAbsorbBar, UUF_Player.SCMOriginalHeight - 2)
 
 			UUF_Player.SCMCustomAnchor = nil
 			UUF_Player.SCMOffset = nil
@@ -94,14 +99,15 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 			UUF_Target:ClearAllPoints()
 			mainAnchor.SetPoint(UUF_Target, "TOPLEFT", mainAnchor, "TOPRIGHT", -offset, 0)
 
+			local height = rowConfig[1].iconHeight or rowConfig[1].size
 			UUF_Target.SCMOffset = -offset
-			UUF_Target.SCMHeight = rowConfig[1].size
+			UUF_Target.SCMHeight = height
 			UUF_Target.SCMAnchor = mainAnchor
 			UUF_Target.SCMCustomAnchor = true
 
-			UUF_Target:SetHeight(rowConfig[1].size)
-			UUF_Target_HealthBar:SetHeight(rowConfig[1].size - 2)
-			UUF_Target_HealthBackground:SetHeight(rowConfig[1].size - 2)
+			UUF_Target:SetHeight(height)
+			UUF_Target_HealthBar:SetHeight(height - 2)
+			UUF_Target_HealthBackground:SetHeight(height - 2)
 
 			if not UUF_Target.SCMHook then
 				UUF_Target.SCMHook = true
