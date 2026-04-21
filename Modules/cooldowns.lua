@@ -26,7 +26,6 @@ local function OnBuffCooldownEnd(self)
 
 	Icons.UpdateChildGlow(parent, true)
 
-
 	if parent.SCMConfig.alwaysShow then
 		Icons.UpdateChildDesaturation(parent, true)
 		return
@@ -130,10 +129,12 @@ function Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
 
 	if durationObject then
 		--print("SET DESATURATED", parent.SCMSpellID, parent)
+		parent.Icon.SCMDesaturated = true
 		parent.Icon:SetDesaturated(true)
 		self:SetCooldownFromDurationObject(durationObject)
 	else
 		--print("SET NOT DESATURATED", parent.SCMSpellID)
+		parent.Icon.SCMDesaturated = nil
 		parent.Icon:SetDesaturated(false)
 		self:Clear()
 	end
@@ -179,7 +180,20 @@ function Cooldowns.SetupCooldownHooks(child)
 
 	hooksecurefunc(child.Cooldown, "SetCooldown", OnRegularCooldownChanged)
 	hooksecurefunc(child.Cooldown, "Clear", OnRegularCooldownChanged)
-	child.Cooldown:HookScript("OnCooldownDone", OnRegularCooldownChanged)
+	child.Cooldown:HookScript("OnCooldownDone", function(self, ...)
+		local parent = self:GetParent()
+		-- if parent then
+		-- 	RunNextFrame(function()
+		-- 		if parent.SCMSpellID == 586 then
+		-- 			print(Cooldowns.IsChildOnCooldown(parent))
+		-- 		end
+		-- 		--parent.Icon.SCMDesaturated = Cooldowns.IsChildOnCooldown(parent)
+		-- 		--parent.Icon:SetDesaturated(parent.Icon.SCMDesaturated)
+		-- 	end)
+		-- end
+		parent.Icon.SCMDesaturated = false
+		OnRegularCooldownChanged(self)
+	end)
 	child.SCMRegularCooldownHook = true
 end
 

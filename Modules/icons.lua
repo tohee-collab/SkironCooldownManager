@@ -97,8 +97,10 @@ end
 function Icons.UpdateChildDesaturation(child, shouldDesaturate)
 	if child.Icon and child.SCMConfig and child.SCMSpellID then
 		if child.SCMConfig.desaturate then
+			child.Icon.SCMDesaturated = shouldDesaturate
 			child.Icon:SetDesaturated(shouldDesaturate)
 		else
+			child.Icon.SCMDesaturated = false
 			--print("SET NOT DESATURATED 2", child.SCMSpellID, child)
 			child.Icon:SetDesaturated(false)
 		end
@@ -120,16 +122,25 @@ function Icons.UpdateChildGlow(child, isInactive)
 	end
 end
 
-local function OnManagedChildShow(child)
+local function OnShow(child)
 	UIParent.SetAlpha(child, child.SCMHidden and 0 or 1)
 	if child.SCMGroup and (child.SCMChanged or child.SCMBuffBar) then
 		SCM:ApplyAnchorGroupCDManagerConfig(child.SCMGroup)
 	end
 end
 
-local function OnManagedChildHide(child)
+local function OnHide(child)
 	if child.SCMGroup and (child.SCMChanged or child.SCMBuffBar) then
 		SCM:ApplyAnchorGroupCDManagerConfig(child.SCMGroup)
+	end
+end
+
+local function OnSetDesaturated(iconTexture)
+	local parent = iconTexture:GetParent()
+	if not parent.SCMCustom and not iconTexture.SCMSkipUpdate and iconTexture.SCMDesaturated then
+		iconTexture.SCMSkipUpdate = true
+		iconTexture:SetDesaturated(iconTexture.SCMDesaturated)
+		iconTexture.SCMSkipUpdate = nil
 	end
 end
 
@@ -139,8 +150,9 @@ function Icons.SetupIconHooks(child)
 	end
 	child.SCMShowHook = true
 
-	child:HookScript("OnShow", OnManagedChildShow)
-	child:HookScript("OnHide", OnManagedChildHide)
+	child:HookScript("OnShow", OnShow)
+	child:HookScript("OnHide", OnHide)
+	hooksecurefunc(child.Icon, "SetDesaturated", OnSetDesaturated)
 end
 
 function Icons.SetupRegularIconHooks(child)
@@ -153,14 +165,6 @@ function Icons.SetupRegularIconHooks(child)
 end
 
 local function GetOrCacheChildren(viewer, shouldRefreshCache)
-	if shouldRefreshCache then
-		local refreshToken = Cache.activeViewerChildrenToken
-		if not refreshToken or Cache.cachedViewerChildrenTokens[viewer] ~= refreshToken then
-			Cache.cachedViewerChildren[viewer] = nil
-			Cache.cachedViewerChildrenTokens[viewer] = refreshToken
-		end
-	end
-
 	if not Cache.cachedViewerChildren[viewer] then
 		Cache.cachedViewerChildren[viewer] = { viewer:GetChildren() }
 	end

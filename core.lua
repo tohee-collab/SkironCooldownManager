@@ -16,19 +16,23 @@ SCM.CustomAnchors = {}
 SCM.CustomEntries = {}
 SCM.Templates = {}
 
-local function OnEssentialCooldownViewerLayout()
+local function OnEssentialCooldownViewerLayout(viewer)
+	SCM:InvalidateViewerChildrenCache(viewer)
 	SCM:ApplyEssentialCDManagerConfig()
 end
 
-local function OnUtilityCooldownViewerLayout()
+local function OnUtilityCooldownViewerLayout(viewer)
+	SCM:InvalidateViewerChildrenCache(viewer)
 	SCM:ApplyUtilityCDManagerConfig()
 end
 
-local function OnBuffCooldownViewerLayout()
+local function OnBuffCooldownViewerLayout(viewer)
+	SCM:InvalidateViewerChildrenCache(viewer)
 	SCM:ApplyBuffIconCDManagerConfig()
 end
 
-local function OnBuffBarViewerLayout()
+local function OnBuffBarViewerLayout(viewer)
+	SCM:InvalidateViewerChildrenCache(viewer)
 	SCM:ApplyBuffBarCDManagerConfig()
 end
 

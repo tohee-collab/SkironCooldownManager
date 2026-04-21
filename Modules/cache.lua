@@ -7,7 +7,6 @@ Cache.cachedChildrenTbl = {}
 Cache.cachedVisibleChildren = {}
 Cache.cachedCooldownFrameTbl = {}
 Cache.cachedViewerChildren = {}
-Cache.cachedViewerChildrenTokens = {}
 Cache.cachedActiveItemFrames = {}
 Cache.cachedVisitedAnchorGroups = {}
 Cache.cachedAnchorStates = {}
@@ -31,7 +30,15 @@ end
 
 function SCM:ClearViewerChildrenCache()
 	wipe(Cache.cachedViewerChildren)
-	wipe(Cache.cachedViewerChildrenTokens)
+end
+
+function SCM:InvalidateViewerChildrenCache(viewer)
+	if viewer then
+		Cache.cachedViewerChildren[viewer] = nil
+		return
+	end
+
+	self:ClearViewerChildrenCache()
 end
 
 function SCM:InvalidatePixelPerfectCache()
