@@ -2,8 +2,10 @@ local SCM = select(2, ...)
 
 local Icons = SCM.Icons
 local Cache = SCM.Cache
-local AddChildToGroup = SCM.Utils.AddChildToGroup
+local Utils = SCM.Utils
+local AddChildToGroup = Utils.AddChildToGroup
 local Cooldowns = SCM.Cooldowns
+local TRACKED_BAR_CATEGORY = Enum.CooldownViewerCategory.TrackedBar
 local delayedHideSpellIDs = {
 	--[450615] = true,
 }
@@ -119,13 +121,13 @@ end
 
 local function OnManagedChildShow(child)
 	UIParent.SetAlpha(child, child.SCMHidden and 0 or 1)
-	if child and child.SCMGroup and child.SCMChanged then
+	if child.SCMGroup and (child.SCMChanged or child.SCMBuffBar) then
 		SCM:ApplyAnchorGroupCDManagerConfig(child.SCMGroup)
 	end
 end
 
 local function OnManagedChildHide(child)
-	if child and child.SCMGroup and child.SCMChanged then
+	if child.SCMGroup and (child.SCMChanged or child.SCMBuffBar) then
 		SCM:ApplyAnchorGroupCDManagerConfig(child.SCMGroup)
 	end
 end
@@ -149,9 +151,13 @@ function Icons.SetupRegularIconHooks(child)
 	Cooldowns.SetupCooldownHooks(child)
 end
 
-local function GetOrCacheChildren(viewer, isBuffIcon)
-	if isBuffIcon then
-		Cache.cachedViewerChildren[viewer] = nil
+local function GetOrCacheChildren(viewer, shouldRefreshCache)
+	if shouldRefreshCache then
+		local refreshToken = Cache.activeViewerChildrenToken
+		if not refreshToken or Cache.cachedViewerChildrenTokens[viewer] ~= refreshToken then
+			Cache.cachedViewerChildren[viewer] = nil
+			Cache.cachedViewerChildrenTokens[viewer] = refreshToken
+		end
 	end
 
 	if not Cache.cachedViewerChildren[viewer] then
@@ -159,6 +165,19 @@ local function GetOrCacheChildren(viewer, isBuffIcon)
 	end
 
 	return Cache.cachedViewerChildren[viewer]
+end
+
+local function GetConfiguredGroupForCategory(childData, categoryIndex)
+	if not (childData and childData.source and categoryIndex ~= nil) then
+		return
+	end
+
+	if categoryIndex == Enum.CooldownViewerCategory.TrackedBuff or categoryIndex == Enum.CooldownViewerCategory.TrackedBar then
+		return childData.source[categoryIndex]
+	end
+
+	local pairedCategory = Utils.GetPairedSource(categoryIndex)
+	return childData.source[categoryIndex] or (pairedCategory and childData.source[pairedCategory])
 end
 
 function Icons.CollectScopedAnchorGroups(updateScope, config, viewerUpdateMapping)
@@ -186,13 +205,11 @@ function Icons.CollectScopedAnchorGroups(updateScope, config, viewerUpdateMappin
 		return targetGroups
 	end
 
-	local pairCategory = SCM.Constants.SourcePairs[categoryIndex]
-
-	for _, child in ipairs(GetOrCacheChildren(viewer, viewerData.isBuffIcon)) do
+	for _, child in ipairs(GetOrCacheChildren(viewer, viewerData.isBuffIcon or viewerData.isBuffBar)) do
 		if child.GetCooldownID then
 			local cooldownID = child:GetCooldownID()
 			local _, childData = SCM:GetSpellConfigByCooldownID(cooldownID)
-			local group = childData and (childData.source[categoryIndex] or childData.source[pairCategory])
+			local group = GetConfiguredGroupForCategory(childData, categoryIndex)
 			if group then
 				targetGroups[group] = true
 			end
@@ -227,6 +244,11 @@ local function ProcessRegularIcon(child, childData, options)
 	Cooldowns.OverrideRegularAuraCooldown(child.Cooldown, child, options)
 end
 
+local function ProcessBuffBar(child)
+	Icons.SetupIconHooks(child)
+	Icons.SetChildVisibilityState(child, true, true)
+end
+
 local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIcon, options)
 	if not child.Icon then
 		return
@@ -250,12 +272,13 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 		child.SCMConfigID = nil
 		child.SCMRowConfig = nil
 		child.SCMGroup = nil
+		child.SCMBuffBar = nil
 
 		Icons.SetChildVisibilityState(child, false, true)
 		return
 	end
 
-	local group = childData.source[categoryIndex] or childData.source[SCM.Constants.SourcePairs[categoryIndex]]
+	local group = GetConfiguredGroupForCategory(childData, categoryIndex)
 	local groupConfig = childData.anchorGroup and childData.anchorGroup[group]
 	if not (group and groupConfig) then
 		child.SCMConfig = nil
@@ -264,6 +287,7 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 		child.SCMConfigID = nil
 		child.SCMRowConfig = nil
 		child.SCMGroup = nil
+		child.SCMBuffBar = nil
 		
 		Icons.SetChildVisibilityState(child, false, true)
 		return
@@ -293,15 +317,80 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 	end
 end
 
-function Icons.ProcessChildren(viewer, validChildren, isBuffIcon)
-	if not viewer then
+local function ProcessSingleBuffBarChild(child, validChildren, categoryIndex, options)
+	if not child.GetCooldownID then
 		return
 	end
 
-	local children = GetOrCacheChildren(viewer, isBuffIcon)
+	local cooldownID = child:GetCooldownID()
+	local categoryConfig = categoryIndex and SCM.defaultCooldownViewerConfig[categoryIndex]
+	local info = categoryConfig and (categoryConfig[cooldownID] or SCM.defaultCooldownViewerConfig.cooldownIDs[cooldownID])
+	local spellID = info and (info.overrideSpellID or info.spellID)
+	if info and info.linkedSpellIDs and #info.linkedSpellIDs == 1 then
+		child.SCMLinkedSpellID = info.linkedSpellIDs[1]
+	end
+
+	child.SCMSpellID = spellID
+
+	local configID, childData = SCM:GetSpellConfigByCooldownID(cooldownID)
+	if not (cooldownID and spellID and childData) then
+		child.SCMConfig = nil
+		child.SCMOrder = nil
+		child.SCMCooldownID = nil
+		child.SCMConfigID = nil
+		child.SCMRowConfig = nil
+		child.SCMGroup = nil
+		child.SCMBuffBar = nil
+
+		Icons.SetChildVisibilityState(child, false, true)
+		return
+	end
+
+	local group = childData.source[TRACKED_BAR_CATEGORY]
+	local groupConfig = childData.anchorGroup and childData.anchorGroup[group]
+	if not (group and groupConfig) then
+		child.SCMConfig = nil
+		child.SCMOrder = nil
+		child.SCMCooldownID = nil
+		child.SCMConfigID = nil
+		child.SCMRowConfig = nil
+		child.SCMGroup = nil
+		child.SCMBuffBar = nil
+
+		Icons.SetChildVisibilityState(child, false, true)
+		return
+	end
+
+	AddChildToGroup(validChildren, group, child)
+
+	child.SCMChanged = not child.SCMConfig or child.SCMConfig ~= groupConfig
+	child.SCMConfig = groupConfig
+	child.SCMOrder = groupConfig.order
+	child.SCMCooldownID = cooldownID
+	child.SCMConfigID = configID
+	child.SCMGroup = group
+	child.SCMBuffBar = true
+
+	ProcessBuffBar(child)
+end
+
+function Icons.ProcessChildren(viewer, validChildren, viewerData)
+	if not (viewer and viewerData) then
+		return
+	end
+
+	local children = GetOrCacheChildren(viewer, viewerData.isBuffIcon or viewerData.isBuffBar)
 	local categoryIndex = SCM.CooldownViewerNameToIndex[viewer:GetName()]
 	local options = SCM.db.profile.options
 
+	if viewerData.isBuffBar then
+		for _, child in ipairs(children) do
+			ProcessSingleBuffBarChild(child, validChildren, categoryIndex, options)
+		end
+		return
+	end
+
+	local isBuffIcon = viewerData.isBuffIcon
 	for _, child in ipairs(children) do
 		ProcessSingleChild(child, validChildren, categoryIndex, isBuffIcon, options)
 	end

@@ -516,6 +516,98 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			options.pandemicGlowOption = value
 		end)
 		pandemicGlowSettings:AddChild(pandemicGlowOption)
+	elseif group == "BuffBar" then
+		local buffBarOptions = options.buffBarOptions
+
+		local textureSettings = AceGUI:Create("InlineGroup")
+		textureSettings:SetLayout("flow")
+		textureSettings:SetFullWidth(true)
+		textureSettings:SetTitle("Texture")
+		tabWidget:AddChild(textureSettings)
+
+		local barTexture = AceGUI:Create("LSM30_Font")
+		barTexture:SetLabel("Foreground Texture")
+		barTexture:SetRelativeWidth(0.5)
+		barTexture:SetList(LSM:HashTable("statusbar"))
+		barTexture:SetValue(buffBarOptions.barTexture)
+		barTexture:SetCallback("OnValueChanged", function(self, event, value)
+			buffBarOptions.barTexture = value
+			self:SetValue(value)
+			SCM:SkinBuffBars()
+		end)
+		textureSettings:AddChild(barTexture)
+		
+		local backgroundColor = AceGUI:Create("ColorPicker")
+		backgroundColor:SetRelativeWidth(0.5)
+		backgroundColor:SetLabel("Background Color")
+		backgroundColor:SetHasAlpha(true)
+
+		local color = buffBarOptions.backgroundColor or { r = 0, g = 0, b = 0, a = 1 }
+		backgroundColor:SetColor(color.r, color.g, color.b, color.a)
+		backgroundColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
+			buffBarOptions.backgroundColor = { r = r, g = g, b = b, a = a }
+			SCM:SkinBuffBars()
+		end)
+		textureSettings:AddChild(backgroundColor)
+
+		local borderSettings = AceGUI:Create("InlineGroup")
+		borderSettings:SetLayout("flow")
+		borderSettings:SetFullWidth(true)
+		borderSettings:SetTitle("Border")
+		tabWidget:AddChild(borderSettings)
+
+		local borderSize = AceGUI:Create("Slider")
+		borderSize:SetRelativeWidth(0.5)
+		borderSize:SetLabel("Border Size")
+		borderSize:SetSliderValues(0, 5, 1)
+		borderSize:SetValue(buffBarOptions.borderSize or 1)
+		borderSize:SetCallback("OnValueChanged", function(_, _, value)
+			buffBarOptions.borderSize = value
+			SCM:SkinBuffBars()
+		end)
+		borderSettings:AddChild(borderSize)
+
+		local borderColor = AceGUI:Create("ColorPicker")
+		borderColor:SetRelativeWidth(0.5)
+		borderColor:SetLabel("Border Color")
+		borderColor:SetHasAlpha(true)
+
+		local color = buffBarOptions.borderColor or { r = 0, g = 0, b = 0, a = 1 }
+		borderColor:SetColor(color.r, color.g, color.b, color.a)
+		borderColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
+			buffBarOptions.borderColor = { r = r, g = g, b = b, a = a }
+			SCM:SkinBuffBars()
+		end)
+		borderSettings:AddChild(borderColor)
+		
+		local fontSettings = AceGUI:Create("InlineGroup")
+		fontSettings:SetLayout("flow")
+		fontSettings:SetFullWidth(true)
+		fontSettings:SetTitle("Text")
+		tabWidget:AddChild(fontSettings)
+
+		local font = AceGUI:Create("LSM30_Font")
+		font:SetLabel("Font")
+		font:SetRelativeWidth(0.5)
+		font:SetList(LSM:HashTable("font"))
+		font:SetValue(buffBarOptions.font)
+		font:SetCallback("OnValueChanged", function(self, event, value)
+			buffBarOptions.font = value
+			self:SetValue(value)
+			SCM:SkinBuffBars()
+		end)
+		fontSettings:AddChild(font)
+
+		local fontSize = AceGUI:Create("Slider")
+		fontSize:SetRelativeWidth(0.5)
+		fontSize:SetLabel("Font Size")
+		fontSize:SetSliderValues(1, 50, 1)
+		fontSize:SetValue(buffBarOptions.fontSize)
+		fontSize:SetCallback("OnValueChanged", function(self, event, value)
+			buffBarOptions.fontSize = value
+			SCM:SkinBuffBars()
+		end)
+		fontSettings:AddChild(fontSize)
 	end
 end
 

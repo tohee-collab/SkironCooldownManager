@@ -4,7 +4,9 @@ local CDM = SCM.CDM
 local UPDATE_SCOPE = CDM.UPDATE_SCOPE
 local OrderCDManagerSpells = CDM.OrderSpells
 local OrderCDManagerSpells_Actual = CDM.OrderSpellsActual
-local ToGlobalGroup = SCM.Utils.ToGlobalGroup
+local Utils = SCM.Utils
+local ToGlobalGroup = Utils.ToGlobalGroup
+local ToBuffBarGroup = Utils.ToBuffBarGroup
 
 function SCM:ApplyEssentialCDManagerConfig()
 	if C_CVar.GetCVar("cooldownViewerEnabled") == "1" and SCM.currentConfig then
@@ -24,6 +26,12 @@ function SCM:ApplyBuffIconCDManagerConfig()
 	end
 end
 
+function SCM:ApplyBuffBarCDManagerConfig()
+	if SCM.currentConfig then
+		OrderCDManagerSpells(UPDATE_SCOPE.BUFF_BAR)
+	end
+end
+
 function SCM:ApplyAllCDManagerConfigs(isInit)
 	if C_CVar.GetCVar("cooldownViewerEnabled") == "1" and SCM.currentConfig then
 		OrderCDManagerSpells(UPDATE_SCOPE.ALL, isInit)
@@ -40,13 +48,21 @@ function SCM:ApplyAnchorGroupCDManagerConfig(group, isGlobal, updateScope)
 		return
 	end
 
-	if isGlobal then
+	updateScope = updateScope
+		or (Utils.IsBuffBarGroup(scopedGroup) and UPDATE_SCOPE.BUFF_BAR)
+		or UPDATE_SCOPE.ALL
+
+	if updateScope == UPDATE_SCOPE.BUFF_BAR then
+		if not Utils.IsBuffBarGroup(scopedGroup) then
+			scopedGroup = ToBuffBarGroup(scopedGroup)
+		end
+	elseif isGlobal and not Utils.IsGlobalGroup(scopedGroup) then
 		scopedGroup = ToGlobalGroup(scopedGroup)
 	end
 
 	local scopedGroups = self:AcquireScopedGroupCache()
 	scopedGroups[scopedGroup] = true
-	OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, scopedGroups)
+	OrderCDManagerSpells_Actual(updateScope, scopedGroups)
 	self:ReleaseScopedGroupCache(scopedGroups)
 end
 
@@ -65,9 +81,9 @@ local function GetScopeGroupsForConfig(customConfig, scopedGroups, isGlobal, pre
 	return scopedGroups
 end
 
-local function ApplyScopedGroups(scopedGroups)
+local function ApplyScopedGroups(scopedGroups, updateScope)
 	if next(scopedGroups) then
-		OrderCDManagerSpells_Actual(UPDATE_SCOPE.ALL, scopedGroups)
+		OrderCDManagerSpells_Actual(updateScope or UPDATE_SCOPE.ALL, scopedGroups)
 	end
 end
 

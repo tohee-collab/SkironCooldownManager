@@ -205,7 +205,7 @@ function SCM:ApplyCustomAnchors(maxGroupWidth, rowConfig)
 						else
 							local refType = type(ref)
 							if refType == "string" then
-								anchor = _G[ref]
+								anchor = SCM.Utils.GetAnchorFrame(ref)
 							elseif refType == "table" then
 								anchor = ref
 							end
@@ -222,7 +222,7 @@ function SCM:ApplyCustomAnchors(maxGroupWidth, rowConfig)
 					if anchorIndex then
 						anchor = SCM:GetAnchor(anchorIndex)
 					elseif anchorRefType == "string" then
-						anchor = _G[anchorRef]
+						anchor = SCM.Utils.GetAnchorFrame(anchorRef)
 					elseif anchorRefType == "table" then
 						anchor = anchorRef
 					end

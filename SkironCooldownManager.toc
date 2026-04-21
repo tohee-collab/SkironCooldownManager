@@ -58,5 +58,7 @@ Options\options.lua
 Options\resourcebar.lua
 Options\profiles.lua
 Options\temporary.lua
+Options\templates\anchor.lua
+Options\templates\glow.lua
 
 templates.xml

@@ -60,6 +60,10 @@ local function ResetCustomIconFrame(_, frame)
 	frame.UpdateCharges = nil
 	frame.SCMWidth = nil
 	frame.SCMHeight = nil
+	frame.SCMBaseStartPoint = nil
+	frame.SCMBaseOffsetX = nil
+	frame.SCMBaseOffsetY = nil
+	frame.SCMLayoutApplied = nil
 	frame.height = nil
 
 	frame:EnableMouse(false)

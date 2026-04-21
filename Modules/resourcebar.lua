@@ -745,8 +745,7 @@ function SCMResourceBarControllerMixin:ApplyFrameWidthOptions(bar)
 	local generalBarOptions = self.barOptions
 	local anchor = generalBarOptions.anchorFrame or DEFAULT_RESOURCE_BAR_ANCHOR
 	if type(anchor) == "string" then
-		local anchorID = anchor:match("ANCHOR:(%d+)")
-		anchor = anchorID and SCM:GetAnchor(tonumber(anchorID)) or _G[anchor] or SCM[anchor]
+		anchor = SCM.Utils.GetAnchorFrame(anchor)
 	end
 
 	if anchor then

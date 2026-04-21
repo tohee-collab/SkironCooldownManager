@@ -62,19 +62,7 @@ local function GetIconOptions()
 end
 
 local function ResolveFrameReference(anchorRef)
-	if type(anchorRef) == "table" then
-		return anchorRef
-	end
-	if type(anchorRef) ~= "string" or anchorRef == "" or anchorRef == "NONE" then
-		return
-	end
-
-	local anchorID = anchorRef:match("ANCHOR:(%d+)")
-	if anchorID then
-		return SCM:GetAnchor(tonumber(anchorID))
-	end
-
-	return _G[anchorRef] or SCM[anchorRef]
+	return SCM.Utils.GetAnchorFrame(anchorRef)
 end
 
 local function ApplyAnchors(frame, anchors)

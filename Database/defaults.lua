@@ -82,6 +82,14 @@ SCM.DefaultDB = {
 					glowColor = { 0.95, 0.95, 0.32, 1 },
 				},
 			},
+			buffBarOptions = {
+				barTexture = "Solid",
+				borderSize = 2,
+				borderColor = {r = 0, g = 0, b = 0, a = 1},
+				backgroundColor = {r = 0.2, g = 0.2, b = 0.2, a = 0.5},
+				font = "Expressway",
+				fontSize = 15,
+			},
 			resourceBars = {
 				"PrimaryResourceBar",
 				"SecondaryResourceBar",
@@ -251,6 +259,7 @@ SCM.DB = {
 SCM.DefaultClassConfig = {
 	spellConfig = {},
 	anchorConfig = {},
+	buffBarsAnchorConfig = {},
 	itemConfig = {},
 	customConfig = {},
 }
@@ -258,4 +267,5 @@ SCM.DefaultClassConfig = {
 SCM.Defaults.GlobalSettingsTabs = {
 	{ value = "General", text = "General" },
 	{ value = "Glow", text = "Glow" },
+	{ value = "BuffBar", text = "Buff Bars" },
 }

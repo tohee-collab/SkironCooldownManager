@@ -14,6 +14,7 @@ SCM.OptionsCallbacks = {}
 SCM.Skins = {}
 SCM.CustomAnchors = {}
 SCM.CustomEntries = {}
+SCM.Templates = {}
 
 local function OnEssentialCooldownViewerLayout()
 	SCM:ApplyEssentialCDManagerConfig()
@@ -25,6 +26,10 @@ end
 
 local function OnBuffCooldownViewerLayout()
 	SCM:ApplyBuffIconCDManagerConfig()
+end
+
+local function OnBuffBarViewerLayout()
+	SCM:ApplyBuffBarCDManagerConfig()
 end
 
 local function OnCooldownViewerSettingsRefreshLayout(self)
@@ -74,6 +79,7 @@ local function OnSpellAlertManagerHideAlert(_, child)
 end
 
 local function RefreshCooldownViewerData(releaseCustomIcons)
+	SCM:InvalidateAnchorLinks()
 	SCM:ClearViewerChildrenCache()
 	SCM:UpdateCooldownInfo(true, CooldownViewerSettings:GetDataProvider())
 	SCM:UpdateDB()
@@ -92,6 +98,7 @@ function SCM:SetHooks()
 	hooksecurefunc(EssentialCooldownViewer, "RefreshLayout", OnEssentialCooldownViewerLayout)
 	hooksecurefunc(UtilityCooldownViewer, "RefreshLayout", OnUtilityCooldownViewerLayout)
 	hooksecurefunc(BuffIconCooldownViewer, "RefreshLayout", OnBuffCooldownViewerLayout)
+	hooksecurefunc(BuffBarCooldownViewer, "RefreshLayout", OnBuffBarViewerLayout)
 	hooksecurefunc(CooldownViewerSettings, "RefreshLayout", OnCooldownViewerSettingsRefreshLayout)
 
 	if ActionButtonSpellAlertManager then
@@ -210,6 +217,8 @@ local function OnProfileChanged(_, _, _, skipReset)
 	if not skipReset then
 		SCM.DB:ResetData()
 	end
+
+	SCM:InvalidateAnchorLinks()
 
 	RefreshCooldownViewerData(true)
 

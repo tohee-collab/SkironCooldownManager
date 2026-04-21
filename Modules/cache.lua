@@ -7,14 +7,22 @@ Cache.cachedChildrenTbl = {}
 Cache.cachedVisibleChildren = {}
 Cache.cachedCooldownFrameTbl = {}
 Cache.cachedViewerChildren = {}
+Cache.cachedViewerChildrenTokens = {}
 Cache.cachedActiveItemFrames = {}
 Cache.cachedVisitedAnchorGroups = {}
+Cache.cachedAnchorStates = {}
+Cache.cachedAnchorChildren = {}
+Cache.cachedAnchorLinks = {}
+Cache.cachedAnchorLinksDirty = true
+Cache.cachedAnchorQueue = {}
+Cache.cachedAnchorOffsetVisited = {}
 Cache.reusableCustomIconContext = {}
 Cache.reusableScopedGroupTables = {}
 Cache.cachedScopedAnchorGroups = {
 	essential = {},
 	utility = {},
 	buff = {},
+	buffBar = {},
 }
 
 function SCM:ClearChildrenCache()
@@ -23,10 +31,15 @@ end
 
 function SCM:ClearViewerChildrenCache()
 	wipe(Cache.cachedViewerChildren)
+	wipe(Cache.cachedViewerChildrenTokens)
 end
 
 function SCM:InvalidatePixelPerfectCache()
 	Cache.cachedPixelPerfectMultiplier = nil
+end
+
+function SCM:InvalidateAnchorLinks()
+	Cache.cachedAnchorLinksDirty = true
 end
 
 function SCM:AcquireScopedGroupCache()

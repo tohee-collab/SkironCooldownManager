@@ -34,6 +34,11 @@ Constants.GrowthDirections = {
 	FIXED = "Fixed",
 }
 
+Constants.SecondaryGrowthDirections = {
+	DOWN = "Down",
+	UP = "Up",
+}
+
 Constants.TextOutline = {
 	NONE = "None",
 	OUTLINE = "Outline",

@@ -249,7 +249,7 @@ local methods = {
 			spellID = spellID,
 			isKnown = info.isKnown,
 			iconType = "spell",
-			isDisabled = info.isDisabled or (info.category and (info.category < 0 or info.category == 3)),
+			isDisabled = info.isDisabled or (info.category and (info.category < 0)),
 			isBuffIcon = isBuffIcon or info.category >= 2,
 			cooldownID = info.cooldownID,
 		})

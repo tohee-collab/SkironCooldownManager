@@ -2,6 +2,9 @@ local _, SCM = ...
 
 local Utils = SCM.Utils
 local GLOBAL_GROUP_OFFSET = 100
+local GLOBAL_BUFF_BAR_OFFSET = 200
+local FIRST_GLOBAL_GROUP = GLOBAL_GROUP_OFFSET + 1
+local FIRST_BUFF_BAR_GROUP = GLOBAL_BUFF_BAR_OFFSET + 1
 
 local function CreateDisabledTooltipOverlay(widget)
 	if not widget or not widget.frame then
@@ -104,20 +107,113 @@ function Utils.ToGlobalGroup(index)
 	return GLOBAL_GROUP_OFFSET + (index or 1)
 end
 
-function Utils.GetAnchorConfigForGroup(config, group, globalAnchorConfig)
+function Utils.ToBuffBarGroup(index)
+	return GLOBAL_BUFF_BAR_OFFSET + (index or 1)
+end
+
+function Utils.IsGlobalGroup(group)
+	return type(group) == "number" and group >= FIRST_GLOBAL_GROUP and group < FIRST_BUFF_BAR_GROUP
+end
+
+function Utils.IsBuffBarGroup(group)
+	return type(group) == "number" and group >= FIRST_BUFF_BAR_GROUP
+end
+
+function Utils.ParseAnchorString(anchorRef)
+	if type(anchorRef) ~= "string" then
+		return
+	end
+
+	if anchorRef:sub(1, 7) ~= "ANCHOR:" then
+		return
+	end
+
+	local anchorType, anchorID = anchorRef:match("^ANCHOR:([%a]+):(%d+)$")
+	if anchorType and anchorID then
+		anchorID = tonumber(anchorID)
+		if not anchorID or anchorID <= 0 then
+			return
+		end
+
+		anchorType = string.upper(anchorType)
+		if anchorType == "I" then
+			return anchorID
+		elseif anchorType == "G" then
+			return Utils.ToGlobalGroup(anchorID)
+		elseif anchorType == "BB" then
+			return Utils.ToBuffBarGroup(anchorID)
+		end
+
+		return
+	end
+
+	anchorID = anchorRef:match("^ANCHOR:(%d+)$")
+	anchorID = anchorID and tonumber(anchorID) or nil
+	if not anchorID or anchorID <= 0 or anchorID == GLOBAL_GROUP_OFFSET or anchorID == GLOBAL_BUFF_BAR_OFFSET then
+		return
+	end
+
+	return anchorID
+end
+
+function Utils.GetAnchorFrame(anchorRef)
+	if type(anchorRef) == "table" then
+		return anchorRef
+	end
+
+	if type(anchorRef) ~= "string" or anchorRef == "" or anchorRef == "NONE" then
+		return
+	end
+
+	if anchorRef:sub(1, 7) ~= "ANCHOR:" then
+		return _G[anchorRef] or SCM[anchorRef]
+	end
+
+	local anchorGroup = Utils.ParseAnchorString(anchorRef)
+	if anchorGroup then
+		return SCM:GetAnchor(anchorGroup)
+	end
+
+	return
+end
+
+function Utils.GetPairedSource(sourceIndex)
+	if sourceIndex == Enum.CooldownViewerCategory.TrackedBuff or sourceIndex == Enum.CooldownViewerCategory.TrackedBar then
+		return
+	end
+
+	return SCM.Constants.SourcePairs[sourceIndex]
+end
+
+function Utils.NormalizeBuffBarGroup(group)
+	group = tonumber(group)
+	if not group or group <= 0 or group == GLOBAL_GROUP_OFFSET or group == GLOBAL_BUFF_BAR_OFFSET then
+		return
+	end
+
+	if group >= FIRST_BUFF_BAR_GROUP then
+		return group
+	end
+
+	if group >= FIRST_GLOBAL_GROUP then
+		return Utils.ToBuffBarGroup(group - GLOBAL_GROUP_OFFSET)
+	end
+
+	return Utils.ToBuffBarGroup(group)
+end
+
+function Utils.GetAnchorConfigForGroup(config, group, globalAnchorConfig, buffBarAnchorConfig)
 	if config and config.anchorConfig and config.anchorConfig[group] then
 		return config.anchorConfig[group]
 	end
 
-	if group < GLOBAL_GROUP_OFFSET then
-		return
+	if Utils.IsGlobalGroup(group) then
+		return globalAnchorConfig and globalAnchorConfig[group - GLOBAL_GROUP_OFFSET]
 	end
 
-	if not globalAnchorConfig then
-		return
+	if Utils.IsBuffBarGroup(group) then
+		return buffBarAnchorConfig and buffBarAnchorConfig[group - GLOBAL_BUFF_BAR_OFFSET]
 	end
-
-	return globalAnchorConfig[group - GLOBAL_GROUP_OFFSET]
 end
 
 function Utils.SortBySCMOrder(a, b)

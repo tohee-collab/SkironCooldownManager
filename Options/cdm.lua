@@ -2,6 +2,10 @@ local addonName, SCM = ...
 local AceGUI = LibStub("AceGUI-3.0")
 local LibCustomGlow = LibStub("LibCustomGlow-1.0")
 local LSM = LibStub("LibSharedMedia-3.0")
+local Utils = SCM.Utils
+local ToGlobalGroup = Utils.ToGlobalGroup
+local ToBuffBarGroup = Utils.ToBuffBarGroup
+local UPDATE_SCOPE = SCM.CDM.UPDATE_SCOPE
 
 local colorKnown = "ffffff"
 local colorUnknown = "808080"
@@ -188,6 +192,28 @@ local function CreateCustomIconButtons(rootDescription, scrollFrame, anchorIndex
 	end
 end
 
+local function GetEffectiveAnchorGroup(anchorIndex, mode)
+	if mode == "global" then
+		return ToGlobalGroup(anchorIndex)
+	end
+
+	if mode == "buffbars" then
+		return ToBuffBarGroup(anchorIndex)
+	end
+
+	return anchorIndex
+end
+
+local function ApplyModeConfigUpdate(anchorIndex, mode)
+	if mode == "global" then
+		SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, true)
+	elseif mode == "buffbars" then
+		SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, false, UPDATE_SCOPE.BUFF_BAR)
+	else
+		SCM:ApplyAllCDManagerConfigs(true)
+	end
+end
+
 local function GetSpellIDForCooldownInfo(cooldownInfo)
 	if cooldownInfo then
 		if cooldownInfo.linkedSpellIDs and #cooldownInfo.linkedSpellIDs == 1 then
@@ -239,18 +265,94 @@ local function GetDisplayDataForSpellConfig(defaultCooldownViewerConfig, sourceI
 	end
 end
 
-local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, anchorIndex, isGlobal)
+local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, anchorIndex, mode)
 	rootDescription:CreateTitle("Add Icon")
-
-	if isGlobal then
-		local customButton = rootDescription:CreateButton("Custom")
-		CreateCustomIconButtons(customButton, scrollFrame, anchorIndex, true, customButtonConfigs)
-		return
-	end
 
 	local dataProvider = CooldownViewerSettings:GetDataProvider()
 	local cooldownInfoByID = dataProvider and dataProvider.displayData.cooldownInfoByID
-	--local cooldownDefaultsByID = dataProvider and dataProvider.displayData.cooldownDefaultsByID
+
+	if mode == "global" then
+		local customButton = rootDescription:CreateButton("Custom")
+		CreateCustomIconButtons(customButton, scrollFrame, anchorIndex, true, customButtonConfigs)
+		return
+	elseif mode == "buffbars" then
+		local numBuffButtons = 0
+		local buffButton = rootDescription:CreateButton("Buff Bars")
+
+		local cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(2, true)
+		for _, cooldownID in ipairs(cooldownIDs) do
+			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
+			local data = cooldownInfoByID[cooldownID]
+
+			if info and data then
+				local spellID = GetSpellIDForCooldownInfo(info)
+				local configID = SCM:GetCooldownConfigKey(cooldownID)
+				info.spellID = spellID
+
+				if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
+					numBuffButtons = numBuffButtons + 1
+
+					info.cooldownID = cooldownID
+					info.configID = configID
+					info.isDisabled = data.category < 0
+					info.category = data.category
+
+					local activeColor = (data.category < 0 and colorDisabled) or (info.isKnown and colorKnown) or colorUnknown
+					buffButton:CreateButton(
+						string.format("|T%d:0|t |cff%s%s (%d)|r", C_Spell.GetSpellTexture(info.spellID), activeColor, C_Spell.GetSpellName(info.spellID), cooldownID),
+						function(info)
+							if not SCM:IsSpellInData(info.cooldownID, info.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, info.configID, info.cooldownID) then
+								local dataIndex = scrollFrame:AddSpellBySpellID(info)
+								SCM:AddSpellToConfig(anchorIndex, dataIndex, info, data, 3, false)
+								ApplyModeConfigUpdate(anchorIndex, mode)
+							end
+							return MenuResponse.Open
+						end,
+						info
+					)
+				end
+			end
+		end
+
+		cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(3, true)
+		for _, cooldownID in ipairs(cooldownIDs) do
+			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
+			local data = cooldownInfoByID[cooldownID]
+
+			if info and data and data.category == 3 then
+				local spellID = GetSpellIDForCooldownInfo(info)
+				local configID = SCM:GetCooldownConfigKey(cooldownID)
+				info.spellID = spellID
+
+				if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
+					numBuffButtons = numBuffButtons + 1
+
+					info.cooldownID = cooldownID
+					info.configID = configID
+					info.isDisabled = data.category < 0
+					info.category = data.category
+
+					local activeColor = (data.category < 0 and colorDisabled) or (info.isKnown and colorKnown) or colorUnknown
+					buffButton:CreateButton(
+						string.format("|T%d:0|t |cff%s%s (%d)|r", C_Spell.GetSpellTexture(info.spellID), activeColor, C_Spell.GetSpellName(info.spellID), cooldownID),
+						function(info)
+							if not SCM:IsSpellInData(info.cooldownID, info.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, info.configID, info.cooldownID) then
+								local dataIndex = scrollFrame:AddSpellBySpellID(info)
+								SCM:AddSpellToConfig(anchorIndex, dataIndex, info, data, 3, false)
+								ApplyModeConfigUpdate(anchorIndex, mode)
+							end
+							return MenuResponse.Open
+						end,
+						info
+					)
+				end
+			end
+		end
+
+		buffButton:SetGridMode(MenuConstants.VerticalGridDirection, floor(numBuffButtons / 15) + 1)
+
+		return
+	end
 
 	local essentialButton = rootDescription:CreateButton("Essential")
 	local utilityButton = rootDescription:CreateButton("Utility")
@@ -295,7 +397,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 					if not SCM:IsSpellInData(info.cooldownID, info.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, info.configID, info.cooldownID) then
 						local dataIndex = scrollFrame:AddSpellBySpellID(info)
 						SCM:AddSpellToConfig(anchorIndex, dataIndex, info, data, item.targetCategory, isBuffIcon)
-						SCM:ApplyAllCDManagerConfigs()
+						ApplyModeConfigUpdate(anchorIndex, mode)
 					end
 					return MenuResponse.Open
 				end, info)
@@ -392,7 +494,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 	end
 end
 
-local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, options)
+local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, anchorIndex, mode, options)
 	self:ReleaseChildren()
 
 	if tabGroup == "general" then
@@ -411,7 +513,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 		hardLimit:SetValue(rowConfig.hardLimit)
 		hardLimit:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.hardLimit = value
-			SCM:ApplyAllCDManagerConfigs()
+			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(hardLimit)
 
@@ -423,7 +525,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 			useFixedWidth:SetValue(rowConfig.useFixedWidth)
 			useFixedWidth:SetCallback("OnValueChanged", function(_, _, value)
 				rowConfig.useFixedWidth = value
-				SCM:ApplyAllCDManagerConfigs()
+				ApplyModeConfigUpdate(anchorIndex, mode)
 
 				if fixedWidth then
 					rowConfig.fixedWidth = rowConfig.fixedWidth or 200
@@ -440,7 +542,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 			fixedWidth:SetDisabled(not rowConfig.useFixedWidth)
 			fixedWidth:SetCallback("OnValueChanged", function(_, _, value)
 				rowConfig.fixedWidth = value
-				SCM:ApplyAllCDManagerConfigs()
+				ApplyModeConfigUpdate(anchorIndex, mode)
 			end)
 			self:AddChild(fixedWidth)
 		end
@@ -452,7 +554,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 		chargeRelativePoint:SetValue(rowConfig.chargePoint or options.chargePoint)
 		chargeRelativePoint:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.chargePoint = value
-			SCM:ApplyAllCDManagerConfigs()
+			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(chargeRelativePoint)
 
@@ -463,7 +565,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 		chargeRelativePoint:SetValue(rowConfig.chargeRelativePoint or options.chargeRelativePoint)
 		chargeRelativePoint:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.chargeRelativePoint = value
-			SCM:ApplyAllCDManagerConfigs()
+			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(chargeRelativePoint)
 
@@ -474,7 +576,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 		xOffset:SetValue(rowConfig.chargeXOffset or options.chargeXOffset)
 		xOffset:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.chargeXOffset = value
-			SCM:ApplyAllCDManagerConfigs()
+			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(xOffset)
 
@@ -485,7 +587,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 		yOffset:SetValue(rowConfig.chargeYOffset or options.chargeYOffset)
 		yOffset:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.chargeYOffset = value
-			SCM:ApplyAllCDManagerConfigs()
+			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(yOffset)
 
@@ -496,7 +598,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 		chargeFontSize:SetValue(rowConfig.chargeFontSize or options.chargeFontSize)
 		chargeFontSize:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.chargeFontSize = value
-			SCM:ApplyAllCDManagerConfigs()
+			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(chargeFontSize)
 	elseif tabGroup == "applications" then
@@ -507,7 +609,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 		applicationsPoint:SetValue(rowConfig.applicationsPoint or options.chargePoint)
 		applicationsPoint:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.applicationsPoint = value
-			SCM:ApplyAllCDManagerConfigs()
+			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(applicationsPoint)
 
@@ -518,7 +620,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 		applicationsRelativePoint:SetValue(rowConfig.applicationsRelativePoint or options.chargeRelativePoint)
 		applicationsRelativePoint:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.applicationsRelativePoint = value
-			SCM:ApplyAllCDManagerConfigs()
+			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(applicationsRelativePoint)
 
@@ -529,7 +631,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 		xOffset:SetValue(rowConfig.applicationsXOffset or options.chargeXOffset)
 		xOffset:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.applicationsXOffset = value
-			SCM:ApplyAllCDManagerConfigs()
+			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(xOffset)
 
@@ -540,7 +642,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 		yOffset:SetValue(rowConfig.applicationsYOffset or options.chargeYOffset)
 		yOffset:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.applicationsYOffset = value
-			SCM:ApplyAllCDManagerConfigs()
+			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(yOffset)
 
@@ -551,7 +653,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 		fontSize:SetValue(rowConfig.applicationsFontSize or options.chargeFontSize)
 		fontSize:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.applicationsFontSize = value
-			SCM:ApplyAllCDManagerConfigs()
+			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(fontSize)
 	end
@@ -559,18 +661,23 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, op
 	self:DoLayout()
 end
 
-local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal, options)
+local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, options)
 	self:ReleaseChildren()
+
+	local isGlobal = mode == "global"
+	local isBuffBar = mode == "buffbars"
 
 	if not data.rowConfig[rowIndex] then
 		return
 	end
 
 	local rowConfig = data.rowConfig[rowIndex]
+	local widthLabel = isBuffBar and "Bar Width" or "Icon Width"
+	local heightLabel = isBuffBar and "Bar Height" or "Icon Height"
 	local iconWidth = AceGUI:Create("Slider")
 	iconWidth:SetRelativeWidth(0.33)
 	iconWidth:SetSliderValues(10, 200, 0.1)
-	iconWidth:SetLabel("Icon Width")
+	iconWidth:SetLabel(widthLabel)
 	iconWidth:SetValue(rowConfig.iconWidth or rowConfig.size)
 
 	self:AddChild(iconWidth)
@@ -578,7 +685,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 	local iconHeight = AceGUI:Create("Slider")
 	iconHeight:SetRelativeWidth(0.33)
 	iconHeight:SetSliderValues(10, 200, 0.1)
-	iconHeight:SetLabel("Icon Height")
+	iconHeight:SetLabel(heightLabel)
 	iconHeight:SetValue(rowConfig.iconHeight or rowConfig.size)
 	iconHeight:SetCallback("OnValueChanged", function(self, event, value)
 		if rowConfig.keepAspectRatio then
@@ -595,7 +702,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 		end
 
 		rowConfig.iconHeight = value
-		SCM:ApplyAllCDManagerConfigs()
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	iconWidth:SetCallback("OnValueChanged", function(self, event, value)
 		if rowConfig.keepAspectRatio then
@@ -612,7 +719,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 		end
 		rowConfig.iconWidth = value
 
-		SCM:ApplyAllCDManagerConfigs()
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	self:AddChild(iconHeight)
 
@@ -623,16 +730,18 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 	limit:SetValue(rowConfig.limit)
 	limit:SetCallback("OnValueChanged", function(self, event, value)
 		rowConfig.limit = value
-		SCM:ApplyAllCDManagerConfigs()
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	self:AddChild(limit)
 
 	local advancedRowSettings = AceGUI:Create("TabGroup")
+	local advancedTabs = isBuffBar and { { value = "general", text = "General" } }
+		or { { value = "general", text = "General" }, { value = "charges", text = "Charges" }, { value = "applications", text = "Stacks" } }
 	advancedRowSettings:SetLayout("flow")
 	advancedRowSettings:SetFullWidth(true)
-	advancedRowSettings:SetTabs({ { value = "general", text = "General" }, { value = "charges", text = "Charges" }, { value = "applications", text = "Stacks" } })
+	advancedRowSettings:SetTabs(advancedTabs)
 	advancedRowSettings:SetCallback("OnGroupSelected", function(self, event, tabGroup)
-		SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, options)
+		SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, anchorIndex, mode, options)
 	end)
 	advancedRowSettings:SelectTab("general")
 	self:AddChild(advancedRowSettings)
@@ -647,9 +756,11 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 	addRowButton:SetRelativeWidth(0.5)
 	addRowButton:SetDisabled(#rowTabsTbl >= 9)
 	addRowButton:SetCallback("OnClick", function()
-		local nextIndex = isGlobal and (#data.rowConfig + 1) or SCM:AddRow(anchorIndex)
+		local nextIndex = ((isGlobal or isBuffBar) and (#data.rowConfig + 1)) or SCM:AddRow(anchorIndex)
 		if isGlobal then
-			data.rowConfig[nextIndex] = { size = 40, limit = 8 }
+			data.rowConfig[nextIndex] = { iconHeight = 40, iconWidth = 40, limit = 8 }
+		elseif isBuffBar then
+			data.rowConfig[nextIndex] = { iconHeight = 40, iconWidth = 150, limit = 8 }
 		end
 
 		tinsert(rowTabsTbl, { value = nextIndex, text = "Row " .. nextIndex })
@@ -658,7 +769,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 		end)
 		self:SetTabs(rowTabsTbl)
 		self:SelectTab(nextIndex)
-		SCM:ApplyAllCDManagerConfigs()
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	buttonGroup:AddChild(addRowButton)
 
@@ -667,7 +778,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 	deleteRowButton:SetRelativeWidth(0.5)
 	deleteRowButton:SetDisabled(rowIndex == 1)
 	deleteRowButton:SetCallback("OnClick", function()
-		if isGlobal then
+		if isGlobal or isBuffBar then
 			tremove(data.rowConfig, rowIndex)
 		else
 			SCM:RemoveRow(anchorIndex, rowIndex)
@@ -689,21 +800,49 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal
 
 		self:SetTabs(rowTabsTbl)
 		self:SelectTab(#rowTabsTbl)
-		SCM:ApplyAllCDManagerConfigs()
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	buttonGroup:AddChild(deleteRowButton)
 	self:DoLayout()
 end
 
-local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isGlobal)
+local function AddStateOptions(stateType, iconSettingsTabs, iconSettings, scrollFrame, value, options, buttonConfig)
+	buttonConfig.stateOptions = buttonConfig.stateOptions or {}
+	buttonConfig.stateOptions[value] = buttonConfig.stateOptions[value] or {}
+
+	SCM.Templates.AddGlowOptions(iconSettingsTabs, buttonConfig.stateOptions[value], iconSettings, scrollFrame)
+end
+
+local function CreateStateDropdown(iconSettingsTabs, iconSettings, scrollFrame, options, buttonConfig)
+	local stateType = AceGUI:Create("Dropdown")
+	stateType:SetRelativeWidth(0.5)
+	stateType:SetLabel("State Type")
+	stateType:SetList({
+		["ready"] = "Ready",
+		["cooldown"] = "On Cooldown",
+		["active"] = "Active",
+	})
+	iconSettingsTabs:AddChild(stateType)
+
+	stateType:SetCallback("OnValueChanged", function(_, _, value)
+		AddStateOptions(stateType, iconSettingsTabs, iconSettings, scrollFrame, value, options, buttonConfig)
+		iconSettingsTabs:DoLayout()
+	end)
+	stateType:SetValue("ready")
+end
+
+local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mode)
 	anchorWidget:ReleaseChildren()
 
 	SCM.activeAnchorSettings = anchorIndex
 	local options = SCM.db.profile.options
+	local isGlobal = mode == "global"
+	local isBuffBar = mode == "buffbars"
+	local currentAnchorIndex = GetEffectiveAnchorGroup(anchorIndex, mode)
 
 	if options.showAnchorHighlight then
 		for group, anchorFrame in pairs(SCM.anchorFrames) do
-			local activeGroup = isGlobal and (100 + anchorIndex) or anchorIndex
+			local activeGroup = GetEffectiveAnchorGroup(anchorIndex, mode)
 			if group == activeGroup then
 				anchorFrame.isGlowActive = true
 				LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
@@ -718,7 +857,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 		end
 	end
 
-	local data = isGlobal and SCM.db.global.globalAnchorConfig[anchorIndex] or SCM.anchorConfig[anchorIndex]
+	local data = (isGlobal and SCM.globalAnchorConfig[anchorIndex]) or (isBuffBar and SCM.buffBarsAnchorConfig[anchorIndex]) or SCM.anchorConfig[anchorIndex]
 	if not data then
 		return
 	end
@@ -744,7 +883,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	addAnchorButton:SetRelativeWidth(0.5)
 	addAnchorButton:SetDisabled(#anchorTabsTbl >= 15)
 	addAnchorButton:SetCallback("OnClick", function()
-		local nextIndex = isGlobal and SCM:AddGlobalAnchor(anchorTabsTbl) or SCM:AddAnchor(anchorTabsTbl)
+		local nextIndex = (isGlobal and SCM:AddGlobalAnchor(anchorTabsTbl)) or (isBuffBar and SCM:AddBuffBarAnchor(anchorTabsTbl)) or SCM:AddAnchor(anchorTabsTbl)
 		anchorWidget:SetTabs(anchorTabsTbl)
 		anchorWidget:SelectTab(nextIndex)
 	end)
@@ -753,10 +892,12 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	local deleteAnchorButton = AceGUI:Create("Button")
 	deleteAnchorButton:SetText("Delete Anchor")
 	deleteAnchorButton:SetRelativeWidth(0.5)
-	deleteAnchorButton:SetDisabled((not isGlobal and anchorIndex <= 3) or (isGlobal and anchorIndex == 1))
+	deleteAnchorButton:SetDisabled((not isGlobal and anchorIndex <= 3) or ((isGlobal or isBuffBar) and anchorIndex == 1))
 	deleteAnchorButton:SetCallback("OnClick", function()
 		if isGlobal then
 			SCM:RemoveGlobalAnchor(anchorIndex, anchorTabsTbl)
+		elseif isBuffBar then
+			SCM:RemoveBuffBarAnchor(anchorIndex, anchorTabsTbl)
 		else
 			SCM:RemoveAnchor(anchorIndex, anchorTabsTbl)
 		end
@@ -772,7 +913,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	point:SetValue(data.anchor[1])
 	point:SetCallback("OnValueChanged", function(self, event, value)
 		data.anchor[1] = value
-		SCM:ApplyAllCDManagerConfigs()
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(point)
 
@@ -782,7 +923,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	relativeTo:SetText(data.anchor[2])
 	relativeTo:SetCallback("OnEnterPressed", function(self, event, text)
 		data.anchor[2] = text
-		SCM:ApplyAllCDManagerConfigs()
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(relativeTo)
 
@@ -793,29 +934,40 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	relativePoint:SetValue(data.anchor[3])
 	relativePoint:SetCallback("OnValueChanged", function(self, event, value)
 		data.anchor[3] = value
-		SCM:ApplyAllCDManagerConfigs()
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(relativePoint)
 
 	local grow = AceGUI:Create("Dropdown")
-	grow:SetRelativeWidth(0.5)
+	grow:SetRelativeWidth(0.33)
 	grow:SetList(SCM.Constants.GrowthDirections)
-	grow:SetLabel("Growth Direction")
+	grow:SetLabel("Primary Growth")
 	grow:SetValue(data.grow or "CENTERED")
 	grow:SetCallback("OnValueChanged", function(self, event, value)
 		data.grow = value
-		SCM:ApplyAllCDManagerConfigs()
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(grow)
 
+	local secondaryGrow = AceGUI:Create("Dropdown")
+	secondaryGrow:SetRelativeWidth(0.33)
+	secondaryGrow:SetList(SCM.Constants.SecondaryGrowthDirections)
+	secondaryGrow:SetLabel("Secondary Growth")
+	secondaryGrow:SetValue(data.secondaryGrow or "DOWN")
+	secondaryGrow:SetCallback("OnValueChanged", function(self, event, value)
+		data.secondaryGrow = value
+		ApplyModeConfigUpdate(anchorIndex, mode)
+	end)
+	anchorOptions:AddChild(secondaryGrow)
+
 	local spacing = AceGUI:Create("Slider")
-	spacing:SetRelativeWidth(0.5)
+	spacing:SetRelativeWidth(0.33)
 	spacing:SetSliderValues(-10, 50, 0.1)
-	spacing:SetLabel("Horizontal Spacing")
+	spacing:SetLabel("Spacing")
 	spacing:SetValue(data.spacing or 0)
 	spacing:SetCallback("OnValueChanged", function(self, event, value)
 		data.spacing = value
-		SCM:ApplyAllCDManagerConfigs()
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(spacing)
 
@@ -826,7 +978,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	xOffset:SetValue(data.anchor[4])
 	xOffset:SetCallback("OnValueChanged", function(self, event, value)
 		data.anchor[4] = value
-		SCM:ApplyAllCDManagerConfigs()
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(xOffset)
 
@@ -837,7 +989,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	yOffset:SetValue(data.anchor[5])
 	yOffset:SetCallback("OnValueChanged", function(self, event, value)
 		data.anchor[5] = value
-		SCM:ApplyAllCDManagerConfigs()
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(yOffset)
 
@@ -851,7 +1003,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	rowTabs:SetFullWidth(true)
 	rowTabs:SetTabs(rowTabsTbl)
 	rowTabs:SetCallback("OnGroupSelected", function(self, event, rowIndex)
-		SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, isGlobal, options)
+		SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, options)
 	end)
 	rowTabs:SelectTab(1)
 	anchorOptions:AddChild(rowTabs)
@@ -879,10 +1031,11 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	local spells = {}
 	if not isGlobal and SCM.spellConfig then
 		local defaultCooldownViewerConfig = SCM.defaultCooldownViewerConfig
+
 		for configID, info in pairs(SCM.spellConfig) do
-			if info.anchorGroup[anchorIndex] then
+			if info.anchorGroup[currentAnchorIndex] then
 				for sourceIndex, spellAnchorIndex in pairs(info.source) do
-					if anchorIndex == spellAnchorIndex then
+					if currentAnchorIndex == spellAnchorIndex then
 						local data = GetDisplayDataForSpellConfig(defaultCooldownViewerConfig, sourceIndex, configID, info)
 						if data then
 							tinsert(spells, { configID = configID, info = info, data = data, isBuffIcon = sourceIndex >= 2 })
@@ -927,6 +1080,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 		for _, customConfig in pairs(SCM.globalCustomConfig) do
 			AddCustomCollection(customConfig)
 		end
+	elseif isBuffBar then
 	else
 		for _, customConfig in pairs(SCM.customConfig) do
 			AddCustomCollection(customConfig)
@@ -934,14 +1088,14 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	end
 
 	table.sort(spells, function(a, b)
-		return (a.order or a.info.anchorGroup[anchorIndex].order) < (b.order or b.info.anchorGroup[anchorIndex].order)
+		return (a.order or a.info.anchorGroup[currentAnchorIndex].order) < (b.order or b.info.anchorGroup[currentAnchorIndex].order)
 	end)
 
 	for _, spellInfo in ipairs(spells) do
 		if spellInfo.isCustom then
 			horizontalScrollFrame:AddCustomIcon(spellInfo)
 		else
-			horizontalScrollFrame:AddSpellBySpellID(BuildScrollSpellData(spellInfo.data, spellInfo.configID), spellInfo.info.anchorGroup[anchorIndex].order, spellInfo.isBuffIcon)
+			horizontalScrollFrame:AddSpellBySpellID(BuildScrollSpellData(spellInfo.data, spellInfo.configID), spellInfo.info.anchorGroup[currentAnchorIndex].order, spellInfo.isBuffIcon)
 		end
 	end
 
@@ -974,12 +1128,12 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 		if button == "LeftButton" then
 			if buttonFrame.data.isAddButton then
 				local menu = MenuUtil.CreateContextMenu(nil, function(owner, rootDescription)
-					CreateAddSpellDropdown(owner, rootDescription, horizontalScrollFrame, anchorIndex, isGlobal)
+					CreateAddSpellDropdown(owner, rootDescription, horizontalScrollFrame, anchorIndex, mode)
 				end)
 			else
 				if not lastButtonFrame or lastButtonFrame ~= buttonFrame then
 					local buttonData = buttonFrame.data
-					local buttonConfig = buttonData.isCustom and SCM:GetConfigTableByID(buttonData.id, buttonData.iconType, isGlobal) or SCM:GetSpellConfigForGroup(buttonData.id, anchorIndex)
+					local buttonConfig = buttonData.isCustom and SCM:GetConfigTableByID(buttonData.id, buttonData.iconType, isGlobal) or SCM:GetSpellConfigForGroup(buttonData.id, currentAnchorIndex)
 
 					buttonFrame:SetBackdropBorderColor(0, 1, 0, 1)
 
@@ -990,7 +1144,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 								SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, isGlobal)
 								return
 							end
-							SCM:ApplyAllCDManagerConfigs()
+							ApplyModeConfigUpdate(anchorIndex, mode)
 						end
 
 						local iconSettingsTabs = AceGUI:Create("TabGroup")
@@ -1206,6 +1360,8 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 									end)
 									iconSettingsTabs:AddChild(glowWhileActive)
 								end
+							elseif group == "state" then
+								CreateStateDropdown(self, iconSettings, scrollFrame, options, buttonConfig)
 							end
 
 							iconSettings:DoLayout()
@@ -1242,14 +1398,14 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 					if buttonFrame.data.isCustom then
 						SCM:RemoveCustomIcon(buttonFrame.data.id, isGlobal, buttonFrame.data.iconType)
 					else
-						SCM:RemoveSpellFromConfig(anchorIndex, buttonFrame.data)
+						SCM:RemoveSpellFromConfig(currentAnchorIndex, buttonFrame.data)
 					end
 					horizontalScrollFrame:RemoveButton(buttonFrame.data)
 					if buttonFrame.data.isCustom then
 						SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, isGlobal)
 						return
 					end
-					SCM:ApplyAllCDManagerConfigs()
+					ApplyModeConfigUpdate(anchorIndex, mode)
 				end)
 			end)
 		end
@@ -1275,12 +1431,12 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 				end
 			elseif entry.spellID and entry.spellID > 0 then
 				local spellConfig = entry.id and SCM.spellConfig[entry.id]
-				if spellConfig and spellConfig.anchorGroup[anchorIndex] then
-					spellConfig.anchorGroup[anchorIndex].order = i
+				if spellConfig and spellConfig.anchorGroup[currentAnchorIndex] then
+					spellConfig.anchorGroup[currentAnchorIndex].order = i
 				end
 			end
 		end
-		SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, isGlobal)
+		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 
 	top:AddChild(horizontalScrollFrame)
@@ -1297,8 +1453,11 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, isG
 	end)
 end
 
-local function CreateAnchorTabGroup(parent, frame, isGlobal)
+local function CreateAnchorTabGroup(parent, frame, mode)
 	parent:ReleaseChildren()
+
+	local isGlobal = mode == "global"
+	local isBuffBar = mode == "buffbars"
 
 	local anchorTabs = AceGUI:Create("TabGroup")
 	anchorTabs:SetLayout("fill")
@@ -1309,7 +1468,7 @@ local function CreateAnchorTabGroup(parent, frame, isGlobal)
 	anchorTabs.frame:SetParent(parent.frame)
 	anchorTabs.frame:Show()
 
-	local sourceConfig = isGlobal and SCM.db.global.globalAnchorConfig or SCM.anchorConfig
+	local sourceConfig = (isGlobal and SCM.globalAnchorConfig) or (isBuffBar and SCM.buffBarsAnchorConfig) or SCM.anchorConfig
 	local anchorTabsTbl = {}
 	for i in ipairs(sourceConfig) do
 		tinsert(anchorTabsTbl, { value = i, text = "Anchor " .. i })
@@ -1317,11 +1476,11 @@ local function CreateAnchorTabGroup(parent, frame, isGlobal)
 
 	anchorTabs:SetTabs(anchorTabsTbl)
 	anchorTabs:SetCallback("OnGroupSelected", function(self, event, anchorIndex)
-		SelectAnchor(self, frame, anchorIndex, anchorTabsTbl, isGlobal)
+		SelectAnchor(self, frame, anchorIndex, anchorTabsTbl, mode)
 	end)
 	anchorTabs:SelectTab(1)
 	--Not sure yet why I have to call this twice
-	SelectAnchor(anchorTabs, frame, 1, anchorTabsTbl, isGlobal)
+	SelectAnchor(anchorTabs, frame, 1, anchorTabsTbl, mode)
 	parent:AddChild(anchorTabs)
 end
 
@@ -1332,13 +1491,14 @@ local function CDM(self, frame, group)
 	modeTabs:SetFullHeight(true)
 
 	local tabs = {
-		{ value = "spec", text = "Spec Anchors" },
-		{ value = "global", text = "Global Anchors" },
+		{ value = "spec", text = "Spec Icon Anchors" },
+		{ value = "buffbars", text = "Spec Bar Anchors" },
+		{ value = "global", text = "Global Icon Anchors" },
 	}
 
 	modeTabs:SetTabs(tabs)
 	modeTabs:SetCallback("OnGroupSelected", function(widget, event, mode)
-		CreateAnchorTabGroup(widget, frame, mode == "global")
+		CreateAnchorTabGroup(widget, frame, mode)
 	end)
 	modeTabs:SelectTab("spec")
 	self:AddChild(modeTabs)
