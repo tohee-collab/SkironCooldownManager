@@ -165,8 +165,8 @@ local function ApplyTextStyle(fs, fontPath, fontSize, fontOutline, justify, widt
 	fs:SetJustifyH(justify)
 	fs:SetWordWrap(false)
 	fs:SetWidth(width)
-	fs:SetShadowColor(0, 0, 0, 1)
-	fs:SetShadowOffset(1, -1)
+	fs:SetShadowColor(0, 0, 0, 0)
+	fs:SetShadowOffset(0, 0)
 end
 
 local function UpdateTextLayout()
