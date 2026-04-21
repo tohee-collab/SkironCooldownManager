@@ -129,11 +129,12 @@ function Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
 	end
 
 	if durationObject then
+		--print("SET DESATURATED", parent.SCMSpellID, parent)
 		parent.Icon:SetDesaturated(true)
 		self:SetCooldownFromDurationObject(durationObject)
 	else
+		--print("SET NOT DESATURATED", parent.SCMSpellID)
 		parent.Icon:SetDesaturated(false)
-		Icons.UpdateChildDesaturation(parent, false)
 		self:Clear()
 	end
 

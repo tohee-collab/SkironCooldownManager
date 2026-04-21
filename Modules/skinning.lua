@@ -111,7 +111,7 @@ local function ApplyCooldownStyle(child, options)
 				self:SetReverse(false)
 				self:SetSwipeColor(unpack(options.normalSwipeColor))
 			else
-				--self:SetSwipeColor(0, 0, 0, 0.7)
+				self:SetSwipeColor(0, 0, 0, 0.7)
 			end
 
 			ApplyCooldownFont(self, options)

@@ -99,6 +99,7 @@ function Icons.UpdateChildDesaturation(child, shouldDesaturate)
 		if child.SCMConfig.desaturate then
 			child.Icon:SetDesaturated(shouldDesaturate)
 		else
+			--print("SET NOT DESATURATED 2", child.SCMSpellID, child)
 			child.Icon:SetDesaturated(false)
 		end
 	end
