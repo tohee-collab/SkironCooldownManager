@@ -1131,7 +1131,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 					CreateAddSpellDropdown(owner, rootDescription, horizontalScrollFrame, anchorIndex, mode)
 				end)
 			else
-				if not lastButtonFrame or lastButtonFrame ~= buttonFrame then
+				if (not lastButtonFrame or lastButtonFrame ~= buttonFrame) and not isBuffBar then
 					local buttonData = buttonFrame.data
 					local buttonConfig = buttonData.isCustom and SCM:GetConfigTableByID(buttonData.id, buttonData.iconType, isGlobal) or SCM:GetSpellConfigForGroup(buttonData.id, currentAnchorIndex)
 
@@ -1374,6 +1374,25 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 						iconSettings:DoLayout()
 						scrollFrame:DoLayout()
 					end
+				elseif isBuffBar then
+					iconSettings:SetTitle("")
+					
+					if lastButtonFrame then
+						lastButtonFrame:SetBackdropBorderColor(BLACK_FONT_COLOR:GetRGBA())
+						lastButtonFrame = nil
+					end
+
+					local label = AceGUI:Create("Label")
+					label:SetRelativeWidth(1.0)
+					label:SetHeight(24)
+					label:SetJustifyH("CENTER")
+					label:SetJustifyV("MIDDLE")
+					label:SetText("|TInterface\\common\\help-i:40:40:0:0|tBuff bars will have additional options at some point.")
+					label:SetFontObject("Game12Font")
+					iconSettings:AddChild(label)
+
+					iconSettings:DoLayout()
+					scrollFrame:DoLayout()
 				else
 					iconSettings:SetTitle("")
 					lastButtonFrame:SetBackdropBorderColor(BLACK_FONT_COLOR:GetRGBA())
