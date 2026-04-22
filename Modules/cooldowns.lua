@@ -118,8 +118,8 @@ function Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
 	local desaturate = false
 
 	if cooldownData.charges then
-		local isActive = C_Spell.GetSpellCharges(parent.SCMSpellID).isActive
-		if isActive then
+		local spellCharges = C_Spell.GetSpellCharges(parent.SCMSpellID)
+		if spellCharges and spellCharges.isActive then
 			durationObject = C_Spell.GetSpellChargeDuration(parent.SCMSpellID)
 		end
 	end
