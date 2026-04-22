@@ -4,6 +4,10 @@ local LibCustomGlow = LibStub("LibCustomGlow-1.0")
 local activeGlows = {}
 
 function SCM:StartCustomGlow(child)
+	if not child then
+		return
+	end
+
 	local options = self.db.profile.options
 	if child.SCMGlow and options.glowType == child.SCMGlow then
 		return
@@ -14,6 +18,10 @@ function SCM:StartCustomGlow(child)
 	end
 
 	local childConfig = child.SCMConfig
+	if not childConfig then
+		return
+	end
+
 	local glowTypeOptions = options.glowTypeOptions[options.glowType]
 	local color = childConfig.useCustomGlowColor and childConfig.customGlowColor or glowTypeOptions.glowColor
 	child.SCMGlow = options.glowType

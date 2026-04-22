@@ -101,7 +101,6 @@ function Icons.UpdateChildDesaturation(child, shouldDesaturate)
 			child.Icon:SetDesaturated(shouldDesaturate)
 		else
 			child.Icon.SCMDesaturated = false
-			--print("SET NOT DESATURATED 2", child.SCMSpellID, child)
 			child.Icon:SetDesaturated(false)
 		end
 	end
@@ -152,7 +151,10 @@ function Icons.SetupIconHooks(child)
 
 	child:HookScript("OnShow", OnShow)
 	child:HookScript("OnHide", OnHide)
-	hooksecurefunc(child.Icon, "SetDesaturated", OnSetDesaturated)
+
+	if child.Icon and child.Icon.SetDesaturated then
+		hooksecurefunc(child.Icon, "SetDesaturated", OnSetDesaturated)
+	end
 end
 
 function Icons.SetupRegularIconHooks(child)
@@ -259,7 +261,7 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 		return
 	end
 
-	local cooldownID = child:GetCooldownID()
+	local cooldownID = child.cooldownID
 	local categoryConfig = categoryIndex and SCM.defaultCooldownViewerConfig[categoryIndex]
 	local info = categoryConfig and (categoryConfig[cooldownID] or SCM.defaultCooldownViewerConfig.cooldownIDs[cooldownID])
 	local spellID = info and (info.overrideSpellID or info.spellID)
@@ -271,14 +273,7 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 
 	local configID, childData = SCM:GetSpellConfigByCooldownID(cooldownID)
 	if not (cooldownID and spellID and childData) then
-		child.SCMConfig = nil
-		child.SCMOrder = nil
-		child.SCMCooldownID = nil
-		child.SCMConfigID = nil
-		child.SCMRowConfig = nil
-		child.SCMGroup = nil
-		child.SCMBuffBar = nil
-
+		Utils.ResetChildSCMState(child)
 		Icons.SetChildVisibilityState(child, false, true)
 		return
 	end
@@ -286,14 +281,7 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 	local group = GetConfiguredGroupForCategory(childData, categoryIndex)
 	local groupConfig = childData.anchorGroup and childData.anchorGroup[group]
 	if not (group and groupConfig) then
-		child.SCMConfig = nil
-		child.SCMOrder = nil
-		child.SCMCooldownID = nil
-		child.SCMConfigID = nil
-		child.SCMRowConfig = nil
-		child.SCMGroup = nil
-		child.SCMBuffBar = nil
-		
+		Utils.ResetChildSCMState(child)
 		Icons.SetChildVisibilityState(child, false, true)
 		return
 	end
@@ -339,14 +327,7 @@ local function ProcessSingleBuffBarChild(child, validChildren, categoryIndex, op
 
 	local configID, childData = SCM:GetSpellConfigByCooldownID(cooldownID)
 	if not (cooldownID and spellID and childData) then
-		child.SCMConfig = nil
-		child.SCMOrder = nil
-		child.SCMCooldownID = nil
-		child.SCMConfigID = nil
-		child.SCMRowConfig = nil
-		child.SCMGroup = nil
-		child.SCMBuffBar = nil
-
+		Utils.ResetChildSCMState(child)
 		Icons.SetChildVisibilityState(child, false, true)
 		return
 	end
@@ -354,14 +335,7 @@ local function ProcessSingleBuffBarChild(child, validChildren, categoryIndex, op
 	local group = childData.source[TRACKED_BAR_CATEGORY]
 	local groupConfig = childData.anchorGroup and childData.anchorGroup[group]
 	if not (group and groupConfig) then
-		child.SCMConfig = nil
-		child.SCMOrder = nil
-		child.SCMCooldownID = nil
-		child.SCMConfigID = nil
-		child.SCMRowConfig = nil
-		child.SCMGroup = nil
-		child.SCMBuffBar = nil
-
+		Utils.ResetChildSCMState(child)
 		Icons.SetChildVisibilityState(child, false, true)
 		return
 	end

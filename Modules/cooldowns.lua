@@ -115,6 +115,7 @@ function Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
 	self.SCMSettingRegularSpellCooldown = true
 
 	local durationObject
+	local desaturate = false
 
 	if cooldownData.charges then
 		local isActive = C_Spell.GetSpellCharges(parent.SCMSpellID).isActive
@@ -124,16 +125,15 @@ function Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
 	end
 
 	if not durationObject then
+		desaturate = true
 		durationObject = C_Spell.GetSpellCooldownDuration(parent.SCMSpellID)
 	end
 
 	if durationObject then
-		--print("SET DESATURATED", parent.SCMSpellID, parent)
-		parent.Icon.SCMDesaturated = true
-		parent.Icon:SetDesaturated(true)
+		parent.Icon.SCMDesaturated = desaturate
+		parent.Icon:SetDesaturated(desaturate)
 		self:SetCooldownFromDurationObject(durationObject)
 	else
-		--print("SET NOT DESATURATED", parent.SCMSpellID)
 		parent.Icon.SCMDesaturated = nil
 		parent.Icon:SetDesaturated(false)
 		self:Clear()

@@ -4,6 +4,7 @@ local CustomIcons = SCM.CustomIcons
 local CDM = SCM.CDM
 local Icons = SCM.Icons
 local GetIconType = SCM.Utils.GetIconType
+local ResetChildSCMState = SCM.Utils.ResetChildSCMState
 
 local CustomItemFrames = {}
 local CustomSpellFrames = {}
@@ -24,10 +25,10 @@ function CustomIcons.GetCustomIconFrames(config)
 end
 
 local function ResetCustomIconFrame(_, frame)
-	SCM:StopCustomGlow(frame)
-
 	local customFrames = frame.SCMFrameRegistry
 	local frameID = frame.SCMFrameID
+	ResetChildSCMState(frame)
+
 	if customFrames and frameID and customFrames[frameID] == frame then
 		customFrames[frameID] = nil
 	end
@@ -35,35 +36,12 @@ local function ResetCustomIconFrame(_, frame)
 	frame.SCMReleased = true
 	frame.SCMFrameRegistry = nil
 	frame.SCMFrameID = nil
-	frame.SCMAnchorFrame = nil
-	frame.SCMAnchorData = nil
-	frame.SCMConfig = nil
-	frame.SCMOrder = nil
-	frame.SCMCooldownID = nil
-	frame.SCMSpellID = nil
-	frame.SCMIconType = nil
-	frame.SCMGroup = nil
-	frame.SCMGlobal = nil
-	frame.SCMShouldBeVisible = nil
-	frame.SCMChanged = nil
-	frame.SCMHidden = nil
-	frame.SCMCustom = nil
-	frame.SCMIconTexture = nil
-	frame.SCMActiveGlow = nil
-	frame.SCMGlowWhileActive = nil
-	frame.SCMPandemic = nil
 	frame.spellID = nil
 	frame.itemID = nil
 	frame.slotID = nil
 	frame.lastCastStartTime = nil
 	frame.UpdateCooldown = nil
 	frame.UpdateCharges = nil
-	frame.SCMWidth = nil
-	frame.SCMHeight = nil
-	frame.SCMBaseStartPoint = nil
-	frame.SCMBaseOffsetX = nil
-	frame.SCMBaseOffsetY = nil
-	frame.SCMLayoutApplied = nil
 	frame.height = nil
 
 	frame:EnableMouse(false)

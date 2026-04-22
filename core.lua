@@ -189,14 +189,14 @@ local function RefreshPixelPerfectLayout()
 end
 
 function SCM:TRAIT_CONFIG_UPDATED()
-	C_Timer.After(0.2, function()
+	C_Timer.After(0.5, function()
 		RefreshCooldownViewerData()
 		SCM:RefreshResourceBarConfig()
 	end)
 end
 
 function SCM:ACTIVE_PLAYER_SPECIALIZATION_CHANGED()
-	C_Timer.After(0.2, function()
+	C_Timer.After(0.5, function()
 		RefreshCooldownViewerData(true)
 		SCM:RefreshResourceBarConfig()
 	end)

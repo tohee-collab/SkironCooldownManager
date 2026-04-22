@@ -469,13 +469,13 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 		local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
 		local data = cooldownInfoByID[cooldownID]
 
-		if info and data and data.category < 3 then
+		if info and data and data.category <= 3 then
 			local spellID = GetSpellIDForCooldownInfo(info)
 			local configID = SCM:GetCooldownConfigKey(cooldownID)
 			info.spellID = spellID
 
 			if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
-				table.insert(buffItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 3 })
+				table.insert(buffItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = Enum.CooldownViewerCategory.TrackedBuff })
 			end
 		end
 	end
@@ -1108,14 +1108,23 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 	iconSettings:SetTitle("")
 	scrollFrame:AddChild(iconSettings)
 
-	local label = AceGUI:Create("Label")
-	label:SetRelativeWidth(1.0)
-	label:SetHeight(24)
-	label:SetJustifyH("CENTER")
-	label:SetJustifyV("MIDDLE")
-	label:SetText("|TInterface\\common\\help-i:40:40:0:0|tClick on an icon above to show spell specific options.")
-	label:SetFontObject("Game12Font")
-	iconSettings:AddChild(label)
+	local function ShowIconSettingsMessage(message)
+		iconSettings:SetTitle("")
+
+		local label = AceGUI:Create("Label")
+		label:SetRelativeWidth(1.0)
+		label:SetHeight(24)
+		label:SetJustifyH("CENTER")
+		label:SetJustifyV("MIDDLE")
+		label:SetText(message)
+		label:SetFontObject("Game12Font")
+		iconSettings:AddChild(label)
+
+		iconSettings:DoLayout()
+		scrollFrame:DoLayout()
+	end
+
+	ShowIconSettingsMessage("|TInterface\\common\\help-i:40:40:0:0|tClick on an icon above to show spell specific options.")
 
 	local lastButtonFrame
 	horizontalScrollFrame:SetCallback("OnGroupSelected", function(scrollFrameWidget, event, buttonFrame, button)
@@ -1134,6 +1143,12 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 				if (not lastButtonFrame or lastButtonFrame ~= buttonFrame) and not isBuffBar then
 					local buttonData = buttonFrame.data
 					local buttonConfig = buttonData.isCustom and SCM:GetConfigTableByID(buttonData.id, buttonData.iconType, isGlobal) or SCM:GetSpellConfigForGroup(buttonData.id, currentAnchorIndex)
+					if not buttonConfig then
+						lastButtonFrame = nil
+						SCM:Debug("Missing icon config for anchor selection", buttonData.id or "unknown", currentAnchorIndex or "unknown", buttonData.cooldownID or "unknown")
+						ShowIconSettingsMessage("|TInterface\\common\\help-i:40:40:0:0|tThis icon could not be resolved for the current anchor.")
+						return
+					end
 
 					buttonFrame:SetBackdropBorderColor(0, 1, 0, 1)
 
@@ -1375,40 +1390,17 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 						scrollFrame:DoLayout()
 					end
 				elseif isBuffBar then
-					iconSettings:SetTitle("")
-					
 					if lastButtonFrame then
 						lastButtonFrame:SetBackdropBorderColor(BLACK_FONT_COLOR:GetRGBA())
 						lastButtonFrame = nil
 					end
 
-					local label = AceGUI:Create("Label")
-					label:SetRelativeWidth(1.0)
-					label:SetHeight(24)
-					label:SetJustifyH("CENTER")
-					label:SetJustifyV("MIDDLE")
-					label:SetText("|TInterface\\common\\help-i:40:40:0:0|tBuff bars will have additional options at some point.")
-					label:SetFontObject("Game12Font")
-					iconSettings:AddChild(label)
-
-					iconSettings:DoLayout()
-					scrollFrame:DoLayout()
+					ShowIconSettingsMessage("|TInterface\\common\\help-i:40:40:0:0|tBuff bars will have additional options at some point.")
 				else
-					iconSettings:SetTitle("")
 					lastButtonFrame:SetBackdropBorderColor(BLACK_FONT_COLOR:GetRGBA())
 					lastButtonFrame = nil
 
-					local label = AceGUI:Create("Label")
-					label:SetRelativeWidth(1.0)
-					label:SetHeight(24)
-					label:SetJustifyH("CENTER")
-					label:SetJustifyV("MIDDLE")
-					label:SetText("|TInterface\\common\\help-i:40:40:0:0|tClick on an icon to show spell specific options.")
-					label:SetFontObject("Game12Font")
-					iconSettings:AddChild(label)
-
-					iconSettings:DoLayout()
-					scrollFrame:DoLayout()
+					ShowIconSettingsMessage("|TInterface\\common\\help-i:40:40:0:0|tClick on an icon to show spell specific options.")
 				end
 			end
 		elseif button == "RightButton" and not buttonFrame.data.isAddButton then

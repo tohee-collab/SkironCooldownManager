@@ -5,6 +5,37 @@ local GLOBAL_GROUP_OFFSET = 100
 local GLOBAL_BUFF_BAR_OFFSET = 200
 local FIRST_GLOBAL_GROUP = GLOBAL_GROUP_OFFSET + 1
 local FIRST_BUFF_BAR_GROUP = GLOBAL_BUFF_BAR_OFFSET + 1
+local CHILD_SCM_RESET_FIELDS = {
+	"SCMConfig",
+	"SCMConfigID",
+	"SCMCooldownID",
+	"SCMSpellID",
+	"SCMLinkedSpellID",
+	"SCMOrder",
+	"SCMGroup",
+	"SCMGlobal",
+	"SCMBuffBar",
+	"SCMBuffOptions",
+	"SCMChanged",
+	"SCMCustom",
+	"SCMIconType",
+	"SCMIconTexture",
+	"SCMGlowWhileActive",
+	"SCMPandemic",
+	"SCMRowConfig",
+	"SCMShouldBeVisible",
+	"SCMHidden",
+	"SCMGlow",
+	"SCMActiveGlow",
+	"SCMAnchorFrame",
+	"SCMAnchorData",
+	"SCMWidth",
+	"SCMHeight",
+	"SCMBaseStartPoint",
+	"SCMBaseOffsetX",
+	"SCMBaseOffsetY",
+	"SCMLayoutApplied",
+}
 
 local function CreateDisabledTooltipOverlay(widget)
 	if not widget or not widget.frame then
@@ -101,6 +132,29 @@ function Utils.SetDisabledTooltip(widget, tooltip)
 
 	widget._scmDisabledTooltip = tooltip
 	Utils.RefreshDisabledTooltip(widget)
+end
+
+function Utils.ResetChildSCMState(child)
+	if not child then
+		return
+	end
+
+	if child.SCMHideTimer then
+		child.SCMHideTimer:Cancel()
+		child.SCMHideTimer = nil
+	end
+
+	if child.SCMGlow then
+		SCM:StopCustomGlow(child)
+	end
+
+	if child.Icon then
+		child.Icon.SCMDesaturated = nil
+	end
+
+	for index = 1, #CHILD_SCM_RESET_FIELDS do
+		child[CHILD_SCM_RESET_FIELDS[index]] = nil
+	end
 end
 
 function Utils.ToGlobalGroup(index)
