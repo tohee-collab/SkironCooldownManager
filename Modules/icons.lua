@@ -4,6 +4,7 @@ local Icons = SCM.Icons
 local Cache = SCM.Cache
 local Utils = SCM.Utils
 local AddChildToGroup = Utils.AddChildToGroup
+local GetSpellConfigByCooldownID = Utils.GetSpellConfigByCooldownID
 local Cooldowns = SCM.Cooldowns
 local TRACKED_BAR_CATEGORY = Enum.CooldownViewerCategory.TrackedBar
 local delayedHideSpellIDs = {
@@ -215,7 +216,7 @@ function Icons.CollectScopedAnchorGroups(updateScope, config, viewerUpdateMappin
 	for _, child in ipairs(GetOrCacheChildren(viewer, viewerData.isBuffIcon or viewerData.isBuffBar)) do
 		if child.GetCooldownID then
 			local cooldownID = child:GetCooldownID()
-			local _, childData = SCM:GetSpellConfigByCooldownID(cooldownID)
+			local _, childData = GetSpellConfigByCooldownID(SCM.spellConfig, cooldownID)
 			local group = GetConfiguredGroupForCategory(childData, categoryIndex)
 			if group then
 				targetGroups[group] = true
@@ -271,7 +272,7 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 
 	child.SCMSpellID = spellID
 
-	local configID, childData = SCM:GetSpellConfigByCooldownID(cooldownID)
+	local configID, childData = GetSpellConfigByCooldownID(SCM.spellConfig, cooldownID)
 	if not (cooldownID and spellID and childData) then
 		Utils.ResetChildSCMState(child)
 		Icons.SetChildVisibilityState(child, false, true)
@@ -325,7 +326,7 @@ local function ProcessSingleBuffBarChild(child, validChildren, categoryIndex, op
 
 	child.SCMSpellID = spellID
 
-	local configID, childData = SCM:GetSpellConfigByCooldownID(cooldownID)
+	local configID, childData = GetSpellConfigByCooldownID(SCM.spellConfig, cooldownID)
 	if not (cooldownID and spellID and childData) then
 		Utils.ResetChildSCMState(child)
 		Icons.SetChildVisibilityState(child, false, true)

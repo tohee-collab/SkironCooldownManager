@@ -5,6 +5,7 @@ local LSM = LibStub("LibSharedMedia-3.0")
 local Utils = SCM.Utils
 local ToGlobalGroup = Utils.ToGlobalGroup
 local ToBuffBarGroup = Utils.ToBuffBarGroup
+local GetCooldownConfigKey = Utils.GetCooldownConfigKey
 local UPDATE_SCOPE = SCM.CDM.UPDATE_SCOPE
 
 local colorKnown = "ffffff"
@@ -307,7 +308,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 			if info and data then
 				local spellID = GetSpellIDForCooldownInfo(info)
-				local configID = SCM:GetCooldownConfigKey(cooldownID)
+				local configID = GetCooldownConfigKey(cooldownID)
 				info.spellID = spellID
 
 				if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
@@ -342,7 +343,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 			if info and data and data.category == 3 then
 				local spellID = GetSpellIDForCooldownInfo(info)
-				local configID = SCM:GetCooldownConfigKey(cooldownID)
+				local configID = GetCooldownConfigKey(cooldownID)
 				info.spellID = spellID
 
 				if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
@@ -406,7 +407,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 			local data = item.data
 			local cooldownID = item.cooldownID
 			local info = item.info
-			local configID = SCM:GetCooldownConfigKey(cooldownID)
+			local configID = GetCooldownConfigKey(cooldownID)
 			if configID then
 				info.cooldownID = item.cooldownID
 				info.configID = configID
@@ -434,7 +435,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 		if info and data then
 			local spellID = GetSpellIDForCooldownInfo(info)
-			local configID = SCM:GetCooldownConfigKey(cooldownID)
+			local configID = GetCooldownConfigKey(cooldownID)
 			info.spellID = spellID
 
 			if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
@@ -454,7 +455,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 		if info and data then
 			local spellID = GetSpellIDForCooldownInfo(info)
-			local configID = SCM:GetCooldownConfigKey(cooldownID)
+			local configID = GetCooldownConfigKey(cooldownID)
 			info.spellID = spellID
 
 			if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
@@ -476,7 +477,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 		if info and data then
 			local spellID = GetSpellIDForCooldownInfo(info)
-			local configID = SCM:GetCooldownConfigKey(cooldownID)
+			local configID = GetCooldownConfigKey(cooldownID)
 			info.spellID = spellID
 
 			if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
@@ -492,7 +493,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 		if info and data and data.category <= 3 then
 			local spellID = GetSpellIDForCooldownInfo(info)
-			local configID = SCM:GetCooldownConfigKey(cooldownID)
+			local configID = GetCooldownConfigKey(cooldownID)
 			info.spellID = spellID
 
 			if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
@@ -899,6 +900,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 	addAnchorButton:SetDisabled(#anchorTabsTbl >= 15)
 	addAnchorButton:SetCallback("OnClick", function()
 		local nextIndex = (isGlobal and SCM:AddGlobalAnchor(anchorTabsTbl)) or (isBuffBar and SCM:AddBuffBarAnchor(anchorTabsTbl)) or SCM:AddAnchor(anchorTabsTbl)
+		ApplyModeConfigUpdate(nextIndex, mode)
 		anchorWidget:SetTabs(anchorTabsTbl)
 		anchorWidget:SelectTab(nextIndex)
 	end)
