@@ -148,6 +148,13 @@ local function BuildProfileExportPayload(self, exportType, classFileName, specID
 		payload.globalSettings = BuildGeneralSettingsExport(options)
 	end
 
+	if exportOptions.includeGlobalAnchors then
+		payload.globalAnchors = {
+			globalAnchorConfig = self.db.global.globalAnchorConfig,
+			globalCustomConfig = self.db.global.globalCustomConfig,
+		}
+	end
+
 	return payload
 end
 
@@ -220,7 +227,7 @@ local function GetImportedProfilePayload(typeID, data)
 		return data, nil
 	end
 
-	if data.profileData or data.resourceBarSettings or data.castBarSettings or data.globalSettings then
+	if data.profileData or data.resourceBarSettings or data.castBarSettings or data.globalSettings or data.globalAnchors then
 		local profileData = type(data.profileData) == "table" and data.profileData or {}
 		return profileData, data
 	end
@@ -401,6 +408,9 @@ function SCM:ImportProfile(profileName, importString)
 		ApplyResourceBarSettings(options, importedSections.resourceBarSettings)
 		ApplyCastBarSettings(options, importedSections.castBarSettings)
 		ApplyOptionsData(options, importedSections.globalSettings)
+		if importedSections.globalAnchors then
+			self:ImportGlobalAnchorsFromData(importedSections.globalAnchors)
+		end
 	end
 
 	self.db.profile.options = options

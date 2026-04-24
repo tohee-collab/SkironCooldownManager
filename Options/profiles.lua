@@ -132,10 +132,11 @@ local function Profiles(widget, frame, group)
 		includeResourceBar = true,
 		includeCastBar = true,
 		includeGlobalSettings = true,
+		includeGlobalAnchors = false,
 	}
 
 	local specificClassCheckbox = AceGUI:Create("CheckBox")
-	specificClassCheckbox:SetLabel("Specific Class")
+	specificClassCheckbox:SetLabel("Class")
 	specificClassCheckbox:SetRelativeWidth(0.5)
 	specificClassCheckbox:SetValue(exportState.useSpecificClass)
 	exportGroup:AddChild(specificClassCheckbox)
@@ -165,21 +166,27 @@ local function Profiles(widget, frame, group)
 
 	local resourceBarCheckbox = AceGUI:Create("CheckBox")
 	resourceBarCheckbox:SetLabel("Resource Bar Settings")
-	resourceBarCheckbox:SetRelativeWidth(0.33)
+	resourceBarCheckbox:SetRelativeWidth(0.25)
 	resourceBarCheckbox:SetValue(exportState.includeResourceBar)
 	exportGroup:AddChild(resourceBarCheckbox)
 
 	local castBarCheckbox = AceGUI:Create("CheckBox")
 	castBarCheckbox:SetLabel("Cast Bar Settings")
-	castBarCheckbox:SetRelativeWidth(0.33)
+	castBarCheckbox:SetRelativeWidth(0.25)
 	castBarCheckbox:SetValue(exportState.includeCastBar)
 	exportGroup:AddChild(castBarCheckbox)
 
 	local globalSettingsCheckbox = AceGUI:Create("CheckBox")
 	globalSettingsCheckbox:SetLabel("Global Settings")
-	globalSettingsCheckbox:SetRelativeWidth(0.33)
+	globalSettingsCheckbox:SetRelativeWidth(0.25)
 	globalSettingsCheckbox:SetValue(exportState.includeGlobalSettings)
 	exportGroup:AddChild(globalSettingsCheckbox)
+
+	local globalAnchorsCheckbox = AceGUI:Create("CheckBox")
+	globalAnchorsCheckbox:SetLabel("Global Icon Anchors")
+	globalAnchorsCheckbox:SetRelativeWidth(0.25)
+	globalAnchorsCheckbox:SetValue(exportState.includeGlobalAnchors)
+	exportGroup:AddChild(globalAnchorsCheckbox)
 
 	local exportButton = AceGUI:Create("Button")
 	exportButton:SetText("Export")
@@ -191,6 +198,7 @@ local function Profiles(widget, frame, group)
 			includeResourceBar = resourceBarCheckbox:GetValue(),
 			includeCastBar = castBarCheckbox:GetValue(),
 			includeGlobalSettings = globalSettingsCheckbox:GetValue(),
+			includeGlobalAnchors = globalAnchorsCheckbox:GetValue(),
 		}))
 	end)
 	exportGroup:AddChild(exportButton)
@@ -259,6 +267,10 @@ local function Profiles(widget, frame, group)
 
 	globalSettingsCheckbox:SetCallback("OnValueChanged", function(_, _, value)
 		exportState.includeGlobalSettings = value
+	end)
+
+	globalAnchorsCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+		exportState.includeGlobalAnchors = value
 	end)
 
 	RefreshExportControls()
