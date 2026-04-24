@@ -108,6 +108,7 @@ end
 
 function Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
 	if not options.disableRegularIconActiveSwipe or not parent.SCMSpellID or not self:GetUseAuraDisplayTime() or parent.SCMConfig.forceActiveSwipe then
+		parent.Icon.SCMDesaturated = nil
 		return
 	end
 
