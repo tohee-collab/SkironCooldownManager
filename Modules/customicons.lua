@@ -142,7 +142,7 @@ local function SetCustomIconCountText(frame, iconType, config)
 		return
 	end
 
-	local count = C_Item.GetItemCount(itemID)
+	local count = C_Item.GetItemCount(itemID, false, true)
 	if not count or count <= 0 then
 		frame.ChargeCount.Current:SetText(0)
 		frame.ChargeCount.Current:Show()
