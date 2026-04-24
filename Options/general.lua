@@ -525,7 +525,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		textureSettings:SetTitle("Texture")
 		tabWidget:AddChild(textureSettings)
 
-		local barTexture = AceGUI:Create("LSM30_Font")
+		local barTexture = AceGUI:Create("LSM30_Statusbar")
 		barTexture:SetLabel("Foreground Texture")
 		barTexture:SetRelativeWidth(0.5)
 		barTexture:SetList(LSM:HashTable("statusbar"))
