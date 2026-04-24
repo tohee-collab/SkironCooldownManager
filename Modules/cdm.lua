@@ -294,6 +294,11 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 			local offsetX = 0
 
 			child.SCMRowConfig = row.rowConfig
+			if child.SCMLayoutLimited then
+				child.SCMLayoutLimited = nil
+				Icons.SetChildVisibilityState(child, child.SCMShouldBeVisible, true)
+			end
+
 			if isCentered or isFixed then
 				offsetX = (rowChild * (row.rowIconWidth + baseSpacing)) - (row.rowWidth / 2) + (row.rowIconWidth / 2)
 			elseif growDir == "LEFT" then
@@ -315,8 +320,9 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 	if totalChildren < #visibleChildren then
 		for index = totalChildren + 1, #visibleChildren do
 			local child = visibleChildren[index]
+			child.SCMLayoutLimited = true
 			child.SCMLayoutApplied = nil
-			Icons.SetChildVisibilityState(child, false, true)
+			Icons.SetChildVisibilityState(child, child.SCMShouldBeVisible, true)
 		end
 	end
 

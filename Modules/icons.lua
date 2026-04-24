@@ -67,6 +67,10 @@ end
 function Icons.ShowChild(child)
 	CancelChildHideTimer(child)
 
+	if child.SCMLayoutLimited then
+		return
+	end
+
 	if child.viewerFrame and child.SCMHidden then
 		child.SCMHidden = false
 		UIParent.SetAlpha(child, 1)
@@ -82,7 +86,7 @@ function Icons.SetChildVisibilityState(child, shouldShow, applyNow)
 	end
 
 	if child.viewerFrame then
-		if shouldShow then
+		if shouldShow and not child.SCMLayoutLimited then
 			Icons.ShowChild(child)
 		else
 			Icons.HideChild(child)
@@ -91,7 +95,7 @@ function Icons.SetChildVisibilityState(child, shouldShow, applyNow)
 	end
 
 	if child.SCMCustom and not child:GetAttribute("statehidden") then
-		child:SetShown(shouldShow)
+		child:SetShown(shouldShow and not child.SCMLayoutLimited)
 	end
 end
 
