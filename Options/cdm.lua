@@ -204,6 +204,26 @@ local function GetEffectiveAnchorGroup(anchorIndex, mode)
 	return anchorIndex
 end
 
+local function SetAnchorHighlight(anchorFrame, state, color)
+	local isActive = state == "active"
+	if anchorFrame.SCMHighlightState == state and anchorFrame.isGlowActive == isActive then
+		return
+	end
+
+	anchorFrame.SCMHighlightState = state
+	anchorFrame.isGlowActive = isActive
+	LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
+	LibCustomGlow.PixelGlow_Start(anchorFrame, color, nil, nil, nil, nil, nil, nil, nil, "SCM")
+
+	if anchorFrame.debugText then
+		if state == "active" then
+			anchorFrame.debugText:SetTextColor(0.34, 0.70, 0.91, 1)
+		else
+			anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
+		end
+	end
+end
+
 local function ApplyModeConfigUpdate(anchorIndex, mode)
 	if mode == "global" then
 		SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, true)
@@ -844,15 +864,9 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 		for group, anchorFrame in pairs(SCM.anchorFrames) do
 			local activeGroup = GetEffectiveAnchorGroup(anchorIndex, mode)
 			if group == activeGroup then
-				anchorFrame.isGlowActive = true
-				LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
-				LibCustomGlow.PixelGlow_Start(anchorFrame, { 0.34, 0.70, 0.91, 1 }, nil, nil, nil, nil, nil, nil, nil, "SCM")
-				anchorFrame.debugText:SetTextColor(0.34, 0.70, 0.91, 1)
+				SetAnchorHighlight(anchorFrame, "active", { 0.34, 0.70, 0.91, 1 })
 			else
-				anchorFrame.isGlowActive = false
-				LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
-				LibCustomGlow.PixelGlow_Start(anchorFrame, nil, nil, nil, nil, nil, nil, nil, nil, "SCM")
-				anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
+				SetAnchorHighlight(anchorFrame, "default")
 			end
 		end
 	end

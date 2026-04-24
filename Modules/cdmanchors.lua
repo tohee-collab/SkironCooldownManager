@@ -239,6 +239,8 @@ local function OnDebugTextureShow(self)
 		return
 	end
 
+	anchorFrame.SCMHighlightState = "default"
+	anchorFrame.isGlowActive = false
 	anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
 	LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
 	LibCustomGlow.PixelGlow_Start(anchorFrame, nil, nil, nil, nil, nil, nil, nil, nil, "SCM")
@@ -246,8 +248,9 @@ end
 
 local function OnDebugTextureHide(self)
 	local anchorFrame = self:GetParent()
-	self.isGlowActive = false
 	if anchorFrame then
+		anchorFrame.SCMHighlightState = nil
+		anchorFrame.isGlowActive = false
 		LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
 	end
 end
@@ -320,7 +323,14 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 	anchorFrame:SetPoint(pivot, target, relativePoint, xOffset + ((iconSize or 0) * xOffsetMultiplier), yOffset + (anchorOffsetY or 0))
 	anchorFrame:Show()
 
-	if self.OptionsFrame ~= nil and self.OptionsFrame:IsShown() and not anchorFrame.isGlowActive and self.db.profile.options.showAnchorHighlight then
+	local shouldStartDefaultHighlight = self.OptionsFrame ~= nil
+		and self.OptionsFrame:IsShown()
+		and not anchorFrame.isGlowActive
+		and anchorFrame.SCMHighlightState ~= "default"
+		and self.db.profile.options.showAnchorHighlight
+
+	if shouldStartDefaultHighlight then
+		anchorFrame.SCMHighlightState = "default"
 		anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
 		LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
 		LibCustomGlow.PixelGlow_Start(anchorFrame, nil, nil, nil, nil, nil, nil, nil, nil, "SCM")
