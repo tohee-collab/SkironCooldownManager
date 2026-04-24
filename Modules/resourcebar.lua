@@ -613,6 +613,7 @@ local function ApplyBarAppearance(bar, barOptions)
 	end
 
 	text.Value:SetFont(fontPath, barOptions.fontSize, fontFlags)
+	text.Value:SetShadowColor(0, 0, 0, 0)
 	UpdateBarTextPosition(bar, barOptions)
 	text:SetShown(barOptions.showValues)
 
