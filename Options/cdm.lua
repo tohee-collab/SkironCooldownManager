@@ -172,13 +172,15 @@ local function CreateCustomIconButton(rootDescription, scrollFrame, anchorIndex,
 			iconData.iconType = buttonConfig.iconType
 			iconData.isCustom = true
 
-			local uniqueID = SCM:AddCustomIcon(anchorIndex, buttonConfig.iconType, configID, nil, nil, isGlobal)
+			local order = scrollFrame:AddCustomIcon(iconData)
+
+			local uniqueID = SCM:AddCustomIcon(anchorIndex, buttonConfig.iconType, configID, order, nil, isGlobal)
 			if not uniqueID then
 				return
 			end
 
-			iconData.id = uniqueID
-			scrollFrame:AddCustomIcon(iconData)
+			--iconData.id = uniqueID
+
 			SCM:ApplyAnchorGroupCDManagerConfig(anchorIndex, isGlobal)
 		end)
 	end)
