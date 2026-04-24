@@ -28,7 +28,7 @@ local function CreateAnchorConfigTables(customConfig)
 
 	if not customConfig[1] then
 		customConfig[1] = {
-			anchor = { "CENTER", "UIParent", "CENTER", 0, -285 },
+			anchor = { "CENTER", "UIParent", "CENTER", 0, 0 },
 			rowConfig = {
 				[1] = {
 					iconWidth = 150,
