@@ -33,6 +33,8 @@ local POINT_OFFSETS = {
 	BOTTOMRIGHT = { 0.5, -0.5 },
 }
 
+local anchorDataByCooldownID = {}
+
 local function GetAnchorState(group)
 	local state = Cache.cachedAnchorStates[group]
 	if not state then
@@ -44,17 +46,19 @@ local function GetAnchorState(group)
 end
 
 local function OnChildSetPoint(child)
-	local anchorFrame = child.SCMAnchorFrame
-	local anchorData = child.SCMAnchorData
+	local cooldownID = not child.SCMCustom and child:GetCooldownID()
+	local anchorData = cooldownID and anchorDataByCooldownID[cooldownID] or not cooldownID and child.SCMAnchorData
+	local anchorFrame = anchorData and anchorData[2]
 	if not anchorFrame or not anchorData then
 		return
 	end
 
+	child.SCMAnchorFrame = anchorFrame
 	anchorFrame.ClearAllPoints(child)
 	anchorFrame.SetPoint(
 		child,
 		anchorData[1],
-		anchorData[2],
+		anchorFrame,
 		anchorData[3],
 		SCM:PixelPerfect(anchorData[4]),
 		SCM:PixelPerfect(anchorData[5])
@@ -81,18 +85,31 @@ end
 local function SetChildPoint(child, groupAnchor, startPoint, offsetX, offsetY)
 	child.SCMAnchorFrame = groupAnchor
 
-	local anchorData = child.SCMAnchorData
+	local cooldownID = not child.SCMCustom and child:GetCooldownID()
+	local anchorData = cooldownID and anchorDataByCooldownID[cooldownID] or not cooldownID and child.SCMAnchorData
 	if not anchorData then
 		anchorData = {}
-		child.SCMAnchorData = anchorData
+		if cooldownID then
+			anchorDataByCooldownID[cooldownID] = anchorData
+		else
+			child.SCMAnchorData = anchorData
+		end
 	end
 
-	if anchorData[1] ~= startPoint or anchorData[2] ~= groupAnchor or anchorData[3] ~= startPoint or anchorData[4] ~= offsetX or anchorData[5] ~= offsetY then
+	local anchorChanged = anchorData[1] ~= startPoint
+		or anchorData[2] ~= groupAnchor
+		or anchorData[3] ~= startPoint
+		or anchorData[4] ~= offsetX
+		or anchorData[5] ~= offsetY
+	if anchorChanged then
 		anchorData[1] = startPoint
 		anchorData[2] = groupAnchor
 		anchorData[3] = startPoint
 		anchorData[4] = offsetX
 		anchorData[5] = offsetY
+	end
+
+	if anchorChanged or cooldownID then
 		OnChildSetPoint(child)
 	end
 end
