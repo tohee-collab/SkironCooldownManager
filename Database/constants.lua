@@ -259,6 +259,38 @@ Constants.ResourceBarRefreshEvents = {
 
 Constants.Roles = {
 	HEALER = "Healer",
-	DAMAGER = "Dps",
+	DAMAGER = "DPS",
 	TANK = "Tank",
+}
+
+Constants.Races = {
+	[1] = true, -- Human
+	[2] = true, -- Orc
+	[3] = true, -- Dwarf
+	[4] = true, -- Night Elf
+	[5] = true, -- Undead
+	[6] = true, -- Tauren
+	[7] = true, -- Gnome
+	[8] = true, -- Troll
+	[9] = true, -- Goblin
+	[10] = true, -- Blood Elf
+	[11] = true, -- Draenei
+	[12] = true, -- Fel Orc
+	[22] = true, -- Worgen
+	[25] = true, -- Pandaren (Alliance)
+	[26] = true, -- Pandaren (Horde)
+	[27] = true, -- Nightborne
+	[28] = true, -- Highmountain Tauren
+	[29] = true, -- Void Elf
+	[30] = true, -- Lightforged Draenei
+	[31] = true, -- Zandalari Troll
+	[32] = true, -- Kul Tiran
+	[34] = true, -- Dark Iron Dwarf
+	[35] = true, -- Vulpera
+	[36] = true, -- Mag'har Orc
+	[37] = true, -- Mechagnome
+	[52] = true, -- Dracthyr (Alliance)
+	[70] = true, -- Dracthyr (Horde)
+	[84] = true, -- Earthen (Horde)
+	[85] = true, -- Earthen (Alliance)
 }

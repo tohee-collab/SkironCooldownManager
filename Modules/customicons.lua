@@ -415,7 +415,13 @@ local function MatchesLoadFilter(loadFilter, value)
 end
 
 local function ShouldLoadCustomIcon(config)
-	return config.alwaysShow or MatchesLoadFilter(config.loadRoles, SCM.currentRole) and MatchesLoadFilter(config.loadClasses, SCM.currentClass)
+	if config.alwaysShow then return true end
+
+	if not MatchesLoadFilter(config.loadRoles, SCM.currentRole) then return false end
+	if not MatchesLoadFilter(config.loadClasses, SCM.currentClass) then return false end
+	if not MatchesLoadFilter(config.loadRaces, SCM.currentRace) then return false end
+
+	return true
 end
 
 local function ResolveCustomIconTexture(config, iconType)
@@ -848,6 +854,7 @@ function SCM:AddCustomIcon(anchorGroup, iconType, configID, order, uniqueID, isG
 		anchorGroup = anchorGroup,
 		order = order,
 		loadClasses = GetDefaultLoadClasses(),
+		loadRaces = Constants.Races,
 		loadRoles = { ["TANK"] = true, ["HEALER"] = true, ["DAMAGER"] = true },
 	}
 

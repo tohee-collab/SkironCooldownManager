@@ -79,6 +79,7 @@ function SCM:UpdateDB()
 	local firstBuffBarGroup = SCM.Utils.ToBuffBarGroup(1)
 	local class = UnitClassBase("player")
 	local specID, _, _, _, role = GetSpecializationInfo(GetSpecialization())
+	local _, _, raceID = UnitRace("player")
 
 	local currentConfig = self.DB:LoadData()
 	local specAnchorConfig = currentConfig and currentConfig.anchorConfig[specID]
@@ -116,6 +117,7 @@ function SCM:UpdateDB()
 	self.currentClass = class
 	self.currentSpecID = specID
 	self.currentRole = role
+	self.currentRace = raceID
 
 	for group, anchorFrame in pairs(self.anchorFrames) do
 		if group < firstGlobalGroup and not self.anchorConfig[group] then
