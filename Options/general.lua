@@ -527,7 +527,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 
 		local barTexture = AceGUI:Create("LSM30_Statusbar")
 		barTexture:SetLabel("Foreground Texture")
-		barTexture:SetRelativeWidth(0.5)
+		barTexture:SetRelativeWidth(0.33)
 		barTexture:SetList(LSM:HashTable("statusbar"))
 		barTexture:SetValue(buffBarOptions.barTexture)
 		barTexture:SetCallback("OnValueChanged", function(self, event, value)
@@ -538,7 +538,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		textureSettings:AddChild(barTexture)
 		
 		local backgroundColor = AceGUI:Create("ColorPicker")
-		backgroundColor:SetRelativeWidth(0.5)
+		backgroundColor:SetRelativeWidth(0.33)
 		backgroundColor:SetLabel("Background Color")
 		backgroundColor:SetHasAlpha(true)
 
@@ -549,6 +549,19 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			SCM:SkinBuffBars()
 		end)
 		textureSettings:AddChild(backgroundColor)
+
+		local foregroundColor = AceGUI:Create("ColorPicker")
+		foregroundColor:SetRelativeWidth(0.33)
+		foregroundColor:SetLabel("Foreground Color")
+		foregroundColor:SetHasAlpha(true)
+
+		local fgColor = buffBarOptions.foregroundColor or { r = 1, g = 1, b = 1, a = 1 }
+		foregroundColor:SetColor(fgColor.r, fgColor.g, fgColor.b, fgColor.a)
+		foregroundColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
+			buffBarOptions.foregroundColor = { r = r, g = g, b = b, a = a }
+			SCM:SkinBuffBars()
+		end)
+		textureSettings:AddChild(foregroundColor)
 
 		local borderSettings = AceGUI:Create("InlineGroup")
 		borderSettings:SetLayout("flow")

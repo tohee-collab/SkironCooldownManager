@@ -230,6 +230,7 @@ function SCM:SkinBuffBars()
 	local borderSize = SCM:PixelPerfect() * options.borderSize
 	local borderColor = options.borderColor
 	local backgroundColor = options.backgroundColor
+	local foregroundColor = options.foregroundColor
 
 	local iconFrame, bar
 	for _, child in ipairs({ BuffBarCooldownViewer:GetChildren() }) do
@@ -259,6 +260,7 @@ function SCM:SkinBuffBars()
 			bar:SetPoint("TOPLEFT", iconFrame, "TOPRIGHT", -borderSize, 0)
 			bar:SetPoint("BOTTOMLEFT", iconFrame, "BOTTOMRIGHT", -borderSize, 0)
 			bar:SetHeight(iconFrame:GetHeight())
+			bar:SetStatusBarColor(foregroundColor.r, foregroundColor.g, foregroundColor.b, foregroundColor.a)
 			bar.BarBG:SetPoint("TOPLEFT", iconFrame, "TOPRIGHT", -borderSize, 0)
 			bar.BarBG:SetPoint("BOTTOMLEFT", iconFrame, "BOTTOMRIGHT", -borderSize, 0)
 			bar.BarBG:SetPoint("RIGHT", bar, "RIGHT", 0, 0)

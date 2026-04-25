@@ -87,6 +87,7 @@ SCM.DefaultDB = {
 				borderSize = 2,
 				borderColor = {r = 0, g = 0, b = 0, a = 1},
 				backgroundColor = {r = 0.2, g = 0.2, b = 0.2, a = 0.5},
+				foregroundColor = {r = 0.5, g = 0.5, b = 1, a = 1},
 				font = "Expressway",
 				fontSize = 15,
 			},
