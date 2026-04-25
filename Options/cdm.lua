@@ -58,6 +58,27 @@ local function GetDefaultCustomIconLoadClasses()
 	return loadClasses
 end
 
+local function GetDefaultLoadRaceNames()
+	local dualFactionRaces = {}
+	local loadedRaces = {}
+
+	local sortedIDs = {}
+	for raceID in pairs(SCM.Constants.Races) do sortedIDs[#sortedIDs + 1] = raceID end
+	table.sort(sortedIDs)
+
+	for i = 1, #sortedIDs do
+		local raceID = sortedIDs[i]
+		local raceInfo = C_CreatureInfo.GetRaceInfo(raceID)
+
+		if raceInfo and not dualFactionRaces[raceInfo.raceName] then
+			dualFactionRaces[raceInfo.raceName] = true
+			loadedRaces[raceID] = raceInfo.raceName
+		end
+	end
+
+	return loadedRaces
+end
+
 local function SortByIndex(a, b)
 	return a.dataIndex < b.dataIndex
 end
@@ -1301,7 +1322,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 								if buttonData.isCustom then
 									if isGlobal then
 										local loadClass = AceGUI:Create("Dropdown")
-										loadClass:SetRelativeWidth(0.5)
+										loadClass:SetRelativeWidth(0.33)
 										loadClass:SetLabel("Classes")
 										loadClass:SetList(GetCustomIconClassList())
 										loadClass:SetMultiselect(true)
@@ -1322,7 +1343,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 										iconSettingsTabs:AddChild(loadClass)
 
 										local loadRole = AceGUI:Create("Dropdown")
-										loadRole:SetRelativeWidth(0.5)
+										loadRole:SetRelativeWidth(0.33)
 										loadRole:SetLabel("Roles")
 										loadRole:SetList(SCM.Constants.Roles)
 										loadRole:SetMultiselect(true)
@@ -1341,6 +1362,27 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 										end
 
 										iconSettingsTabs:AddChild(loadRole)
+
+										local loadRaces = AceGUI:Create("Dropdown")
+										loadRaces:SetRelativeWidth(0.33)
+										loadRaces:SetLabel("Races")
+										loadRaces:SetList(GetDefaultLoadRaceNames())
+										loadRaces:SetMultiselect(true)
+										loadRaces:SetCallback("OnValueChanged", function(_, _, key, value)
+											buttonConfig.loadRaces = buttonConfig.loadRaces or SCM.Constants.Races
+											buttonConfig.loadRaces[key] = value
+											ApplyIconConfigUpdate()
+										end)
+
+										if not buttonConfig.loadRaces then
+											buttonConfig.loadRaces = SCM.Constants.Races
+										end
+
+										for key, value in pairs(buttonConfig.loadRaces) do
+											loadRaces:SetItemValue(key, value)
+										end
+
+										iconSettingsTabs:AddChild(loadRaces)
 										return
 									end
 								end
