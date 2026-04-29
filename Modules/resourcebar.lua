@@ -1,6 +1,7 @@
 local _, SCM = ...
 local LSM = LibStub("LibSharedMedia-3.0")
 
+local Utils = SCM.Utils
 local MIN_BAR_WIDTH = 200
 local RESOURCE_BAR_FRAME_NAME = "SCM_ResourceBarContainer"
 local MOUNTED_VISIBILITY_CONDITION = "[combat]show;[mounted][stance:3]hide;show"
@@ -54,12 +55,7 @@ local function GetPowerColor(powerToken, powerType, altR, altG, altB)
 end
 
 local function ShouldHideManaForCurrentRole(barOptions)
-	local specializationIndex = GetSpecialization()
-	if not specializationIndex then
-		return
-	end
-
-	local role = select(5, GetSpecializationInfo(specializationIndex))
+	local role = select(5, Utils.GetSpec())
 	return barOptions.hideManaRoles[role]
 end
 
@@ -431,7 +427,7 @@ local function UpdateTicks(bar, maxValue)
 end
 
 local function GetChargedSegmentMap(bar, segmentCount, currentValue)
-	if bar.powerType == Enum.PowerType.ComboPoints and UnitClassBase("player") == "ROGUE" then
+	if bar.powerType == Enum.PowerType.ComboPoints and Utils.GetClass() == "ROGUE" then
 		local chargedComboPoints = GetUnitChargedPowerPoints("player")
 		if not chargedComboPoints or #chargedComboPoints == 0 then
 			return
@@ -874,9 +870,8 @@ function SCMResourceBarControllerMixin:ConfigureSecondaryBar()
 	local secondaryResource
 
 	if not UnitInVehicle("player") then
-		local className = UnitClassBase("player")
-		local specializationIndex = C_SpecializationInfo.GetSpecialization()
-		local specializationID = C_SpecializationInfo.GetSpecializationInfo(specializationIndex)
+		local className = Utils.GetClass()
+		local specializationID = Utils.GetSpec()
 
 		secondaryResource = SCMConstants.SpecSecondaryPower[specializationID] or SCMConstants.ClassSecondaryPower[className]
 		if secondaryResource and secondaryResource.showWhenPrimaryPowerType and primaryPowerType ~= secondaryResource.showWhenPrimaryPowerType then

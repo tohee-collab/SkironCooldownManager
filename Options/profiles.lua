@@ -6,38 +6,6 @@ local AceDBOptions = LibStub("AceDBOptions-3.0")
 
 SCM.MainTabs.Profiles = { value = "Profiles", text = "Profiles", order = 9, subgroups = {} }
 
-local classFileNameToID = {}
-local function GetSpecList(classFileName)
-	local specs = {}
-	if classFileName and classFileNameToID[classFileName] then
-		local classID = classFileNameToID[classFileName]
-		for specIndex = 1, C_SpecializationInfo.GetNumSpecializationsForClassID(classID) do
-			local id, name, _, icon = GetSpecializationInfoForClassID(classID, specIndex)
-			if id and name and icon then
-				specs[id] = ("|T%s:14:14:0:0|t %s"):format(icon, name)
-			end
-		end
-	end
-	return specs
-end
-
-local function GetClassList()
-	local classes = {
-		ALL = "ALL",
-	}
-
-	for classIndex = 1, GetNumClasses() do
-		local className, classFile, classID = GetClassInfo(classIndex)
-
-		if className and classFile and classID then
-			local classColor = GetClassColorObj(classFile)
-			classes[classFile] = ("|A:%s:0:0|a %s"):format(GetClassAtlas(classFile), classColor:WrapTextInColorCode(className))
-			classFileNameToID[classFile] = classID
-		end
-	end
-	return classes
-end
-
 local function CreateImportEditBox(Profiles, widget, frame, group)
 	widget:ReleaseChildren()
 
@@ -143,7 +111,7 @@ local function Profiles(widget, frame, group)
 
 	local classDropdown = AceGUI:Create("Dropdown")
 	classDropdown:SetLabel("Select Class")
-	classDropdown:SetList(GetClassList())
+	classDropdown:SetList(SCM.Utils.GetClassList(true))
 	classDropdown:SetRelativeWidth(0.5)
 	classDropdown:SetDisabled(true)
 	classDropdown.text:SetJustifyH("LEFT")
@@ -206,7 +174,7 @@ local function Profiles(widget, frame, group)
 	local function RefreshExportControls()
 		local selectedClass = classDropdown:GetValue()
 		local hasSpecificClass = exportState.useSpecificClass and selectedClass ~= nil
-		local filteredSpecs = hasSpecificClass and GetSpecList(selectedClass) or {}
+		local filteredSpecs = hasSpecificClass and SCM.Utils.GetSpecList(selectedClass) or {}
 		local hasSpecs = next(filteredSpecs) ~= nil
 
 		classDropdown:SetDisabled(not exportState.useSpecificClass)

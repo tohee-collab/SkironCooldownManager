@@ -257,6 +257,19 @@ SCM.DB = {
 			},
 		},
 	},
+
+	defaultBuffBarsAnchorConfig = {
+		[1] = {
+			anchor = { "CENTER", "UIParent", "CENTER", 0, 0 },
+			rowConfig = {
+				[1] = {
+					iconWidth = 150,
+					iconHeight = 40,
+					limit = 8,
+				},
+			},
+		},
+	},
 }
 
 SCM.DefaultClassConfig = {

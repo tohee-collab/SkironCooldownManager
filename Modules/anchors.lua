@@ -1,5 +1,6 @@
 local SCM = select(2, ...)
 
+local Utils = SCM.Utils
 local OriginalUUFAnchors = {}
 local OriginalElvUIAnchors = {}
 
@@ -29,7 +30,7 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 	local mainAnchor = SCM:GetAnchor(1)
 
 	if UUF_Player then
-		if options.anchorUUF and options.anchorUUFRoles[(select(5, GetSpecializationInfo(GetSpecialization())))] then
+		if options.anchorUUF and options.anchorUUFRoles[(select(5, Utils.GetSpec()))] then
 			if not UUF_Player.SCMOriginalAnchor then
 				UUF_Player.SCMOriginalAnchor = { UUF_Player:GetPoint() }
 				UUF_Player.SCMOriginalWidth = UUF_Player:GetWidth()
@@ -53,7 +54,7 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 			if not UUF_Player.SCMHook then
 				UUF_Player.SCMHook = true
 				hooksecurefunc(UUF_Player, "SetPoint", function(self)
-					if options.anchorUUF and options.anchorUUFRoles[(select(5, GetSpecializationInfo(GetSpecialization())))] then
+					if options.anchorUUF and options.anchorUUFRoles[(select(5, Utils.GetSpec()))] then
 						self.SCMAnchor.SetPoint(self, "TOPRIGHT", self.SCMAnchor, "TOPLEFT", self.SCMOffset, 0)
 						self.SCMAnchor.SetHeight(self, self.SCMHeight)
 						self.SCMAnchor.SetHeight(UUF_Player_HealthBar, self.SCMHeight - 2)
@@ -63,7 +64,7 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 				end)
 
 				hooksecurefunc(UUF_Player, "SetSize", function(self)
-					if options.anchorUUF and options.anchorUUFRoles[(select(5, GetSpecializationInfo(GetSpecialization())))] then
+					if options.anchorUUF and options.anchorUUFRoles[(select(5, Utils.GetSpec()))] then
 						self.SCMAnchor.SetHeight(self, self.SCMHeight)
 						self.SCMAnchor.SetHeight(UUF_Player_HealthBar, self.SCMHeight - 2)
 						self.SCMAnchor.SetHeight(UUF_Player_HealthBackground, self.SCMHeight - 2)
@@ -89,7 +90,7 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 	end
 
 	if UUF_Target then
-		if options.anchorUUF and options.anchorUUFRoles[(select(5, GetSpecializationInfo(GetSpecialization())))] then
+		if options.anchorUUF and options.anchorUUFRoles[(select(5, Utils.GetSpec()))] then
 			if not UUF_Target.SCMOriginalAnchor then
 				UUF_Target.SCMOriginalAnchor = { UUF_Target:GetPoint() }
 				UUF_Target.SCMOriginalWidth = UUF_Target:GetWidth()
@@ -112,7 +113,7 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 			if not UUF_Target.SCMHook then
 				UUF_Target.SCMHook = true
 				hooksecurefunc(UUF_Target, "SetPoint", function(self)
-					if options.anchorUUF and options.anchorUUFRoles[(select(5, GetSpecializationInfo(GetSpecialization())))] then
+					if options.anchorUUF and options.anchorUUFRoles[(select(5, Utils.GetSpec()))] then
 						self.SCMAnchor.SetPoint(self, "TOPLEFT", self.SCMAnchor, "TOPRIGHT", self.SCMOffset, 0)
 						self.SCMAnchor.SetHeight(self, self.SCMHeight)
 						self.SCMAnchor.SetHeight(UUF_Target_HealthBar, self.SCMHeight - 2)
@@ -121,7 +122,7 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 				end)
 
 				hooksecurefunc(UUF_Target, "SetSize", function(self)
-					if options.anchorUUF and options.anchorUUFRoles[(select(5, GetSpecializationInfo(GetSpecialization())))] then
+					if options.anchorUUF and options.anchorUUFRoles[(select(5, Utils.GetSpec()))] then
 						self.SCMAnchor.SetHeight(self, self.SCMHeight)
 						self.SCMAnchor.SetHeight(UUF_Target_HealthBar, self.SCMHeight - 2)
 						self.SCMAnchor.SetHeight(UUF_Target_HealthBackground, self.SCMHeight - 2)
@@ -272,7 +273,7 @@ function SCM:CopyAnchorConfig(sourceClass, sourceSpecID)
 			sourceAnchorConfig = self.DB.defaultAnchorConfig
 		end
 		if not sourceBuffBarsAnchorConfig then
-			sourceBuffBarsAnchorConfig = {}
+			sourceBuffBarsAnchorConfig = self.DB.defaultBuffBarsAnchorConfig
 		end
 	end
 

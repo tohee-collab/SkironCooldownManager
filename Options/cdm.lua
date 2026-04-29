@@ -48,26 +48,9 @@ for iconType, options in pairs(iconTypeTabs) do
 	end
 end
 
-local customIconClassList
-local function GetCustomIconClassList()
-	if not customIconClassList then
-		customIconClassList = {}
-		for classIndex = 1, GetNumClasses() do
-			local className, classFile = GetClassInfo(classIndex)
-			if className and classFile then
-				local classColor = GetClassColorObj(classFile)
-				local classAtlas = GetClassAtlas(classFile)
-				customIconClassList[classFile] = classAtlas and ("|A:%s:0:0|a %s"):format(classAtlas, classColor:WrapTextInColorCode(className)) or classColor:WrapTextInColorCode(className)
-			end
-		end
-	end
-
-	return customIconClassList
-end
-
 local function GetDefaultCustomIconLoadClasses()
 	local loadClasses = {}
-	for classFile in pairs(GetCustomIconClassList()) do
+	for classFile in pairs(SCM.Utils.GetClassList(false)) do
 		loadClasses[classFile] = true
 	end
 	return loadClasses
@@ -1350,7 +1333,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 										local loadClass = AceGUI:Create("Dropdown")
 										loadClass:SetRelativeWidth(0.33)
 										loadClass:SetLabel("Classes")
-										loadClass:SetList(GetCustomIconClassList())
+										loadClass:SetList(SCM.Utils.GetClassList(false))
 										loadClass:SetMultiselect(true)
 										loadClass:SetCallback("OnValueChanged", function(_, _, key, value)
 											buttonConfig.loadClasses = buttonConfig.loadClasses or GetDefaultCustomIconLoadClasses()
@@ -1582,33 +1565,12 @@ local function CreateAnchorTabGroup(parent, frame, mode)
 	parent:AddChild(anchorTabs)
 end
 
-local copyClassFileNameToID = {}
-
 local function GetCopyClassList()
-	local classes = {}
-	for classIndex = 1, GetNumClasses() do
-		local className, classFile, classID = GetClassInfo(classIndex)
-		if className and classFile and classID then
-			local classColor = GetClassColorObj(classFile)
-			classes[classFile] = ("|A:%s:0:0|a %s"):format(GetClassAtlas(classFile), classColor:WrapTextInColorCode(className))
-			copyClassFileNameToID[classFile] = classID
-		end
-	end
-	return classes
+	return SCM.Utils.GetClassList(false)
 end
 
 local function GetCopySpecList(classFileName)
-	local specs = {}
-	if classFileName and copyClassFileNameToID[classFileName] then
-		local classID = copyClassFileNameToID[classFileName]
-		for specIndex = 1, C_SpecializationInfo.GetNumSpecializationsForClassID(classID) do
-			local id, name, _, icon = GetSpecializationInfoForClassID(classID, specIndex)
-			if id and name and icon then
-				specs[id] = ("|T%s:14:14:0:0|t %s"):format(icon, name)
-			end
-		end
-	end
-	return specs
+	return SCM.Utils.GetSpecList(classFileName)
 end
 
 local function CreateCopyAnchorTab(widget, frame, modeTabs)
@@ -1620,7 +1582,7 @@ local function CreateCopyAnchorTab(widget, frame, modeTabs)
 	local _, currentSpecName = C_SpecializationInfo.GetSpecializationInfo(C_SpecializationInfo.GetSpecialization())
 	local targetSpecDisplay = currentSpecName or tostring(currentSpecID)
 
-	-- Populate copyClassFileNameToID now (needed for the class dropdown below).
+	-- Populate the class list (also seeds the classFileNameToID lookup used by GetCopySpecList).
 	local classList = GetCopyClassList()
 
 	local outerGroup = AceGUI:Create("SimpleGroup")

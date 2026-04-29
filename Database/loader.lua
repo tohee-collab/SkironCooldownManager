@@ -12,7 +12,7 @@ local function GetSpecConfigValue(configTable, specID)
 end
 
 function SCM.DB:LoadData()
-	SCM.DB.currentConfig = self:GetClassConfig(UnitClassBase("player"))
+	SCM.DB.currentConfig = self:GetClassConfig(SCM.Utils.GetClass())
 	SCM.DB.configLoaded = SCM.DB.currentConfig ~= nil
 
 	return SCM.DB.currentConfig
@@ -35,7 +35,7 @@ function SCM.DB:RegisterClassConfig(classFileName, config)
 
 	for specID, anchorConfig in pairs(config.anchorConfig) do
 		if #anchorConfig == 0 then
-			self.classes[classFileName].anchorConfig[specID] = self.defaultAnchorConfig
+			self.classes[classFileName].anchorConfig[specID] = CopyTable(self.defaultAnchorConfig)
 		else
 			self.classes[classFileName].anchorConfig[specID] = anchorConfig
 		end
@@ -63,7 +63,7 @@ function SCM.DB:RegisterClassSpecConfig(classFileName, config, specID)
 
 	if config.anchorConfig[specID] then
 		if #config.anchorConfig[specID] == 0 then
-			self.classes[classFileName].anchorConfig[specID] = self.defaultAnchorConfig
+			self.classes[classFileName].anchorConfig[specID] = CopyTable(self.defaultAnchorConfig)
 		else
 			self.classes[classFileName].anchorConfig[specID] = config.anchorConfig[specID]
 		end
@@ -87,7 +87,7 @@ function SCM.DB:RegisterAndLoadConfig(profileName, classFileName, config, specID
 		SCM.DB:RegisterClassConfig(classFileName, config)
 	end
 
-	if classFileName == UnitClassBase("player") then
+	if classFileName == SCM.Utils.GetClass() then
 		SCM.db.profile[classFileName] = SCM.db.profile[classFileName] or {}
 
 		for specID, spellConfig in pairs(config.spellConfig) do
