@@ -265,6 +265,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 	local customTimerStart, customTimerDuration = GetActiveCustomTimer(frame, iconType, config, now)
 	if customTimerStart then
 		frame.Cooldown:SetCooldown(customTimerStart, customTimerDuration)
+		frame.Cooldown:SetReverse(true)
 		frame.Icon:SetDesaturated(false)
 		UpdateCustomIconGlow(frame, true)
 		return true
