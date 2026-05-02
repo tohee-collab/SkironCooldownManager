@@ -199,9 +199,11 @@ local function CreateCustomIconButton(rootDescription, scrollFrame, anchorIndex,
 			iconData.iconType = buttonConfig.iconType
 			iconData.isCustom = true
 
+			local uniqueID = SCM:GetUniqueID(configID, buttonConfig.iconType, isGlobal)
+			iconData.id = uniqueID
 			local order, insertedData = scrollFrame:AddCustomIcon(iconData)
 
-			local uniqueID = SCM:AddCustomIcon(anchorIndex, buttonConfig.iconType, configID, order, nil, isGlobal)
+			uniqueID = SCM:AddCustomIcon(anchorIndex, buttonConfig.iconType, configID, order, uniqueID, isGlobal)
 			if not uniqueID then
 				scrollFrame:RemoveButton(insertedData)
 				return
