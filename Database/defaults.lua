@@ -156,6 +156,7 @@ SCM.DefaultDB = {
 					backdropSize = 2,
 					backdropColor = { r = 0, g = 0, b = 0, a = 1 },
 					height = 20,
+					heightAlternative = 10,
 					showValues = true,
 				},
 				secondaryBar = {
@@ -183,6 +184,7 @@ SCM.DefaultDB = {
 					backdropSize = 2,
 					backdropColor = { r = 0, g = 0, b = 0, a = 1 },
 					height = 20,
+					heightAlternative = 20,
 					showValues = true,
 				},
 			},
@@ -250,6 +252,19 @@ SCM.DB = {
 			rowConfig = {
 				[1] = {
 					size = 40,
+					limit = 8,
+				},
+			},
+		},
+	},
+
+	defaultBuffBarsAnchorConfig = {
+		[1] = {
+			anchor = { "CENTER", "UIParent", "CENTER", 0, 0 },
+			rowConfig = {
+				[1] = {
+					iconWidth = 150,
+					iconHeight = 40,
 					limit = 8,
 				},
 			},

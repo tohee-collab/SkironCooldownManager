@@ -265,6 +265,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 	local customTimerStart, customTimerDuration = GetActiveCustomTimer(frame, iconType, config, now)
 	if customTimerStart then
 		frame.Cooldown:SetCooldown(customTimerStart, customTimerDuration)
+		frame.Cooldown:SetReverse(true)
 		frame.Icon:SetDesaturated(false)
 		UpdateCustomIconGlow(frame, true)
 		return true
@@ -854,7 +855,7 @@ function SCM:AddCustomIcon(anchorGroup, iconType, configID, order, uniqueID, isG
 		anchorGroup = anchorGroup,
 		order = order,
 		loadClasses = GetDefaultLoadClasses(),
-		loadRaces = Constants.Races,
+		loadRaces = SCM.Constants.Races,
 		loadRoles = { ["TANK"] = true, ["HEALER"] = true, ["DAMAGER"] = true },
 	}
 

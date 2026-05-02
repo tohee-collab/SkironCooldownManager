@@ -77,8 +77,8 @@ end
 function SCM:UpdateDB()
 	local firstGlobalGroup = SCM.Utils.ToGlobalGroup(1)
 	local firstBuffBarGroup = SCM.Utils.ToBuffBarGroup(1)
-	local class = UnitClassBase("player")
-	local specID, _, _, _, role = GetSpecializationInfo(GetSpecialization())
+	local class = Utils.GetClass()
+	local specID, _, _, _, role = Utils.GetSpec()
 	local _, _, raceID = UnitRace("player")
 
 	local currentConfig = self.DB:LoadData()
@@ -91,7 +91,7 @@ function SCM:UpdateDB()
 	self.db.profile[class][specID] = self.db.profile[class][specID]
 		or {
 			anchorConfig = CopyTable(specAnchorConfig or self.DB.defaultAnchorConfig),
-			buffBarsAnchorConfig = CopyTable(specBuffBarsAnchorConfig or {}),
+			buffBarsAnchorConfig = CopyTable(specBuffBarsAnchorConfig or self.DB.defaultBuffBarsAnchorConfig),
 			spellConfig = specSpellConfig or {},
 			customConfig = specCustomConfig or {},
 		}

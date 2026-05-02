@@ -307,3 +307,52 @@ function Utils.GetIconType(config)
 	if not config or not (type(config) == "table") then return end
 	return config.iconType or (config.spellID and "spell") or "item"
 end
+
+function Utils.GetClass()
+	return UnitClassBase("player")
+end
+
+function Utils.GetSpec()
+	return GetSpecializationInfo(GetSpecialization())
+end
+
+local classFileNameToID = {}
+
+--- Returns a table of { [classFile] = displayString } for all classes.
+--- Populates the shared classFileNameToID lookup as a side effect.
+--- Pass addAll=true to include an "ALL" = "ALL" entry (for export/import filters).
+function Utils.GetClassList(addAll)
+	local classes = {}
+
+	if addAll then
+		classes["ALL"] = "ALL"
+	end
+
+	for classIndex = 1, GetNumClasses() do
+		local className, classFile, classID = GetClassInfo(classIndex)
+		if className and classFile and classID then
+			local classColor = GetClassColorObj(classFile)
+			local classAtlas = GetClassAtlas(classFile)
+			classes[classFile] = classAtlas and ("|A:%s:0:0|a %s"):format(classAtlas, classColor:WrapTextInColorCode(className)) or classColor:WrapTextInColorCode(className)
+			classFileNameToID[classFile] = classID
+		end
+	end
+
+	return classes
+end
+
+--- Returns a table of { [specID] = displayString } for all specs of the given class.
+--- Utils.GetClassList must have been called at least once to populate the classID lookup.
+function Utils.GetSpecList(classFileName)
+	local specs = {}
+	if classFileName and classFileNameToID[classFileName] then
+		local classID = classFileNameToID[classFileName]
+		for specIndex = 1, C_SpecializationInfo.GetNumSpecializationsForClassID(classID) do
+			local id, name, _, icon = GetSpecializationInfoForClassID(classID, specIndex)
+			if id and name and icon then
+				specs[id] = ("|T%s:14:14:0:0|t %s"):format(icon, name)
+			end
+		end
+	end
+	return specs
+end

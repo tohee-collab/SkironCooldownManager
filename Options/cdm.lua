@@ -14,6 +14,21 @@ local colorDisabled = "ff0000"
 
 SCM.MainTabs.CDM = { value = "CDM", text = "Cooldown Manager", order = 2, subgroups = {} }
 
+StaticPopupDialogs["SCM_CONFIRM_COPY_ANCHORS"] = {
+	text = "Copy anchor configuration from |cFFFFFFFF%s|r?\n\nThis will overwrite the current anchor layout for |cFFFFFFFF%s|r.",
+	button1 = "Copy",
+	button2 = "Cancel",
+	OnAccept = function(self, data)
+		if data and data.callback then
+			data.callback()
+		end
+	end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = 3,
+}
+
 local iconTypeTabs = {
 	all = {
 		{ value = "general", text = "General" },
@@ -33,29 +48,20 @@ for iconType, options in pairs(iconTypeTabs) do
 	end
 end
 
-local customIconClassList
-local function GetCustomIconClassList()
-	if not customIconClassList then
-		customIconClassList = {}
-		for classIndex = 1, GetNumClasses() do
-			local className, classFile = GetClassInfo(classIndex)
-			if className and classFile then
-				local classColor = GetClassColorObj(classFile)
-				local classAtlas = GetClassAtlas(classFile)
-				customIconClassList[classFile] = classAtlas and ("|A:%s:0:0|a %s"):format(classAtlas, classColor:WrapTextInColorCode(className)) or classColor:WrapTextInColorCode(className)
-			end
-		end
-	end
-
-	return customIconClassList
-end
-
 local function GetDefaultCustomIconLoadClasses()
 	local loadClasses = {}
-	for classFile in pairs(GetCustomIconClassList()) do
+	for classFile in pairs(SCM.Utils.GetClassList(false)) do
 		loadClasses[classFile] = true
 	end
 	return loadClasses
+end
+
+local function GetDefaultCustomIconLoadRaces()
+	local loadRaces = {}
+	for raceID in pairs(SCM.Constants.Races) do
+		loadRaces[raceID] = true
+	end
+	return loadRaces
 end
 
 local function GetDefaultLoadRaceNames()
@@ -551,6 +557,13 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		keepAspectRatio:SetCallback("OnValueChanged", function(_, _, value)
 			rowConfig.keepAspectRatio = value
 		end)
+		keepAspectRatio:SetCallback("OnEnter", function()
+			GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR")
+			GameTooltip:SetText("Lock Aspect Ratio", nil, nil, nil, nil, true)
+			GameTooltip:AddLine("This will lock both Icon Width & Icon Height to be the same value.", 1, 1, 1, true)
+			GameTooltip:Show()
+		end)
+		keepAspectRatio:SetCallback("OnLeave", function() GameTooltip:Hide() end)
 		self:AddChild(keepAspectRatio)
 
 		local hardLimit = AceGUI:Create("CheckBox")
@@ -561,6 +574,13 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 			rowConfig.hardLimit = value
 			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
+		hardLimit:SetCallback("OnEnter", function()
+			GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR")
+			GameTooltip:SetText("Hard Limit", nil, nil, nil, nil, true)
+			GameTooltip:AddLine("This option will ensure that only the set number of icons are displayed.", 1, 1, 1, true)
+			GameTooltip:Show()
+		end)
+		hardLimit:SetCallback("OnLeave", function() GameTooltip:Hide() end)
 		self:AddChild(hardLimit)
 
 		if rowIndex == 1 then
@@ -578,6 +598,13 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 					fixedWidth:SetDisabled(not value)
 				end
 			end)
+			useFixedWidth:SetCallback("OnEnter", function()
+				GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR")
+				GameTooltip:SetText("Use Fixed Width", nil, nil, nil, nil, true)
+				GameTooltip:AddLine("This will make the row use a fixed width instead of calculating it based on the number of icons.", 1, 1, 1, true)
+				GameTooltip:Show()
+			end)
+			useFixedWidth:SetCallback("OnLeave", function() GameTooltip:Hide() end)
 			self:AddChild(useFixedWidth)
 
 			fixedWidth = AceGUI:Create("Slider")
@@ -1325,7 +1352,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 										local loadClass = AceGUI:Create("Dropdown")
 										loadClass:SetRelativeWidth(0.33)
 										loadClass:SetLabel("Classes")
-										loadClass:SetList(GetCustomIconClassList())
+										loadClass:SetList(SCM.Utils.GetClassList(false))
 										loadClass:SetMultiselect(true)
 										loadClass:SetCallback("OnValueChanged", function(_, _, key, value)
 											buttonConfig.loadClasses = buttonConfig.loadClasses or GetDefaultCustomIconLoadClasses()
@@ -1370,14 +1397,14 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 										loadRaces:SetList(GetDefaultLoadRaceNames())
 										loadRaces:SetMultiselect(true)
 										loadRaces:SetCallback("OnValueChanged", function(_, _, key, value)
-											buttonConfig.loadRaces = buttonConfig.loadRaces or SCM.Constants.Races
-											buttonConfig.loadRaces[key] = value
-											ApplyIconConfigUpdate()
-										end)
+												buttonConfig.loadRaces = buttonConfig.loadRaces or GetDefaultCustomIconLoadRaces()
+												buttonConfig.loadRaces[key] = value
+												ApplyIconConfigUpdate()
+											end)
 
-										if not buttonConfig.loadRaces then
-											buttonConfig.loadRaces = SCM.Constants.Races
-										end
+											if not buttonConfig.loadRaces then
+												buttonConfig.loadRaces = GetDefaultCustomIconLoadRaces()
+											end
 
 										for key, value in pairs(buttonConfig.loadRaces) do
 											loadRaces:SetItemValue(key, value)
@@ -1557,6 +1584,117 @@ local function CreateAnchorTabGroup(parent, frame, mode)
 	parent:AddChild(anchorTabs)
 end
 
+local function GetCopyClassList()
+	return SCM.Utils.GetClassList(false)
+end
+
+local function GetCopySpecList(classFileName)
+	return SCM.Utils.GetSpecList(classFileName)
+end
+
+local function CreateCopyAnchorTab(widget, frame, modeTabs)
+	widget:ReleaseChildren()
+
+	local currentClass = SCM.currentClass
+	local currentSpecID = SCM.currentSpecID
+	-- Use the live player API so we don't depend on copyClassFileNameToID being pre-populated.
+	local _, currentSpecName = C_SpecializationInfo.GetSpecializationInfo(C_SpecializationInfo.GetSpecialization())
+	local targetSpecDisplay = currentSpecName or tostring(currentSpecID)
+
+	-- Populate the class list (also seeds the classFileNameToID lookup used by GetCopySpecList).
+	local classList = GetCopyClassList()
+
+	local outerGroup = AceGUI:Create("SimpleGroup")
+	outerGroup:SetFullWidth(true)
+	outerGroup:SetLayout("flow")
+	widget:AddChild(outerGroup)
+
+	local targetLabel = AceGUI:Create("Label")
+	targetLabel:SetFullWidth(true)
+	targetLabel:SetText("|cFFAAAAAACopy Anchors To |r " .. (classList[currentClass] or currentClass) .. " - " .. targetSpecDisplay)
+	targetLabel:SetJustifyH("CENTER")
+	targetLabel:SetFont(STANDARD_TEXT_FONT, 15, "OUTLINE")
+	outerGroup:AddChild(targetLabel)
+
+	local infoLabel = AceGUI:Create("Label")
+	infoLabel:SetFullWidth(true)
+	infoLabel:SetText("This will only copy across anchors and their layout, spells / icons are not copied.")
+	infoLabel:SetJustifyH("CENTER")
+	infoLabel:SetFont(STANDARD_TEXT_FONT, 12, "OUTLINE")
+	outerGroup:AddChild(infoLabel)
+
+	local copyFromGroup = AceGUI:Create("InlineGroup")
+	copyFromGroup:SetFullWidth(true)
+	copyFromGroup:SetTitle("Copy From")
+	copyFromGroup:SetLayout("flow")
+	outerGroup:AddChild(copyFromGroup)
+
+	local selectedClass = nil
+	local selectedSpecID = nil
+	local selectedSpecDisplay = nil
+
+	local copyBtn
+
+	local function RefreshCopyButton()
+		if not copyBtn then return end
+		local isSelf = selectedClass == currentClass and selectedSpecID == currentSpecID
+		local isValid = selectedClass ~= nil and selectedSpecID ~= nil and not isSelf
+		copyBtn:SetDisabled(not isValid)
+		if isSelf then
+			copyBtn:SetText("Cannot Copy to the Same Specialization")
+		else
+			copyBtn:SetText("Copy Anchors")
+		end
+	end
+
+	local specDropdown = AceGUI:Create("Dropdown")
+	specDropdown:SetRelativeWidth(0.5)
+	specDropdown:SetLabel("Specialization")
+	specDropdown:SetList({})
+	specDropdown:SetDisabled(true)
+	specDropdown.text:SetJustifyH("LEFT")
+
+	local classDropdown = AceGUI:Create("Dropdown")
+	classDropdown:SetRelativeWidth(0.5)
+	classDropdown:SetLabel("Class")
+	classDropdown:SetList(classList)
+	classDropdown.text:SetJustifyH("LEFT")
+	classDropdown:SetCallback("OnValueChanged", function(_, _, value)
+		selectedClass = value
+		selectedSpecID = nil
+		selectedSpecDisplay = nil
+		local specList = GetCopySpecList(value)
+		specDropdown:SetList(specList)
+		specDropdown:SetValue(nil)
+		specDropdown:SetDisabled(false)
+		specDropdown.text:SetJustifyH("LEFT")
+		RefreshCopyButton()
+	end)
+	copyFromGroup:AddChild(classDropdown)
+
+	specDropdown:SetCallback("OnValueChanged", function(_, _, value)
+		selectedSpecID = value
+		local specList = GetCopySpecList(selectedClass)
+		selectedSpecDisplay = specList[value]
+		RefreshCopyButton()
+	end)
+	copyFromGroup:AddChild(specDropdown)
+
+	copyBtn = AceGUI:Create("Button")
+	copyBtn:SetText("Copy Anchors")
+	copyBtn:SetFullWidth(true)
+	copyBtn:SetDisabled(true)
+	copyBtn:SetCallback("OnClick", function()
+		StaticPopup_Show("SCM_CONFIRM_COPY_ANCHORS", selectedSpecDisplay or tostring(selectedSpecID), targetSpecDisplay, {
+			callback = function()
+				SCM:CopyAnchorConfig(selectedClass, selectedSpecID)
+				modeTabs:SelectTab("spec")
+			end,
+		})
+	end)
+	copyFromGroup:AddChild(copyBtn)
+end
+
 local function CDM(self, frame, group)
 	local modeTabs = AceGUI:Create("TabGroup")
 	modeTabs:SetLayout("fill")
@@ -1567,11 +1705,16 @@ local function CDM(self, frame, group)
 		{ value = "spec", text = "|cFFFFFFFFSpecialization|r: Icons" },
 		{ value = "buffbars", text = "|cFFFFFFFFSpecialization|r: Bars" },
 		{ value = "global", text = "|cFFFFFFFFGlobal|r: Icons" },
+		{ value = "copy", text = "|cFFFFFFFFCopy|r Anchors" },
 	}
 
 	modeTabs:SetTabs(tabs)
 	modeTabs:SetCallback("OnGroupSelected", function(widget, event, mode)
-		CreateAnchorTabGroup(widget, frame, mode)
+		if mode == "copy" then
+			CreateCopyAnchorTab(widget, frame, modeTabs)
+		else
+			CreateAnchorTabGroup(widget, frame, mode)
+		end
 	end)
 	modeTabs:SelectTab("spec")
 	self:AddChild(modeTabs)
