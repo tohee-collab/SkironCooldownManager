@@ -171,6 +171,16 @@ function Icons.SetupRegularIconHooks(child)
 	Cooldowns.SetupCooldownHooks(child)
 end
 
+function Icons.SetupBuffBarHooks(child)
+	if child.SCMShowHook then
+		return
+	end
+	child.SCMShowHook = true
+
+	child:HookScript("OnShow", OnShow)
+	hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnHide)
+end
+
 local function GetOrCacheChildren(viewer, shouldRefreshCache)
 	if not Cache.cachedViewerChildren[viewer] then
 		Cache.cachedViewerChildren[viewer] = { viewer:GetChildren() }
@@ -257,7 +267,7 @@ local function ProcessRegularIcon(child, childData, options)
 end
 
 local function ProcessBuffBar(child, childData, options)
-	Icons.SetupIconHooks(child)
+	Icons.SetupBuffBarHooks(child)
 	local isInactive = not child.auraInstanceID
 	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and childData.alwaysShow)
 	local shouldHide = isInactive and not forceShow
@@ -328,7 +338,7 @@ local function ProcessSingleChild(child, validChildren, categoryIndex, isBuffIco
 
 	AddChildToGroup(validChildren, group, child)
 
-	child.SCMChanged = not child.SCMConfig or child.SCMConfig ~= groupConfig
+	child.SCMChanged = (not child.SCMConfig or child.SCMConfig ~= groupConfig) or (not child.SCMCooldownID or child.SCMCooldownID ~= cooldownID)
 	child.SCMConfig = groupConfig
 	child.SCMOrder = groupConfig.order
 	child.SCMCooldownID = cooldownID
@@ -400,7 +410,7 @@ local function ProcessSingleBuffBarChild(child, validChildren, categoryIndex, op
 
 	AddChildToGroup(validChildren, group, child)
 
-	child.SCMChanged = not child.SCMConfig or child.SCMConfig ~= groupConfig
+	child.SCMChanged = (not child.SCMConfig or child.SCMConfig ~= groupConfig) or (not child.SCMCooldownID or child.SCMCooldownID ~= cooldownID)
 	child.SCMConfig = groupConfig
 	child.SCMOrder = groupConfig.order
 	child.SCMCooldownID = cooldownID

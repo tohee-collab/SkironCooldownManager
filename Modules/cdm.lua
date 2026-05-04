@@ -258,7 +258,9 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 	local effectiveWidth = max(initialWidth, maxGroupWidth, 1)
 	local effectiveHeight = max(initialHeight, accumulatedY - baseSpacing, 1)
 	local firstRowHeight = (rows[1] and rows[1].rowIconHeight) or initialHeight
-	local anchorOffsetY = growsUp and max(effectiveHeight - firstRowHeight, 0) or 0
+	local heightDelta = max(effectiveHeight - firstRowHeight, 0)
+	local anchorOffsetY = secondaryGrowDir == "UP" and ((pivot:find("TOP") and heightDelta) or (not pivot:find("BOTTOM") and heightDelta / 2) or 0)
+		or ((pivot:find("BOTTOM") and -heightDelta) or (not pivot:find("TOP") and -heightDelta / 2) or 0)
 	local boundsChanged = state.effectiveWidth ~= effectiveWidth or state.effectiveHeight ~= effectiveHeight or state.anchorOffsetY ~= anchorOffsetY
 	local groupAnchor = SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, growDir, initialWidth, resetSize, anchorOffsetY)
 
