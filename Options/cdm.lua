@@ -334,7 +334,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
 			local data = cooldownInfoByID[cooldownID]
 
-			if info and data then
+			if info and data and data.category == 3 then
 				local spellID = GetSpellIDForCooldownInfo(info)
 				local configID = GetCooldownConfigKey(cooldownID)
 				info.spellID = spellID
