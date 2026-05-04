@@ -70,14 +70,7 @@ local function ApplyAnchors(frame, anchors)
 		return
 	end
 
-	local anchorFrame
-	for _, anchorRef in ipairs({ strsplit(",", anchors[2]) }) do
-		local resolvedAnchor = ResolveFrameReference(strtrim(anchorRef))
-		if resolvedAnchor and resolvedAnchor:IsVisible() then
-			anchorFrame = resolvedAnchor
-			break
-		end
-	end
+	local anchorFrame = ResolveFrameReference(anchors[2])
 	frame:ClearAllPoints()
 	frame:SetPoint(anchors[1] or "CENTER", anchorFrame or UIParent, anchors[3] or anchors[1] or "CENTER", anchors[4] or 0, anchors[5] or 0)
 end
@@ -201,16 +194,6 @@ local function GetMatchedCastBarWidth()
 	end
 
 	local anchorFrame = ResolveFrameReference(options.anchors and options.anchors[2])
-	if type(options.anchors and options.anchors[2]) == "string" and options.anchors[2]:find(",") then
-		anchorFrame = nil
-		for _, anchorRef in ipairs({ strsplit(",", options.anchors[2]) }) do
-			local resolvedAnchor = ResolveFrameReference(strtrim(anchorRef))
-			if resolvedAnchor and resolvedAnchor:IsVisible() then
-				anchorFrame = resolvedAnchor
-				break
-			end
-		end
-	end
 	if not anchorFrame or not anchorFrame.GetWidth then
 		return
 	end

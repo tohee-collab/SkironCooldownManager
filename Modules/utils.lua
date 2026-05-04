@@ -228,15 +228,7 @@ function Utils.ParseAnchorString(anchorRef)
 	return anchorID
 end
 
-function Utils.GetAnchorFrame(anchorRef)
-	if type(anchorRef) == "table" then
-		return anchorRef
-	end
-
-	if type(anchorRef) ~= "string" or anchorRef == "" or anchorRef == "NONE" then
-		return
-	end
-
+local function GetSingleAnchorFrame(anchorRef)
 	if anchorRef:sub(1, 7) ~= "ANCHOR:" then
 		return _G[anchorRef] or SCM[anchorRef]
 	end
@@ -245,8 +237,30 @@ function Utils.GetAnchorFrame(anchorRef)
 	if anchorGroup then
 		return SCM:GetAnchor(anchorGroup)
 	end
+end
 
-	return
+function Utils.GetAnchorFrame(anchorRef)
+	if type(anchorRef) == "table" then
+		return anchorRef, anchorRef
+	end
+
+	if type(anchorRef) ~= "string" or anchorRef == "" or anchorRef == "NONE" then
+		return
+	end
+
+	if anchorRef:find(",", 1, true) then
+		for _, currentRef in ipairs({ strsplit(",", anchorRef) }) do
+			currentRef = strtrim(currentRef)
+			local anchorFrame = currentRef ~= "" and GetSingleAnchorFrame(currentRef)
+			if anchorFrame and anchorFrame:IsVisible() then
+				return anchorFrame, currentRef
+			end
+		end
+
+		return
+	end
+
+	return GetSingleAnchorFrame(anchorRef), anchorRef
 end
 
 function Utils.GetPairedSource(sourceIndex)

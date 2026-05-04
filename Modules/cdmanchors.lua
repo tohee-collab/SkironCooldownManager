@@ -55,14 +55,7 @@ local function OnChildSetPoint(child)
 
 	child.SCMAnchorFrame = anchorFrame
 	anchorFrame.ClearAllPoints(child)
-	anchorFrame.SetPoint(
-		child,
-		anchorData[1],
-		anchorFrame,
-		anchorData[3],
-		SCM:PixelPerfect(anchorData[4]),
-		SCM:PixelPerfect(anchorData[5])
-	)
+	anchorFrame.SetPoint(child, anchorData[1], anchorFrame, anchorData[3], SCM:PixelPerfect(anchorData[4]), SCM:PixelPerfect(anchorData[5]))
 end
 
 function SCM:GetAnchorPivot(point, growDir)
@@ -96,11 +89,7 @@ local function SetChildPoint(child, groupAnchor, startPoint, offsetX, offsetY)
 		end
 	end
 
-	local anchorChanged = anchorData[1] ~= startPoint
-		or anchorData[2] ~= groupAnchor
-		or anchorData[3] ~= startPoint
-		or anchorData[4] ~= offsetX
-		or anchorData[5] ~= offsetY
+	local anchorChanged = anchorData[1] ~= startPoint or anchorData[2] ~= groupAnchor or anchorData[3] ~= startPoint or anchorData[4] ~= offsetX or anchorData[5] ~= offsetY
 	if anchorChanged then
 		anchorData[1] = startPoint
 		anchorData[2] = groupAnchor
@@ -160,13 +149,7 @@ function SCM:UpdateAnchorOffset(group, skipChildren)
 			for index = 1, #children do
 				local child = children[index]
 				if child and child.SCMGroup == group and child.SCMLayoutApplied then
-					SetChildPoint(
-						child,
-						child.SCMAnchorFrame,
-						child.SCMBaseStartPoint,
-						(child.SCMBaseOffsetX or 0) + adjustmentX,
-						(child.SCMBaseOffsetY or 0) + adjustmentY
-					)
+					SetChildPoint(child, child.SCMAnchorFrame, child.SCMBaseStartPoint, (child.SCMBaseOffsetX or 0) + adjustmentX, (child.SCMBaseOffsetY or 0) + adjustmentY)
 				end
 			end
 		end
@@ -222,7 +205,7 @@ function SCM:UpdateManagedAnchorChild(child, groupAnchor, startPoint, offsetX, o
 	if child.SCMBuffBar then
 		child:SetWidth(self:PixelPerfect(width))
 		child:SetHeight(self:PixelPerfect(height))
-		
+
 		if child.Icon then
 			child.Icon:SetSize(self:PixelPerfect(height), self:PixelPerfect(height))
 		end
@@ -312,10 +295,10 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 
 	local target = anchor
 	if type(target) == "string" then
-		local isAnchorRef = target:sub(1, 7) == "ANCHOR:"
-		target = Utils.GetAnchorFrame(target)
+		local selectedAnchorRef
+		target, selectedAnchorRef = Utils.GetAnchorFrame(target)
 
-		if isAnchorRef and target then
+		if type(selectedAnchorRef) == "string" and selectedAnchorRef:sub(1, 7) == "ANCHOR:" and target then
 			anchorFrame:SetScale(target:GetScale())
 		end
 	end
