@@ -12,7 +12,7 @@ local delayedHideSpellIDs = {
 }
 local delayedHideSeconds = 0.03
 
-local function OnManagedChildSetAlpha(self)
+local function OnSetAlpha(self)
 	UIParent.SetAlpha(self, self.SCMHidden and 0 or 1)
 end
 
@@ -25,7 +25,7 @@ local function ApplyHideChildNow(child)
 
 	if not child.SCMAlphaHook then
 		child.SCMAlphaHook = true
-		hooksecurefunc(child, "SetAlpha", OnManagedChildSetAlpha)
+		hooksecurefunc(child, "SetAlpha", OnSetAlpha)
 	end
 end
 
@@ -149,7 +149,7 @@ local function OnSetDesaturated(iconTexture)
 end
 
 function Icons.SetupIconHooks(child)
-	if child.SCMShowHook or child == UIParent then
+	if child.SCMShowHook then
 		return
 	end
 	child.SCMShowHook = true
@@ -256,8 +256,17 @@ local function ProcessRegularIcon(child, childData, options)
 	Cooldowns.OverrideRegularAuraCooldown(child.Cooldown, child, options)
 end
 
-local function ProcessBuffBar(child)
+local function ProcessBuffBar(child, childData, options)
 	Icons.SetupIconHooks(child)
+	local isInactive = not child.auraInstanceID
+	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and childData.alwaysShow)
+	local shouldHide = isInactive and not forceShow
+
+	if shouldHide then
+		Icons.SetChildVisibilityState(child, false, true)
+		return
+	end
+
 	Icons.SetChildVisibilityState(child, true, true)
 end
 
@@ -399,7 +408,7 @@ local function ProcessSingleBuffBarChild(child, validChildren, categoryIndex, op
 	child.SCMGroup = group
 	child.SCMBuffBar = true
 
-	ProcessBuffBar(child)
+	ProcessBuffBar(child, groupConfig, options)
 end
 
 function Icons.ProcessChildren(viewer, validChildren, viewerData)
