@@ -414,12 +414,13 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 
 	local function GetSortRank(info, data)
 		if data.category < 0 then
-			return 3
+			return 4
 		end
 		if info.isKnown then
 			return 1
 		end
-		return 2
+
+		return data.category
 	end
 
 	local function SortSpells(a, b)
@@ -429,7 +430,13 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 		if rankA ~= rankB then
 			return rankA < rankB
 		end
-		return C_Spell.GetSpellName(a.info.spellID) < C_Spell.GetSpellName(b.info.spellID)
+
+		local nameA = C_Spell.GetSpellName(a.info.spellID)
+		local nameB = C_Spell.GetSpellName(b.info.spellID)
+
+		if nameA and nameB then
+			return nameA < nameB
+		end
 	end
 
 	local function ProcessAndCreateButtons(parentButton, items, isBuffIcon)
