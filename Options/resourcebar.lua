@@ -17,8 +17,8 @@ local RESOURCE_BAR_TABS = {
 	{ value = "Secondary", text = "Secondary" },
 }
 
-local function RefreshResourceBars()
-	SCM:RefreshResourceBarConfig()
+local function RefreshResourceBars(refreshTicks)
+	SCM:RefreshResourceBarConfig(refreshTicks)
 end
 
 local function AddLayoutSettings(parent, settings)
@@ -339,7 +339,7 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings)
 	showTicks:SetValue(settings.showTicks)
 	showTicks:SetCallback("OnValueChanged", function(_, _, value)
 		settings.showTicks = value
-		RefreshResourceBars()
+		RefreshResourceBars(true)
 	end)
 	tickSettings:AddChild(showTicks)
 
@@ -350,7 +350,7 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings)
 	tickColor:SetColor(settings.tickColor.r, settings.tickColor.g, settings.tickColor.b, settings.tickColor.a)
 	tickColor:SetCallback("OnValueChanged", function(_, _, r, g, b, a)
 		settings.tickColor = { r = r, g = g, b = b, a = a }
-		RefreshResourceBars()
+		RefreshResourceBars(true)
 	end)
 	tickSettings:AddChild(tickColor)
 
@@ -361,7 +361,7 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings)
 	tickWidth:SetValue(settings.tickWidth)
 	tickWidth:SetCallback("OnValueChanged", function(_, _, value)
 		settings.tickWidth = value
-		RefreshResourceBars()
+		RefreshResourceBars(true)
 	end)
 	tickSettings:AddChild(tickWidth)
 
