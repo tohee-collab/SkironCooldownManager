@@ -270,11 +270,7 @@ end
 
 local function GetSpellIDForCooldownInfo(cooldownInfo)
 	if cooldownInfo then
-		if cooldownInfo.linkedSpellIDs and #cooldownInfo.linkedSpellIDs == 1 then
-			return cooldownInfo.linkedSpellIDs[1]
-		end
-
-		return cooldownInfo.spellID
+		return cooldownInfo.linkedSpellID or cooldownInfo.overrideTooltipSpellID or cooldownInfo.overrideSpellID or cooldownInfo.spellID
 	end
 end
 
