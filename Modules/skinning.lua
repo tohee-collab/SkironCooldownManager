@@ -242,6 +242,10 @@ function SCM:SkinBuffBars()
 			bar = child.Bar
 		end
 
+		if child.DebuffBorder then
+			child.DebuffBorder:SetAlpha(0)
+		end
+
 		if bar and iconFrame then
 			local statusBarTexture = bar:GetStatusBarTexture()
 			if statusBarTexture then
