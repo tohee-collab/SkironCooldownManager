@@ -401,6 +401,7 @@ end
 local function OpenOptions()
 	local options = SCM.db.profile.options
 	SCM.isOptionsOpen = true
+	SCM.simulateBuffs = true
 
 	SCM:StopAllGlows()
 	SCM:ApplyAllCDManagerConfigs()
@@ -447,6 +448,7 @@ local function OpenOptions()
 	frame:SetCallback("OnClose", function()
 		SCM.OptionsFrame = nil
 		SCM.isOptionsOpen = nil
+		SCM.simulateBuffs = nil
 		for _, anchorFrame in pairs(SCM.anchorFrames) do
 			anchorFrame.debugTexture:Hide()
 			anchorFrame.debugText:Hide()
