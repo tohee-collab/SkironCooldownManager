@@ -4,7 +4,7 @@ local Cooldowns = SCM.Cooldowns
 local Icons = SCM.Icons
 
 local function OnBuffCooldownSet(self)
-	local parent = self:GetParent()
+	local parent = (self.SCMConfig and self) or self:GetParent()
 	if not parent or not parent.SCMConfig then
 		return
 	end
@@ -82,6 +82,7 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 	child.SCMBuffOptions = options
 
 	-- Cooldowns
+	hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
 	hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
 	hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
 	child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
