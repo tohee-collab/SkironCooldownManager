@@ -95,8 +95,8 @@ local function RefreshCooldownViewerData(releaseCustomIcons)
 	end
 	SCM:CreateAllCustomIcons()
 	SCM:ApplyAllCDManagerConfigs()
-	SCM:RefreshResourceBarConfig()
 	SCM:UpdateCastBar()
+	SCM:RefreshResourceBarConfig()
 end
 SCM.RefreshCooldownViewerData = RefreshCooldownViewerData
 

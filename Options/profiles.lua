@@ -162,7 +162,7 @@ local function Profiles(widget, frame, group)
 	exportButton:SetCallback("OnClick", function()
 		local selectedClass = exportState.useSpecificClass and classDropdown:GetValue() or nil
 		local selectedSpec = exportState.useSpecificSpec and specDropdown:GetValue() or nil
-		CreateExportEditBox(Profiles, widget, frame, group, SCM:ExportProfile(widget, selectedClass, selectedSpec, {
+		CreateExportEditBox(Profiles, widget, frame, group, SCM:ExportProfile(selectedClass, selectedSpec, {
 			includeResourceBar = resourceBarCheckbox:GetValue(),
 			includeCastBar = castBarCheckbox:GetValue(),
 			includeGlobalSettings = globalSettingsCheckbox:GetValue(),

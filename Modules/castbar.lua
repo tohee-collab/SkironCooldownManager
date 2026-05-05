@@ -468,10 +468,10 @@ function SCM:UpdateCastBar()
 		return
 	end
 
+	castBar.barOptions = options
 	UpdateStatusBarLook(options.fgColor)
 
 	if options.enable then
-		castBar.barOptions = options
 		castBar:UnregisterAllEvents()
 		HideCastBar()
 
