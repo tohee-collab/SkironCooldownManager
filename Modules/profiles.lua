@@ -13,11 +13,11 @@ local GLOBAL_CUSTOM_CONFIG_KEYS = {
 	"timerConfig",
 }
 local PROFILE_OPTION_SECTION_KEYS = {
-	resourceBars = true,
 	resourceBar = true,
 	castBar = true,
 }
 
+-- Copy/settings helpers
 local function CopyValue(value)
 	if type(value) == "table" then
 		return CopyTable(value)
@@ -35,23 +35,6 @@ local function BuildGeneralSettingsExport(options)
 	end
 
 	return exportData
-end
-
-local function BuildResourceBarSettingsExport(options)
-	local exportData = {}
-	if options.resourceBars ~= nil then
-		exportData.resourceBars = CopyValue(options.resourceBars)
-	end
-
-	if options.resourceBar ~= nil then
-		exportData.resourceBar = CopyValue(options.resourceBar)
-	end
-
-	return exportData
-end
-
-local function BuildCastBarSettingsExport(options)
-	return options.castBar and CopyValue(options.castBar) or {}
 end
 
 local function ApplyOptionsData(options, data)
@@ -74,32 +57,7 @@ local function ApplyResourceBarSettings(options, data)
 	end
 end
 
-local function ApplyCastBarSettings(options, data)
-	if type(data) ~= "table" then
-		return
-	end
-
-	options.castBar = CopyValue(data)
-end
-
-local function MergeConfig(destDB, sourceData, defaultAnchor)
-	if not destDB or not sourceData then
-		return
-	end
-
-	destDB.spellConfig = sourceData.spellConfig
-	destDB.itemConfig = sourceData.itemConfig
-	destDB.customConfig = sourceData.customConfig or {}
-	destDB.buffBarsAnchorConfig = type(sourceData.buffBarsAnchorConfig) == "table" and sourceData.buffBarsAnchorConfig or {}
-
-	local anchors = sourceData.anchorConfig
-	if not anchors or #anchors == 0 then
-		destDB.anchorConfig = defaultAnchor
-	else
-		destDB.anchorConfig = anchors
-	end
-end
-
+-- Export helpers
 local function GetProfileExportData(db, exportType, classFileName, specID)
 	if not classFileName and not specID then
 		return {}
@@ -137,11 +95,11 @@ local function BuildProfileExportPayload(self, exportType, classFileName, specID
 	local options = self.db.profile.options
 
 	if exportOptions.includeResourceBar then
-		payload.resourceBarSettings = BuildResourceBarSettingsExport(options)
+		payload.resourceBarSettings = options.resourceBar and {resourceBar = CopyValue(options.resourceBar)} or nil
 	end
 
 	if exportOptions.includeCastBar then
-		payload.castBarSettings = BuildCastBarSettingsExport(options)
+		payload.castBarSettings = options.castBar and CopyValue(options.castBar) or nil
 	end
 
 	if exportOptions.includeGlobalSettings then
@@ -158,7 +116,7 @@ local function BuildProfileExportPayload(self, exportType, classFileName, specID
 	return payload
 end
 
-local function GetExportString(self, classFileName, specID, exportOptions)
+function SCM:ExportProfile(classFileName, specID, exportOptions)
 	exportOptions = exportOptions or {}
 	if specID and (exportOptions.includeResourceBar or exportOptions.includeCastBar or exportOptions.includeGlobalSettings or exportOptions.includeGlobalAnchors) then
 		specID = nil
@@ -175,10 +133,6 @@ local function GetExportString(self, classFileName, specID, exportOptions)
 	return prefix .. SCM.Encode(BuildProfileExportPayload(self, exportType, classFileName, specID, exportOptions))
 end
 
-function SCM:ExportProfile(widget, classFileName, specID, exportOptions)
-	return GetExportString(self, classFileName, specID, exportOptions)
-end
-
 function SCM:ExportGlobalSettings()
 	local exportType = EXPORT_TYPE_GLOBAL_SETTINGS
 	local prefix = string.format("!SCM:%d:%d!", dataVersion, exportType)
@@ -193,17 +147,7 @@ function SCM:ExportGlobalAnchors()
 	})
 end
 
-function SCM:ExportEverything()
-	local prefix = string.format("!SCM:%d:%d!", dataVersion, EXPORT_TYPE_EVERYTHING)
-	local options = self.db.profile.options
-	return prefix .. SCM.Encode({
-		profileData = GetProfileExportData(self.db.profile, EXPORT_TYPE_ALL),
-		resourceBarSettings = BuildResourceBarSettingsExport(options),
-		castBarSettings = BuildCastBarSettingsExport(options),
-		globalSettings = BuildGeneralSettingsExport(options),
-	})
-end
-
+-- Import helpers
 local function DecodeImportString(importString)
 	local parameterString, dataString = importString:match("^!([^!]+)!(.+)$")
 	if not parameterString or not dataString then
@@ -227,43 +171,22 @@ local function DecodeImportString(importString)
 	return typeID, data
 end
 
-local function GetImportedProfilePayload(typeID, data)
-	if type(data) ~= "table" then
-		return data, nil
+local function MergeConfig(destDB, sourceData, defaultAnchor)
+	if not destDB or not sourceData then
+		return
 	end
 
-	if data.profileData or data.resourceBarSettings or data.castBarSettings or data.globalSettings or data.globalAnchors then
-		local profileData = type(data.profileData) == "table" and data.profileData or {}
-		return profileData, data
+	destDB.spellConfig = sourceData.spellConfig
+	destDB.itemConfig = sourceData.itemConfig
+	destDB.customConfig = sourceData.customConfig or {}
+	destDB.buffBarsAnchorConfig = type(sourceData.buffBarsAnchorConfig) == "table" and sourceData.buffBarsAnchorConfig or {}
+
+	local anchors = sourceData.anchorConfig
+	if not anchors or #anchors == 0 then
+		destDB.anchorConfig = defaultAnchor
+	else
+		destDB.anchorConfig = anchors
 	end
-
-	if typeID == EXPORT_TYPE_EVERYTHING then
-		local profileData = type(data.profileData) == "table" and data.profileData or {}
-		return profileData, data
-	end
-
-	return data, nil
-end
-
-local function NormalizeAnchorEntry(anchorConfig)
-	if type(anchorConfig) ~= "table" then
-		anchorConfig = {}
-	end
-
-	if type(anchorConfig.anchor) ~= "table" then
-		anchorConfig.anchor = { "CENTER", "UIParent", "CENTER", 0, 0 }
-	end
-
-	if type(anchorConfig.rowConfig) ~= "table" or #anchorConfig.rowConfig == 0 then
-		anchorConfig.rowConfig = {
-			{
-				size = 40,
-				limit = 8,
-			},
-		}
-	end
-
-	return anchorConfig
 end
 
 local function NormalizeImportedGlobalAnchorData(data)
@@ -275,7 +198,24 @@ local function NormalizeImportedGlobalAnchorData(data)
 	end
 
 	for index, anchorConfig in ipairs(anchors) do
-		anchors[index] = NormalizeAnchorEntry(anchorConfig)
+		if type(anchorConfig) ~= "table" then
+			anchorConfig = {}
+		end
+
+		if type(anchorConfig.anchor) ~= "table" then
+			anchorConfig.anchor = { "CENTER", "UIParent", "CENTER", 0, 0 }
+		end
+
+		if type(anchorConfig.rowConfig) ~= "table" or #anchorConfig.rowConfig == 0 then
+			anchorConfig.rowConfig = {
+				{
+					size = 40,
+					limit = 8,
+				},
+			}
+		end
+
+		anchors[index] = anchorConfig
 	end
 
 	local customConfig = type(data) == "table" and data.globalCustomConfig or nil
@@ -309,20 +249,7 @@ local function NormalizeImportedGlobalAnchorData(data)
 	return anchors, customConfig
 end
 
-local function RefreshImportedGlobalAnchors(self, previousAnchorCount)
-	local currentAnchorCount = #self.db.global.globalAnchorConfig
-	for index = currentAnchorCount + 1, previousAnchorCount do
-		local globalGroup = self.Utils.ToGlobalGroup(index)
-		local anchorFrame = SCM:GetAnchor(globalGroup)
-		if anchorFrame then
-			anchorFrame:Hide()
-			self.anchorFrames[globalGroup] = nil
-		end
-	end
-
-	SCM.RefreshCooldownViewerData(true)
-end
-
+-- Public profile/import helpers
 function SCM:GetFreeProfileName(profileName)
 	if not profileName or strtrim(profileName) == "" then
 		profileName = "New Profile"
@@ -352,7 +279,6 @@ function SCM:ImportProfile(profileName, importString)
 		return
 	end
 
-
 	if typeID == EXPORT_TYPE_GLOBAL_SETTINGS then
 		self:ImportGlobalSettingsFromData(data)
 		return
@@ -364,7 +290,15 @@ function SCM:ImportProfile(profileName, importString)
 	end
 
 	local importedSections
-	data, importedSections = GetImportedProfilePayload(typeID, data)
+	if type(data) == "table" then
+		if data.profileData or data.resourceBarSettings or data.castBarSettings or data.globalSettings or data.globalAnchors then
+			importedSections = data
+			data = type(data.profileData) == "table" and data.profileData or {}
+		elseif typeID == EXPORT_TYPE_EVERYTHING then
+			importedSections = data
+			data = type(data.profileData) == "table" and data.profileData or {}
+		end
+	end
 
 	if typeID == EXPORT_TYPE_EVERYTHING then
 		typeID = EXPORT_TYPE_ALL
@@ -410,9 +344,18 @@ function SCM:ImportProfile(profileName, importString)
 
 	local options = self.db.profile.options
 	if importedSections then
-		ApplyResourceBarSettings(options, importedSections.resourceBarSettings)
-		ApplyCastBarSettings(options, importedSections.castBarSettings)
-		ApplyOptionsData(options, importedSections.globalSettings)
+		if importedSections.resourceBarSettings then
+			ApplyResourceBarSettings(options, importedSections.resourceBarSettings)
+		end
+
+		if importedSections.castBarSettings then
+			options.castBar = CopyValue(importedSections.castBarSettings)
+		end
+
+		if importedSections.globalSettings then
+			ApplyOptionsData(options, importedSections.globalSettings)
+		end
+		
 		if importedSections.globalAnchors then
 			self:ImportGlobalAnchorsFromData(importedSections.globalAnchors)
 		end
@@ -438,7 +381,17 @@ function SCM:ImportGlobalAnchorsFromData(data)
 	self.db.global.globalAnchorConfig = anchors
 	self.db.global.globalCustomConfig = customConfig
 
-	RefreshImportedGlobalAnchors(self, previousAnchorCount)
+	local currentAnchorCount = #self.db.global.globalAnchorConfig
+	for index = currentAnchorCount + 1, previousAnchorCount do
+		local globalGroup = self.Utils.ToGlobalGroup(index)
+		local anchorFrame = SCM:GetAnchor(globalGroup)
+		if anchorFrame then
+			anchorFrame:Hide()
+			self.anchorFrames[globalGroup] = nil
+		end
+	end
+
+	SCM.RefreshCooldownViewerData(true)
 end
 
 function SCM:ImportGlobalSettingsFromData(data)
