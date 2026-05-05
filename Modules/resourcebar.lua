@@ -826,15 +826,9 @@ function SCMResourceBarControllerMixin:ApplyFrameWidthOptions(bar)
 			end)
 		end
 
-		local offset = 0
-		if bar.segmentCount then
-			if bar.segmentCount == 5 then
-				offset = SCM:PixelPerfect()
-			end
-		end
 		--No idea whats going in with these fucking pixels. BRB taking a math class
 		self:ClearAllPoints()
-		PixelUtil.SetPoint(self, generalBarOptions.point, anchor, generalBarOptions.relativePoint, (generalBarOptions.xOffset or 0) + offset, generalBarOptions.yOffset or 0)
+		PixelUtil.SetPoint(self, generalBarOptions.point, anchor, generalBarOptions.relativePoint, generalBarOptions.xOffset, generalBarOptions.yOffset)
 
 		return widthChanged
 	end
