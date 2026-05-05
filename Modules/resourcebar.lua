@@ -2,7 +2,6 @@ local _, SCM = ...
 local LSM = LibStub("LibSharedMedia-3.0")
 
 local Utils = SCM.Utils
-local MIN_BAR_WIDTH = 200
 local RESOURCE_BAR_FRAME_NAME = "SCM_ResourceBarContainer"
 local MOUNTED_VISIBILITY_CONDITION = "[combat]show;[mounted][stance:3]hide;show"
 
@@ -814,7 +813,7 @@ function SCMResourceBarControllerMixin:ApplyFrameWidthOptions(bar)
 			widthFromOptions = anchor:GetWidth() or 0
 		end
 
-		local desiredWidth = max(MIN_BAR_WIDTH, widthFromOptions)
+		local desiredWidth = max(generalBarOptions.minWidth, widthFromOptions)
 		local previousWidth = bar:GetWidth() or 0
 		bar:SetWidth(desiredWidth)
 		local widthChanged = previousWidth ~= (bar:GetWidth() or 0)

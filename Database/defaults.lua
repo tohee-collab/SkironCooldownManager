@@ -107,6 +107,7 @@ SCM.DefaultDB = {
 				growDirection = "UP",
 				useFrequentPowerUpdates = false,
 				maelstromOverflowColor = { r = 0.25, g = 0.70, b = 1.00 },
+				minWidth = 200,
 				powerTypeColorOverrides = {
 					MANA = { enabled = false, color = { r = 0.00, g = 0.45, b = 1.00 } },
 					RAGE = { enabled = false, color = { r = 1.00, g = 0.15, b = 0.15 } },
