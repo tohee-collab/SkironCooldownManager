@@ -1,4 +1,4 @@
-local _, SCM = ...
+local SCM = select(2, ...)
 local AceGUI = LibStub("AceGUI-3.0")
 local LibCustomGlow = LibStub("LibCustomGlow-1.0")
 local Utils = SCM.Utils

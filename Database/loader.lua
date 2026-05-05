@@ -1,4 +1,4 @@
-local _, SCM = ...
+local SCM = select(2, ...)
 
 local function GetSpecConfigValue(configTable, specID)
 	if type(configTable) ~= "table" then

@@ -1,4 +1,4 @@
-local _, SCM = ...
+local SCM = select(2, ...)
 local AceGUI = LibStub("AceGUI-3.0")
 
 SCM.MainTabs.Temporary = { value = "Temporary", text = "Temporary", order = 8, subgroups = {} }

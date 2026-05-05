@@ -1,4 +1,4 @@
-local _, SCM = ...
+local SCM = select(2, ...)
 
 local uidCounter = 0
 local sessionSeed = math.floor(GetTimePreciseSec() * 1000000) % 0xFFFFFF

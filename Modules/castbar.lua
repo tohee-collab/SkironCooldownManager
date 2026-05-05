@@ -1,4 +1,4 @@
-local _, SCM = ...
+local SCM = select(2, ...)
 local LSM = LibStub("LibSharedMedia-3.0")
 
 local castBarHooksSet

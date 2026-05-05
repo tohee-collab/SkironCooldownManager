@@ -1,4 +1,4 @@
-local _, SCM = ...
+local SCM = select(2, ...)
 
 local Utils = SCM.Utils
 local COOLDOWN_CONFIG_KEY_PREFIX = "cooldown:"
