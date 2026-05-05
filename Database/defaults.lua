@@ -107,6 +107,7 @@ SCM.DefaultDB = {
 				growDirection = "UP",
 				useFrequentPowerUpdates = false,
 				maelstromOverflowColor = { r = 0.25, g = 0.70, b = 1.00 },
+				minWidth = 200,
 				powerTypeColorOverrides = {
 					MANA = { enabled = false, color = { r = 0.00, g = 0.45, b = 1.00 } },
 					RAGE = { enabled = false, color = { r = 1.00, g = 0.15, b = 0.15 } },
@@ -186,6 +187,7 @@ SCM.DefaultDB = {
 					height = 20,
 					heightAlternative = 20,
 					showValues = true,
+					disableMaelstromOverflow = false,
 				},
 			},
 			castBar = {
@@ -201,6 +203,13 @@ SCM.DefaultDB = {
 				bgColor = { r = 0, g = 0, b = 0, a = 0.8 },
 				interruptColor = { r = 1, g = 0.25, b = 0.25, a = 1 },
 				borderColor = { r = 0, g = 0, b = 0, a = 1 },
+				empoweredStageColors = {
+					{ r = 0.35, g = 0.75, b = 1.00, a = 0.35 },
+					{ r = 0.45, g = 1.00, b = 0.55, a = 0.35 },
+					{ r = 1.00, g = 0.85, b = 0.25, a = 0.35 },
+					{ r = 1.00, g = 0.50, b = 0.25, a = 0.35 },
+					{ r = 0.85, g = 0.45, b = 1.00, a = 0.35 },
+				},
 				anchors = { "BOTTOM", "SCM_SecondaryResourceBar,SCM_PrimaryResourceBar,ANCHOR:1", "TOP", 0, 0 },
 				icon = {
 					enable = true,
@@ -208,6 +217,11 @@ SCM.DefaultDB = {
 					size = 24,
 					zoom = 0.08,
 					position = "LEFT",
+				},
+				ticks = {
+					enable = true,
+					width = 2,
+					color = { r = 1, g = 1, b = 1, a = 1 },
 				},
 				spellName = {
 					enable = true,

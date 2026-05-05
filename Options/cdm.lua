@@ -68,7 +68,9 @@ local function GetDefaultLoadRaceNames()
 	local loadedRaces = {}
 
 	local sortedIDs = {}
-	for raceID in pairs(SCM.Constants.Races) do sortedIDs[#sortedIDs + 1] = raceID end
+	for raceID in pairs(SCM.Constants.Races) do
+		sortedIDs[#sortedIDs + 1] = raceID
+	end
 	table.sort(sortedIDs)
 
 	for i = 1, #sortedIDs do
@@ -324,88 +326,7 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 		local customButton = rootDescription:CreateButton("Custom")
 		CreateCustomIconButtons(customButton, scrollFrame, anchorIndex, true, customButtonConfigs)
 		return
-	elseif mode == "buffbars" then
-		local numBuffButtons = 0
-		local buffButton = rootDescription:CreateButton("Buff Bars")
-
-		local cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(2, true)
-		for _, cooldownID in ipairs(cooldownIDs) do
-			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
-			local data = cooldownInfoByID[cooldownID]
-
-			if info and data and data.category == 3 then
-				local spellID = GetSpellIDForCooldownInfo(info)
-				local configID = GetCooldownConfigKey(cooldownID)
-				info.spellID = spellID
-
-				if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
-					numBuffButtons = numBuffButtons + 1
-
-					info.cooldownID = cooldownID
-					info.configID = configID
-					info.isDisabled = data.category < 0
-					info.category = data.category
-
-					local activeColor = (data.category < 0 and colorDisabled) or (info.isKnown and colorKnown) or colorUnknown
-					buffButton:CreateButton(
-						string.format("|T%d:0|t |cff%s%s (%d)|r", C_Spell.GetSpellTexture(info.spellID), activeColor, C_Spell.GetSpellName(info.spellID), cooldownID),
-						function(info)
-							if not SCM:IsSpellInData(info.cooldownID, info.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, info.configID, info.cooldownID) then
-								local dataIndex = scrollFrame:AddSpellBySpellID(info)
-								SCM:AddSpellToConfig(anchorIndex, dataIndex, info, data, 3, false)
-								ApplyModeConfigUpdate(anchorIndex, mode)
-							end
-							return MenuResponse.Open
-						end,
-						info
-					)
-				end
-			end
-		end
-
-		cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(3, true)
-		for _, cooldownID in ipairs(cooldownIDs) do
-			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
-			local data = cooldownInfoByID[cooldownID]
-
-			if info and data and data.category == 3 then
-				local spellID = GetSpellIDForCooldownInfo(info)
-				local configID = GetCooldownConfigKey(cooldownID)
-				info.spellID = spellID
-
-				if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
-					numBuffButtons = numBuffButtons + 1
-
-					info.cooldownID = cooldownID
-					info.configID = configID
-					info.isDisabled = data.category < 0
-					info.category = data.category
-
-					local activeColor = (data.category < 0 and colorDisabled) or (info.isKnown and colorKnown) or colorUnknown
-					buffButton:CreateButton(
-						string.format("|T%d:0|t |cff%s%s (%d)|r", C_Spell.GetSpellTexture(info.spellID), activeColor, C_Spell.GetSpellName(info.spellID), cooldownID),
-						function(info)
-							if not SCM:IsSpellInData(info.cooldownID, info.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, info.configID, info.cooldownID) then
-								local dataIndex = scrollFrame:AddSpellBySpellID(info)
-								SCM:AddSpellToConfig(anchorIndex, dataIndex, info, data, 3, false)
-								ApplyModeConfigUpdate(anchorIndex, mode)
-							end
-							return MenuResponse.Open
-						end,
-						info
-					)
-				end
-			end
-		end
-
-		buffButton:SetGridMode(MenuConstants.VerticalGridDirection, floor(numBuffButtons / 15) + 1)
-
-		return
 	end
-
-	local essentialButton = rootDescription:CreateButton("Essential")
-	local utilityButton = rootDescription:CreateButton("Utility")
-	local buffButton = rootDescription:CreateButton("Buff")
 
 	local function GetSortRank(info, data)
 		if data.category < 0 then
@@ -460,6 +381,53 @@ local function CreateAddSpellDropdown(owner, rootDescription, scrollFrame, ancho
 			end
 		end
 	end
+
+	if mode == "buffbars" then
+		local buffButton = rootDescription:CreateButton("Buff Bars")
+		local buffItems = {}
+
+		local cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(2, true)
+		for _, cooldownID in ipairs(cooldownIDs) do
+			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
+			local data = cooldownInfoByID[cooldownID]
+
+			if info and data and (data.category == 3 or data.category < 0) then
+				local spellID = GetSpellIDForCooldownInfo(info)
+				local configID = GetCooldownConfigKey(cooldownID)
+				info.spellID = spellID
+
+				if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
+					table.insert(buffItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 3 })
+				end
+			end
+		end
+
+		cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(3, true)
+		for _, cooldownID in ipairs(cooldownIDs) do
+			local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
+			local data = cooldownInfoByID[cooldownID]
+
+			if info and data and (data.category == 3 or data.category < 0) then
+				local spellID = GetSpellIDForCooldownInfo(info)
+				local configID = GetCooldownConfigKey(cooldownID)
+				info.spellID = spellID
+
+				if configID and not SCM:IsSpellInData(cooldownID, data.category) and not DoesScrollFrameContainSpellConfig(scrollFrame, configID, cooldownID) then
+					table.insert(buffItems, { info = info, data = data, cooldownID = cooldownID, targetCategory = 3 })
+				end
+			end
+		end
+
+		buffButton:SetGridMode(MenuConstants.VerticalGridDirection, floor(#buffItems / 15) + 1)
+
+		ProcessAndCreateButtons(buffButton, buffItems, false)
+
+		return
+	end
+
+	local essentialButton = rootDescription:CreateButton("Essential")
+	local utilityButton = rootDescription:CreateButton("Utility")
+	local buffButton = rootDescription:CreateButton("Buff")
 
 	local essentialItems = {}
 	local cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(0, true)
@@ -567,7 +535,9 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 			GameTooltip:AddLine("This will lock both Icon Width & Icon Height to be the same value.", 1, 1, 1, true)
 			GameTooltip:Show()
 		end)
-		keepAspectRatio:SetCallback("OnLeave", function() GameTooltip:Hide() end)
+		keepAspectRatio:SetCallback("OnLeave", function()
+			GameTooltip:Hide()
+		end)
 		self:AddChild(keepAspectRatio)
 
 		local hardLimit = AceGUI:Create("CheckBox")
@@ -584,7 +554,9 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 			GameTooltip:AddLine("This option will ensure that only the set number of icons are displayed.", 1, 1, 1, true)
 			GameTooltip:Show()
 		end)
-		hardLimit:SetCallback("OnLeave", function() GameTooltip:Hide() end)
+		hardLimit:SetCallback("OnLeave", function()
+			GameTooltip:Hide()
+		end)
 		self:AddChild(hardLimit)
 
 		if rowIndex == 1 then
@@ -608,7 +580,9 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 				GameTooltip:AddLine("This will make the row use a fixed width instead of calculating it based on the number of icons.", 1, 1, 1, true)
 				GameTooltip:Show()
 			end)
-			useFixedWidth:SetCallback("OnLeave", function() GameTooltip:Hide() end)
+			useFixedWidth:SetCallback("OnLeave", function()
+				GameTooltip:Hide()
+			end)
 			self:AddChild(useFixedWidth)
 
 			fixedWidth = AceGUI:Create("Slider")
@@ -1401,14 +1375,14 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 										loadRaces:SetList(GetDefaultLoadRaceNames())
 										loadRaces:SetMultiselect(true)
 										loadRaces:SetCallback("OnValueChanged", function(_, _, key, value)
-												buttonConfig.loadRaces = buttonConfig.loadRaces or GetDefaultCustomIconLoadRaces()
-												buttonConfig.loadRaces[key] = value
-												ApplyIconConfigUpdate()
-											end)
+											buttonConfig.loadRaces = buttonConfig.loadRaces or GetDefaultCustomIconLoadRaces()
+											buttonConfig.loadRaces[key] = value
+											ApplyIconConfigUpdate()
+										end)
 
-											if not buttonConfig.loadRaces then
-												buttonConfig.loadRaces = GetDefaultCustomIconLoadRaces()
-											end
+										if not buttonConfig.loadRaces then
+											buttonConfig.loadRaces = GetDefaultCustomIconLoadRaces()
+										end
 
 										for key, value in pairs(buttonConfig.loadRaces) do
 											loadRaces:SetItemValue(key, value)
@@ -1640,7 +1614,9 @@ local function CreateCopyAnchorTab(widget, frame, modeTabs)
 	local copyBtn
 
 	local function RefreshCopyButton()
-		if not copyBtn then return end
+		if not copyBtn then
+			return
+		end
 		local isSelf = selectedClass == currentClass and selectedSpecID == currentSpecID
 		local isValid = selectedClass ~= nil and selectedSpecID ~= nil and not isSelf
 		copyBtn:SetDisabled(not isValid)

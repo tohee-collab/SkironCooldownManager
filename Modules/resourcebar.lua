@@ -2,7 +2,6 @@ local SCM = select(2, ...)
 local LSM = LibStub("LibSharedMedia-3.0")
 
 local Utils = SCM.Utils
-local MIN_BAR_WIDTH = 200
 local RESOURCE_BAR_FRAME_NAME = "SCM_ResourceBarContainer"
 local MOUNTED_VISIBILITY_CONDITION = "[combat]show;[mounted][stance:3]hide;show"
 
@@ -355,6 +354,8 @@ local function ConfigureBarForResource(bar, resource, altR, altG, altB)
 
 	if bar.SCMUseSegmentedSecondaryDisplay and powerType == Enum.PowerType.Mana then
 		segmentCount = nil
+	elseif resourceKind == "maelstromWeapon" and bar.barOptions and bar.barOptions.disableMaelstromOverflow then
+		segmentCount = 10
 	end
 
 	local resourceChanged = bar.resourceKind ~= resourceKind
@@ -485,9 +486,9 @@ local function GetChargedSegmentMap(bar, segmentCount, currentValue)
 	return chargedSegmentMap
 end
 
-local function ShouldUseSegmentedSecondaryDisplay(bar, segmentCount)
-	local hasUsableSegmentCount = type(segmentCount) == "number" and segmentCount > 1
-	if not bar.SCMUseSegmentedSecondaryDisplay or not hasUsableSegmentCount then
+local function HasSegments(bar, segmentCount)
+	local hasSegments = type(segmentCount) == "number" and segmentCount > 1
+	if not bar.SCMUseSegmentedSecondaryDisplay or not hasSegments then
 		return
 	end
 
@@ -560,7 +561,7 @@ end
 
 local function UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues)
 	local segmentCount = GetNumSegments(bar, maxValue)
-	if not ShouldUseSegmentedSecondaryDisplay(bar, segmentCount) then
+	if not HasSegments(bar, segmentCount) then
 		bar.SCMSegmentedDisplay = nil
 		HideRegions(bar.SegmentFillBars)
 		HideRegions(bar.RuneSegmentBars)
@@ -812,7 +813,7 @@ function SCMResourceBarControllerMixin:ApplyFrameWidthOptions(bar)
 			widthFromOptions = anchor:GetWidth() or 0
 		end
 
-		local desiredWidth = max(MIN_BAR_WIDTH, widthFromOptions)
+		local desiredWidth = max(generalBarOptions.minWidth, widthFromOptions)
 		local previousWidth = bar:GetWidth() or 0
 		bar:SetWidth(desiredWidth)
 		local widthChanged = previousWidth ~= (bar:GetWidth() or 0)
@@ -826,15 +827,9 @@ function SCMResourceBarControllerMixin:ApplyFrameWidthOptions(bar)
 			end)
 		end
 
-		local offset = 0
-		if bar.segmentCount then
-			if bar.segmentCount == 5 then
-				offset = SCM:PixelPerfect()
-			end
-		end
 		--No idea whats going in with these fucking pixels. BRB taking a math class
 		self:ClearAllPoints()
-		PixelUtil.SetPoint(self, generalBarOptions.point, anchor, generalBarOptions.relativePoint, (generalBarOptions.xOffset or 0) + offset, generalBarOptions.yOffset or 0)
+		PixelUtil.SetPoint(self, generalBarOptions.point, anchor, generalBarOptions.relativePoint, generalBarOptions.xOffset, generalBarOptions.yOffset)
 
 		return widthChanged
 	end
@@ -936,12 +931,12 @@ function SCMResourceBarControllerMixin:ConfigurePrimaryBar()
 	local powerType, powerToken, altR, altG, altB = UnitPowerType("player")
 	if not powerType or not powerToken then
 		ResetResourceBar(self.PrimaryBar)
-		return
+		return false
 	end
 
 	if powerType == Enum.PowerType.Mana and ShouldHideManaForCurrentRole(self.primaryBarOptions) then
 		ResetResourceBar(self.PrimaryBar)
-		return
+		return false
 	end
 
 	return ConfigureBarForResource(self.PrimaryBar, {
@@ -964,9 +959,8 @@ function SCMResourceBarControllerMixin:ConfigureSecondaryBar()
 			secondaryResource = nil
 		end
 
-		if not secondaryResource then
-			local classManaSecondaryPower = SCMConstants.ClassManaSecondaryPower[className]
-			secondaryResource = classManaSecondaryPower and classManaSecondaryPower[primaryPowerType]
+		if not secondaryResource and SCMConstants.ClassManaSecondaryPower[className] then
+			secondaryResource = SCMConstants.ClassManaSecondaryPower[className][primaryPowerType]
 		end
 	end
 
@@ -980,7 +974,7 @@ function SCMResourceBarControllerMixin:ConfigureSecondaryBar()
 
 	if not secondaryResource then
 		ResetResourceBar(self.SecondaryBar)
-		return
+		return false
 	end
 
 	return ConfigureBarForResource(self.SecondaryBar, secondaryResource)
@@ -993,9 +987,9 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 
 	local currentValue, maxValue, displayValue, resourceSegmentValues = GetCurrentPowerValue(bar.resourceKind, bar.powerType)
 	if not (currentValue and maxValue) then
-		UpdateSegments(bar, nil, nil, nil)
+		UpdateSegments(bar)
 		if refreshTicks then
-			RefreshBarTicks(bar, nil)
+			RefreshBarTicks(bar)
 		end
 		bar:Hide()
 		return

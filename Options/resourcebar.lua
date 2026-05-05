@@ -64,8 +64,19 @@ local function AddLayoutSettings(parent, settings)
 	layoutSettings:SetFullWidth(true)
 	parent:AddChild(layoutSettings)
 
+	local barMinWidth = AceGUI:Create("Slider")
+	barMinWidth:SetRelativeWidth(0.33)
+	barMinWidth:SetLabel("Min Width")
+	barMinWidth:SetSliderValues(50, 500, 0.1)
+	barMinWidth:SetValue(settings.minWidth)
+	barMinWidth:SetCallback("OnValueChanged", function(_, _, value)
+		settings.minWidth = value
+		RefreshResourceBars()
+	end)
+	layoutSettings:AddChild(barMinWidth)
+
 	local barSpacing = AceGUI:Create("Slider")
-	barSpacing:SetRelativeWidth(0.5)
+	barSpacing:SetRelativeWidth(0.33)
 	barSpacing:SetLabel("Spacing")
 	barSpacing:SetSliderValues(-10, 20, 0.1)
 	barSpacing:SetValue(settings.spacing)
@@ -76,7 +87,7 @@ local function AddLayoutSettings(parent, settings)
 	layoutSettings:AddChild(barSpacing)
 
 	local growDirection = AceGUI:Create("Dropdown")
-	growDirection:SetRelativeWidth(0.5)
+	growDirection:SetRelativeWidth(0.33)
 	growDirection:SetLabel("Grow Direction")
 	growDirection:SetList(RESOURCE_BAR_GROW_DIRECTIONS)
 	growDirection:SetValue(settings.growDirection)
@@ -474,6 +485,24 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings)
 		RefreshResourceBars()
 	end)
 	textSettings:AddChild(valueYOffset)
+
+	if title == "Secondary" then
+		local miscSettings = AceGUI:Create("InlineGroup")
+		miscSettings:SetLayout("flow")
+		miscSettings:SetTitle("Miscellaneous")
+		miscSettings:SetFullWidth(true)
+		parent:AddChild(miscSettings)
+
+		local disableMaelstromOverflow = AceGUI:Create("CheckBox")
+		disableMaelstromOverflow:SetRelativeWidth(0.5)
+		disableMaelstromOverflow:SetLabel("Disable Maelstrom Overflow")
+		disableMaelstromOverflow:SetValue(settings.disableMaelstromOverflow)
+		disableMaelstromOverflow:SetCallback("OnValueChanged", function(_, _, value)
+			settings.disableMaelstromOverflow = value
+			RefreshResourceBars()
+		end)
+		miscSettings:AddChild(disableMaelstromOverflow)
+	end
 end
 
 local function SelectResourceBarTab(tabGroup, group, settings)
