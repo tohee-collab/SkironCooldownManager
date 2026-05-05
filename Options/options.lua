@@ -422,7 +422,7 @@ local function OpenOptions()
 		return a.order < b.order
 	end)
 
-	local tabs = AceGUI:Create("SCMTabGroup")
+	local tabs = AceGUI:Create("TabGroup")
 	tabs:SetTabs(tabsTbl)
 	tabs:SetWidth(frame.frame:GetWidth() - 30)
 	tabs:SetFullHeight(true)
@@ -465,6 +465,8 @@ local function OpenOptions()
 			anchorFrame.debugText:Show()
 		end
 	end
+
+	tabs.border:ClearBackdrop()
 end
 
 SLASH_SCM1 = "/scm"
