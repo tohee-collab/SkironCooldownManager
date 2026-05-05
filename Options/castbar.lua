@@ -171,7 +171,8 @@ local function CastBar(self)
 	self:ReleaseChildren()
 
 	local options = SCM.db.profile.options.castBar
-	local iconOptions = EnsureIconOptions(options)
+	local iconOptions = options.icon
+	local tickOptions = options.ticks
 
 	local rootGroup = AceGUI:Create("InlineGroup")
 	rootGroup:SetLayout("fill")
@@ -361,6 +362,44 @@ local function CastBar(self)
 		RefreshCastBar()
 	end)
 
+	local tickGroup = AceGUI:Create("InlineGroup")
+	tickGroup:SetTitle("Ticks")
+	tickGroup:SetFullWidth(true)
+	tickGroup:SetLayout("flow")
+	scrollFrame:AddChild(tickGroup)
+
+	local tickEnable = AceGUI:Create("CheckBox")
+	tickEnable:SetRelativeWidth(0.33)
+	tickEnable:SetLabel("Show Ticks")
+	tickEnable:SetValue(tickOptions.enable)
+	tickEnable:SetCallback("OnValueChanged", function(_, _, value)
+		tickOptions.enable = value
+		RefreshCastBar()
+	end)
+	tickGroup:AddChild(tickEnable)
+
+	local tickColor = AceGUI:Create("ColorPicker")
+	tickColor:SetRelativeWidth(0.33)
+	tickColor:SetLabel("Tick Color")
+	tickColor:SetHasAlpha(true)
+	tickColor:SetColor(tickOptions.color.r, tickOptions.color.g, tickOptions.color.b, tickOptions.color.a)
+	tickColor:SetCallback("OnValueChanged", function(_, _, r, g, b, a)
+		tickOptions.color = { r = r, g = g, b = b, a = a }
+		RefreshCastBar()
+	end)
+	tickGroup:AddChild(tickColor)
+
+	local tickWidth = AceGUI:Create("Slider")
+	tickWidth:SetRelativeWidth(0.33)
+	tickWidth:SetLabel("Tick Width")
+	tickWidth:SetSliderValues(1, 10, 0.1)
+	tickWidth:SetValue(tickOptions.width)
+	tickWidth:SetCallback("OnValueChanged", function(_, _, value)
+		tickOptions.width = value
+		RefreshCastBar()
+	end)
+	tickGroup:AddChild(tickWidth)
+
 	local colorGroup = AceGUI:Create("InlineGroup")
 	colorGroup:SetTitle("Colors")
 	colorGroup:SetFullWidth(true)
@@ -410,6 +449,20 @@ local function CastBar(self)
 		RefreshCastBar()
 	end)
 	colorGroup:AddChild(borderColor)
+
+	for i, color in ipairs(options.empoweredStageColors) do
+		local stageIndex = i
+		local stageColor = AceGUI:Create("ColorPicker")
+		stageColor:SetRelativeWidth(0.2)
+		stageColor:SetLabel("Empower " .. stageIndex)
+		stageColor:SetHasAlpha(true)
+		stageColor:SetColor(color.r, color.g, color.b, color.a)
+		stageColor:SetCallback("OnValueChanged", function(_, _, r, g, b, a)
+			options.empoweredStageColors[stageIndex] = { r = r, g = g, b = b, a = a }
+			RefreshCastBar()
+		end)
+		colorGroup:AddChild(stageColor)
+	end
 
 	local anchorsGroup = AceGUI:Create("InlineGroup")
 	anchorsGroup:SetTitle("Anchors")
