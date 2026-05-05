@@ -21,7 +21,7 @@ local CAST_STOP_EVENTS = {
 	UNIT_SPELLCAST_EMPOWER_STOP = true,
 }
 
-local ICON_SPACING = 1
+local ICON_SPACING = 0
 
 local function ApplyRelativeAnchor(frame, anchors, relativeFrame)
 	frame:ClearAllPoints()
@@ -134,7 +134,7 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	local options = castBar.barOptions or SCM.db.profile.options.castBar
 	local profileOptions = SCM.db.profile.options
 
-	local borderSize = SCM:PixelPerfect() * profileOptions.borderSize
+	local borderSize = profileOptions.borderSize
 	local texturePath = LSM:Fetch("statusbar", options.texture) or "Interface\\TargetingFrame\\UI-StatusBar"
 	local borderColor = options.borderColor
 	local backgroundColor = bgColor or options.bgColor
@@ -156,32 +156,36 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	castBar.Background:SetColorTexture(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a)
 
 	local iconOptions = options.icon
-	local innerWidth = max(castBar:GetWidth() - borderSize * 2, 1)
-	local innerHeight = max(castBar:GetHeight() - borderSize * 2, 1)
+	local outerWidth = max(castBar:GetWidth(), 1)
+	local outerHeight = max(castBar:GetHeight(), 1)
+	local innerWidth = max(outerWidth - borderSize * 2, 1)
 	local spacing = iconOptions.enable and min(SCM:PixelPerfect(ICON_SPACING), max(innerWidth - 1, 0)) or 0
 	local iconSize = 0
 	local iconZoom = min(iconOptions.zoom, 0.49)
 
 	if iconOptions.enable then
 		local configuredIconSize = max(iconOptions.matchBarHeight and options.height or iconOptions.size, 1)
-		iconSize = min(SCM:PixelPerfect(configuredIconSize), innerHeight, max(innerWidth - spacing - 1, 0))
+		iconSize = min(SCM:PixelPerfect(configuredIconSize), outerHeight, max(outerWidth - borderSize - spacing - 1, 0))
 	end
 
 	castBar.Status:ClearAllPoints()
 	castBar.IconFrame:ClearAllPoints()
 	castBar.IconFrame.Icon:ClearAllPoints()
-	castBar.IconFrame.Icon:SetAllPoints(castBar.IconFrame)
+	castBar.IconFrame.Icon:SetPoint("TOPLEFT", castBar.IconFrame, "TOPLEFT", borderSize, -borderSize)
+	castBar.IconFrame.Icon:SetPoint("BOTTOMRIGHT", castBar.IconFrame, "BOTTOMRIGHT", -borderSize, borderSize)
 	castBar.IconFrame.Icon:SetTexCoord(iconZoom, 1 - iconZoom, iconZoom, 1 - iconZoom)
+	castBar.IconFrame:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = borderSize })
+	castBar.IconFrame:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, borderColor.a)
 
 	if iconOptions.enable and iconSize > 0 then
 		castBar.IconFrame:SetSize(iconSize, iconSize)
 		if iconOptions.position == "RIGHT" then
-			castBar.IconFrame:SetPoint("RIGHT", castBar, "RIGHT", -borderSize, 0)
+			castBar.IconFrame:SetPoint("RIGHT", castBar, "RIGHT", -borderSize / 2, 0)
 			castBar.Status:SetPoint("TOPLEFT", castBar, "TOPLEFT", borderSize, -borderSize)
-			castBar.Status:SetPoint("BOTTOMRIGHT", castBar, "BOTTOMRIGHT", -(borderSize + iconSize + spacing), borderSize)
+			castBar.Status:SetPoint("BOTTOMRIGHT", castBar, "BOTTOMRIGHT", -(iconSize + spacing), borderSize)
 		else
-			castBar.IconFrame:SetPoint("LEFT", castBar, "LEFT", borderSize, 0)
-			castBar.Status:SetPoint("TOPLEFT", castBar, "TOPLEFT", borderSize + iconSize + spacing, -borderSize)
+			castBar.IconFrame:SetPoint("LEFT", castBar, "LEFT", borderSize / 2, 0)
+			castBar.Status:SetPoint("TOPLEFT", castBar, "TOPLEFT", iconSize + spacing, -borderSize)
 			castBar.Status:SetPoint("BOTTOMRIGHT", castBar, "BOTTOMRIGHT", -borderSize, borderSize)
 		end
 	else
@@ -445,7 +449,7 @@ function SCM:CreateCastBar()
 	castBar.Status:SetMinMaxValues(0, 1)
 	castBar.Status:SetValue(0)
 
-	castBar.IconFrame = CreateFrame("Frame", nil, castBar)
+	castBar.IconFrame = CreateFrame("Frame", nil, castBar, "BackdropTemplate")
 	castBar.IconFrame:SetFrameLevel(castBar:GetFrameLevel() + 2)
 	castBar.IconFrame.Icon = castBar.IconFrame:CreateTexture(nil, "ARTWORK")
 

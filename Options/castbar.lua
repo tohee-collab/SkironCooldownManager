@@ -11,7 +11,7 @@ local FONT_OUTLINES = {
 	MONOCHROME = "Monochrome",
 	SLUG = "Slug",
 	["OUTLINE SLUG"] = "Outline Slug",
-	-- ["THICKOUTLINE SLUG"] = "Thick Outline Slug", -- Doesn't seem to do anything?
+	-- ["THICKOUTLINE SLUG"] = "Thick Outline Slug", -- Seems to be identical to Outline Slug?
 	-- ["MONOCHROME SLUG"] = "Monochrome Slug", -- Doesn't seem to do anything?
 }
 
