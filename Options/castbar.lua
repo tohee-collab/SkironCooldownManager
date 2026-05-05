@@ -9,41 +9,16 @@ local FONT_OUTLINES = {
 	OUTLINE = "Outline",
 	THICKOUTLINE = "Thick Outline",
 	MONOCHROME = "Monochrome",
+	SLUG = "Slug",
+	["OUTLINE SLUG"] = "Outline Slug",
+	-- ["THICKOUTLINE SLUG"] = "Thick Outline Slug", -- Doesn't seem to do anything?
+	-- ["MONOCHROME SLUG"] = "Monochrome Slug", -- Doesn't seem to do anything?
 }
 
 local ICON_POSITIONS = {
 	LEFT = "Left",
 	RIGHT = "Right",
 }
-
-local function EnsureIconOptions(options)
-	if type(options.icon) ~= "table" then
-		options.icon = {}
-	end
-
-	local iconOptions = options.icon
-	if iconOptions.enable == nil then
-		iconOptions.enable = true
-	end
-
-	if iconOptions.matchBarHeight == nil then
-		iconOptions.matchBarHeight = true
-	end
-
-	if iconOptions.size == nil then
-		iconOptions.size = options.height or 24
-	end
-
-	if iconOptions.zoom == nil then
-		iconOptions.zoom = 0.08
-	end
-
-	if iconOptions.position ~= "LEFT" and iconOptions.position ~= "RIGHT" then
-		iconOptions.position = "LEFT"
-	end
-
-	return iconOptions
-end
 
 local function AddHeader(widget, text)
 	local label = AceGUI:Create("Label")
