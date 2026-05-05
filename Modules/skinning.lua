@@ -172,6 +172,9 @@ function SCM:SkinChild(child, childConfig)
 		child.Icon:SetPoint("BOTTOMRIGHT", child, "BOTTOMRIGHT", -borderSize, borderSize)
 		child.Icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)
 
+		child.Cooldown:ClearAllPoints()
+		child.Cooldown:SetAllPoints(child)
+
 		child.customBorder = CreateFrame("Frame", nil, child, "BackdropTemplate")
 		child.customBorder:SetFrameLevel(child:GetFrameLevel() + 1)
 		child.customBorder:SetAllPoints(child)
