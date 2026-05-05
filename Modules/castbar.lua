@@ -1,4 +1,4 @@
-local addonName, SCM = ...
+local SCM = select(2, ...)
 local LSM = LibStub("LibSharedMedia-3.0")
 
 local castBarHooksSet

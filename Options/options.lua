@@ -445,6 +445,7 @@ local function OpenOptions()
 	end)
 	tabs:SelectTab("General")
 	frame:AddChild(tabs)
+	SCM:SkinOptionsFrame(frame, tabs)
 	frame:SetCallback("OnClose", function()
 		SCM.OptionsFrame = nil
 		SCM.isOptionsOpen = nil

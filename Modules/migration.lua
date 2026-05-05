@@ -1,4 +1,4 @@
-local _, SCM = ...
+local SCM = select(2, ...)
 
 local Utils = SCM.Utils
 local GetCooldownConfigKey = Utils.GetCooldownConfigKey

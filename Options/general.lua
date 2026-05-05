@@ -1,4 +1,4 @@
-local addonName, SCM = ...
+local SCM = select(2, ...)
 local AceGUI = LibStub("AceGUI-3.0")
 local LibEditModeOverride = LibStub("LibEditModeOverride-1.0")
 local LSM = LibStub("LibSharedMedia-3.0")
@@ -537,7 +537,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			SCM:SkinBuffBars()
 		end)
 		textureSettings:AddChild(barTexture)
-		
+
 		local backgroundColor = AceGUI:Create("ColorPicker")
 		backgroundColor:SetRelativeWidth(0.33)
 		backgroundColor:SetLabel("Background Color")
@@ -593,7 +593,7 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			SCM:SkinBuffBars()
 		end)
 		borderSettings:AddChild(borderColor)
-		
+
 		local fontSettings = AceGUI:Create("InlineGroup")
 		fontSettings:SetLayout("flow")
 		fontSettings:SetFullWidth(true)

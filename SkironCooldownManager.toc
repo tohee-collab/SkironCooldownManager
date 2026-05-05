@@ -35,6 +35,7 @@ core.lua
 Modules\glow.lua
 Modules\cache.lua
 Modules\skinning.lua
+Modules\elvui_skin.lua
 Modules\utils.lua
 Modules\customicons.lua
 Modules\migration.lua
