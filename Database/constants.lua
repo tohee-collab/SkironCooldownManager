@@ -331,4 +331,6 @@ Constants.Races = {
 	[70] = true, -- Dracthyr (Horde)
 	[84] = true, -- Earthen (Horde)
 	[85] = true, -- Earthen (Alliance)
+	[86] = true, -- Haranir
+	[91] = true, -- Haranir
 }
