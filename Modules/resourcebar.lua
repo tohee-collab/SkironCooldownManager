@@ -485,9 +485,9 @@ local function GetChargedSegmentMap(bar, segmentCount, currentValue)
 	return chargedSegmentMap
 end
 
-local function ShouldUseSegmentedSecondaryDisplay(bar, segmentCount)
-	local hasUsableSegmentCount = type(segmentCount) == "number" and segmentCount > 1
-	if not bar.SCMUseSegmentedSecondaryDisplay or not hasUsableSegmentCount then
+local function HasSegments(bar, segmentCount)
+	local hasSegments = type(segmentCount) == "number" and segmentCount > 1
+	if not bar.SCMUseSegmentedSecondaryDisplay or not hasSegments then
 		return
 	end
 
@@ -560,7 +560,7 @@ end
 
 local function UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues)
 	local segmentCount = GetNumSegments(bar, maxValue)
-	if not ShouldUseSegmentedSecondaryDisplay(bar, segmentCount) then
+	if not HasSegments(bar, segmentCount) then
 		bar.SCMSegmentedDisplay = nil
 		HideRegions(bar.SegmentFillBars)
 		HideRegions(bar.RuneSegmentBars)
@@ -930,12 +930,12 @@ function SCMResourceBarControllerMixin:ConfigurePrimaryBar()
 	local powerType, powerToken, altR, altG, altB = UnitPowerType("player")
 	if not powerType or not powerToken then
 		ResetResourceBar(self.PrimaryBar)
-		return
+		return false
 	end
 
 	if powerType == Enum.PowerType.Mana and ShouldHideManaForCurrentRole(self.primaryBarOptions) then
 		ResetResourceBar(self.PrimaryBar)
-		return
+		return false
 	end
 
 	return ConfigureBarForResource(self.PrimaryBar, {
@@ -958,9 +958,8 @@ function SCMResourceBarControllerMixin:ConfigureSecondaryBar()
 			secondaryResource = nil
 		end
 
-		if not secondaryResource then
-			local classManaSecondaryPower = SCMConstants.ClassManaSecondaryPower[className]
-			secondaryResource = classManaSecondaryPower and classManaSecondaryPower[primaryPowerType]
+		if not secondaryResource and SCMConstants.ClassManaSecondaryPower[className] then
+			secondaryResource = SCMConstants.ClassManaSecondaryPower[className][primaryPowerType]
 		end
 	end
 
@@ -974,7 +973,7 @@ function SCMResourceBarControllerMixin:ConfigureSecondaryBar()
 
 	if not secondaryResource then
 		ResetResourceBar(self.SecondaryBar)
-		return
+		return false
 	end
 
 	return ConfigureBarForResource(self.SecondaryBar, secondaryResource)
@@ -987,9 +986,9 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 
 	local currentValue, maxValue, displayValue, resourceSegmentValues = GetCurrentPowerValue(bar.resourceKind, bar.powerType)
 	if not (currentValue and maxValue) then
-		UpdateSegments(bar, nil, nil, nil)
+		UpdateSegments(bar)
 		if refreshTicks then
-			RefreshBarTicks(bar, nil)
+			RefreshBarTicks(bar)
 		end
 		bar:Hide()
 		return
