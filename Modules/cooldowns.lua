@@ -19,7 +19,7 @@ local function OnBuffCooldownSet(self)
 end
 
 local function OnBuffCooldownEnd(self)
-	local parent = self:GetParent()
+	local parent = (self.SCMConfig and self) or self:GetParent()
 	if not parent or not parent.SCMConfig then
 		return
 	end
@@ -83,9 +83,10 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 
 	-- Cooldowns
 	hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
-	hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
-	hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
-	child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
+	--hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
+	--hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
+	--child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
+	hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnBuffCooldownEnd)
 
 	-- Pandmic Alerts
 	hooksecurefunc(child, "TriggerPandemicAlert", OnBuffTriggerPandemicAlert)
