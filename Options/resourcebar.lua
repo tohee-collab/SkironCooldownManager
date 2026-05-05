@@ -474,6 +474,24 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings)
 		RefreshResourceBars()
 	end)
 	textSettings:AddChild(valueYOffset)
+
+	if title == "Secondary" then
+		local miscSettings = AceGUI:Create("InlineGroup")
+		miscSettings:SetLayout("flow")
+		miscSettings:SetTitle("Miscellaneous")
+		miscSettings:SetFullWidth(true)
+		parent:AddChild(miscSettings)
+
+		local disableMaelstromOverflow = AceGUI:Create("CheckBox")
+		disableMaelstromOverflow:SetRelativeWidth(0.5)
+		disableMaelstromOverflow:SetLabel("Disable Maelstrom Overflow")
+		disableMaelstromOverflow:SetValue(settings.disableMaelstromOverflow)
+		disableMaelstromOverflow:SetCallback("OnValueChanged", function(_, _, value)
+			settings.disableMaelstromOverflow = value
+			RefreshResourceBars()
+		end)
+		miscSettings:AddChild(disableMaelstromOverflow)
+	end
 end
 
 local function SelectResourceBarTab(tabGroup, group, settings)

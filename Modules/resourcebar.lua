@@ -355,6 +355,8 @@ local function ConfigureBarForResource(bar, resource, altR, altG, altB)
 
 	if bar.SCMUseSegmentedSecondaryDisplay and powerType == Enum.PowerType.Mana then
 		segmentCount = nil
+	elseif resourceKind == "maelstromWeapon" and bar.barOptions and bar.barOptions.disableMaelstromOverflow then
+		segmentCount = 10
 	end
 
 	local resourceChanged = bar.resourceKind ~= resourceKind

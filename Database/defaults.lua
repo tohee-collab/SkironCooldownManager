@@ -186,6 +186,7 @@ SCM.DefaultDB = {
 					height = 20,
 					heightAlternative = 20,
 					showValues = true,
+					disableMaelstromOverflow = false,
 				},
 			},
 			castBar = {
