@@ -31,12 +31,6 @@ end
 local function ClearPips()
 	local castBar = SCM.CastBar
 
-	for _, pip in ipairs(castBar.Pips) do
-		pip:Hide()
-		pip:SetParent(nil)
-	end
-	wipe(castBar.Pips)
-
 	for _, band in ipairs(castBar.StageBands) do
 		band:Hide()
 	end
@@ -53,7 +47,10 @@ local function CreatePips(empoweredStages)
 	local totalWidth = castBar.Status:GetWidth()
 	local totalHeight = castBar.Status:GetHeight()
 	local total = 0
-	local stageColors = SCM.db.profile.options.castBar.empoweredStageColors
+	local options = castBar.barOptions or SCM.db.profile.options.castBar
+	local stageColors = options.empoweredStageColors
+	local tickOptions = options.ticks
+	local tickIndex = 1
 
 	for i, stage in ipairs(empoweredStages) do
 		local band = castBar.StageBands[i]
@@ -71,13 +68,26 @@ local function CreatePips(empoweredStages)
 
 		if i < #empoweredStages then
 			total = total + stage
-			local pip = castBar.Status:CreateTexture(nil, "OVERLAY")
-			pip:SetColorTexture(1, 1, 1, 0.9)
-			pip:SetSize(1, max(totalHeight - 2, 1))
-			pip:SetPoint("LEFT", castBar.Status, "LEFT", totalWidth * total, 0)
-			pip:Show()
-			castBar.Pips[#castBar.Pips + 1] = pip
+			if tickOptions.enable then
+				local tick = castBar.TickLines[tickIndex]
+				if not tick then
+					tick = castBar.Status:CreateTexture(nil, "OVERLAY")
+					castBar.TickLines[tickIndex] = tick
+				end
+
+				local color = tickOptions.color
+				tick:ClearAllPoints()
+				tick:SetColorTexture(color.r, color.g, color.b, color.a)
+				tick:SetSize(tickOptions.width, totalHeight)
+				tick:SetPoint("CENTER", castBar.Status, "LEFT", totalWidth * total, 0)
+				tick:Show()
+				tickIndex = tickIndex + 1
+			end
 		end
+	end
+
+	for i = tickIndex, #castBar.TickLines do
+		castBar.TickLines[i]:Hide()
 	end
 end
 
@@ -351,8 +361,10 @@ local function HandleCast(durationObject, castType, empoweredStages, isChannelSt
 			castBar.CurrentChannelTickCount = nil
 		end
 	else
-		for _, tick in ipairs(castBar.TickLines) do
-			tick:Hide()
+		if not empoweredStages then
+			for _, tick in ipairs(castBar.TickLines) do
+				tick:Hide()
+			end
 		end
 		castBar.CurrentChannelTickCount = nil
 		castBar.CurrentChannelSpellID = nil
@@ -423,7 +435,6 @@ function SCM:CreateCastBar()
 
 	local castBar = CreateFrame("Frame", "SCM_CastBar", UIParent, "BackdropTemplate")
 	castBar:SetFrameStrata("BACKGROUND")
-	castBar.Pips = {}
 	castBar.StageBands = {}
 	castBar.TickLines = {}
 
