@@ -1,7 +1,6 @@
 local SCM = select(2, ...)
 
 local Utils = SCM.Utils
-local OriginalUUFAnchors = {}
 local OriginalElvUIAnchors = {}
 
 local function OnResourceBarWidthChanged(self)

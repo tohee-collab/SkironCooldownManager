@@ -1,7 +1,6 @@
-local addonName, SCM = ...
+local _, SCM = ...
 local AceGUI = LibStub("AceGUI-3.0")
 local LibCustomGlow = LibStub("LibCustomGlow-1.0")
-local LSM = LibStub("LibSharedMedia-3.0")
 local Utils = SCM.Utils
 local ToGlobalGroup = Utils.ToGlobalGroup
 local ToBuffBarGroup = Utils.ToBuffBarGroup
