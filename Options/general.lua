@@ -225,6 +225,8 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		borderSize:SetValue(options.borderSize or 1)
 		borderSize:SetCallback("OnValueChanged", function(_, _, value)
 			options.borderSize = value
+			SCM:CreateCastBar()
+			SCM:UpdateCastBar()
 			SCM:ApplyAllCDManagerConfigs()
 		end)
 		borderSettings:AddChild(borderSize)
@@ -458,7 +460,6 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			options.disableRegularIconActiveSwipe = value
 		end)
 		activeSwipeSettings:AddChild(disableRegularIconActiveSwipe)
-
 	elseif group == "Glow" then
 		local glowSettings = AceGUI:Create("InlineGroup")
 		glowSettings:SetLayout("flow")
