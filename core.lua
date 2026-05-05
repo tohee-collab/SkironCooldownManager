@@ -261,6 +261,8 @@ end
 
 EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	SCM.db = LibStub("AceDB-3.0"):New(addonName .. "DB", SCM.DefaultDB, true)
+	SCM.LibDualSpec = LibStub("LibDualSpec-1.0")
+	SCM.LibDualSpec:EnhanceDatabase(SCM.db, addonName)
 	SCM:MigrateLegacyProfileOptions()
 	SCM.db.RegisterCallback(SCM, "OnProfileChanged", OnProfileChanged)
 	SCM.db.RegisterCallback(SCM, "OnProfileCopied", OnProfileChanged)

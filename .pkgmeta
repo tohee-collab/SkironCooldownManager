@@ -9,6 +9,7 @@ externals:
   Libs/LibSharedMedia-3.0: https://repos.curseforge.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3.0
   Libs/LibCustomGlow-1.0: https://github.com/Stanzilla/LibCustomGlow
   Libs/LibEditModeOverride: https://github.com/plusmouse/LibEditModeOverride
+  Libs/LibDualSpec-1.0: https://repos.curseforge.com/wow/libdualspec-1-0
   Libs/TaintLess:
     url: https://www.townlong-yak.com/addons.git/taintless
     commit: default

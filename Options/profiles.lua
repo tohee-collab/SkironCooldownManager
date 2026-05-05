@@ -255,6 +255,7 @@ local function Profiles(widget, frame, group)
 	profilesGroup:AddChild(dbOptionsGroup)
 
 	local profileOptions = AceDBOptions:GetOptionsTable(SCM.db)
+	SCM.LibDualSpec:EnhanceOptions(profileOptions, SCM.db)
 	AceConfig:RegisterOptionsTable("SCM_Profiles_OptionTable", profileOptions)
 	AceConfigDialog:Open("SCM_Profiles_OptionTable", dbOptionsGroup)
 end
