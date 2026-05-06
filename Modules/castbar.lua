@@ -134,7 +134,7 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	local options = castBar.barOptions or SCM.db.profile.options.castBar
 	local profileOptions = SCM.db.profile.options
 
-	local borderSize = profileOptions.borderSize
+	local borderSize = SCM:PixelPerfect() * profileOptions.borderSize
 	local texturePath = LSM:Fetch("statusbar", options.texture) or "Interface\\TargetingFrame\\UI-StatusBar"
 	local borderColor = options.borderColor
 	local backgroundColor = bgColor or options.bgColor
@@ -180,11 +180,11 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	if iconOptions.enable and iconSize > 0 then
 		castBar.IconFrame:SetSize(iconSize, iconSize)
 		if iconOptions.position == "RIGHT" then
-			castBar.IconFrame:SetPoint("RIGHT", castBar, "RIGHT", -borderSize / 2, 0)
+			castBar.IconFrame:SetPoint("RIGHT", castBar, "RIGHT", -borderSize + SCM:PixelPerfect(), 0)
 			castBar.Status:SetPoint("TOPLEFT", castBar, "TOPLEFT", borderSize, -borderSize)
 			castBar.Status:SetPoint("BOTTOMRIGHT", castBar, "BOTTOMRIGHT", -(iconSize + spacing), borderSize)
 		else
-			castBar.IconFrame:SetPoint("LEFT", castBar, "LEFT", borderSize / 2, 0)
+			castBar.IconFrame:SetPoint("LEFT", castBar, "LEFT", borderSize - SCM:PixelPerfect(), 0)
 			castBar.Status:SetPoint("TOPLEFT", castBar, "TOPLEFT", iconSize + spacing, -borderSize)
 			castBar.Status:SetPoint("BOTTOMRIGHT", castBar, "BOTTOMRIGHT", -borderSize, borderSize)
 		end
