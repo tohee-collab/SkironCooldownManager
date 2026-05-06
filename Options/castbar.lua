@@ -1,6 +1,7 @@
 local SCM = select(2, ...)
 local AceGUI = LibStub("AceGUI-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
+local Constants = SCM.Constants
 
 SCM.MainTabs.CastBar = { value = "CastBar", text = "Cast Bar", order = 6, subgroups = {} }
 
@@ -291,7 +292,7 @@ local function CastBar(self)
 	local fontOutline = AceGUI:Create("Dropdown")
 	fontOutline:SetRelativeWidth(0.25)
 	fontOutline:SetLabel("Font Outline")
-	fontOutline:SetList(FONT_OUTLINES)
+	fontOutline:SetList(Constants.TextOutline, Constants.TextOutlineSorted)
 	fontOutline:SetValue(options.fontOutline or "")
 	fontOutline:SetCallback("OnValueChanged", function(_, _, value)
 		options.fontOutline = value

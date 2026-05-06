@@ -445,7 +445,7 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings)
 	local textOutline = AceGUI:Create("Dropdown")
 	textOutline:SetRelativeWidth(0.33)
 	textOutline:SetLabel("Outline")
-	textOutline:SetList(Constants.TextOutline)
+	textOutline:SetList(Constants.TextOutline, Constants.TextOutlineSorted)
 	textOutline:SetValue(settings.textOutline)
 	textOutline:SetCallback("OnValueChanged", function(_, _, value)
 		settings.textOutline = value

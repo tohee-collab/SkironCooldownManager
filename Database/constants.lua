@@ -49,6 +49,11 @@ Constants.TextOutline = {
 	["OUTLINE SLUG"] = "Outline Slug",
 }
 
+Constants.TextOutlineSorted = {
+	"", "OUTLINE", "SLUG", "MONOCHROME", "OUTLINE,MONOCHROME", "OUTLINE SLUG", "THICKOUTLINE",
+}
+
+
 Constants.ResourceBarGrowthDirection = {
 	UP = "Up",
 	DOWN = "Down",
