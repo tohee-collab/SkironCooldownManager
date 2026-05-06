@@ -153,6 +153,10 @@ function SCM:SPELL_UPDATE_COOLDOWN(spellID)
 	SCM:UpdateCustomIconsGCD()
 end
 
+function SCM:SPELL_UPDATE_USABLE()
+	SCM.CustomIcons.UpdateSpellUsability()
+end
+
 function SCM:SPELL_UPDATE_CHARGES()
 	SCM:ApplyAnchorGroupByIconTypes(false, nil, "spell")
 end

@@ -788,6 +788,29 @@ function CustomIcons.UpdateIcons(customConfig, key)
 	end
 end
 
+local function UpdateSpellUsabilityForConfig(configTable)
+	if not configTable then
+		return
+	end
+
+	for id, config in pairs(configTable) do
+		local spellID = config.spellID
+		local frame = spellID and CustomSpellFrames[id]
+		if frame and not frame.SCMReleased then
+			if C_Spell.IsSpellUsable(spellID) then
+				frame.Icon:SetVertexColor(1, 1, 1, 1)
+			else
+				frame.Icon:SetVertexColor(CooldownViewerConstants.ITEM_NOT_USABLE_COLOR:GetRGBA())
+			end
+		end
+	end
+end
+
+function CustomIcons.UpdateSpellUsability()
+	UpdateSpellUsabilityForConfig(SCM.customConfig.spellConfig)
+	UpdateSpellUsabilityForConfig(SCM.globalCustomConfig.spellConfig)
+end
+
 local function UpdateCountTextForConfigTable(customConfig, spellID)
 	for id, config in pairs(customConfig) do
 		if not spellID or config.spellID == spellID then
