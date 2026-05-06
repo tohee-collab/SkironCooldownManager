@@ -193,6 +193,13 @@ local function OnChildSetHeight(child)
 	end
 end
 
+local function OnChildSetScale(child)
+	local anchorFrame = child.SCMAnchorFrame
+	if anchorFrame then
+		anchorFrame.SetScale(child, Cache.cachedViewerScale or 1)
+	end
+end
+
 function SCM:UpdateManagedAnchorChild(child, groupAnchor, startPoint, offsetX, offsetY, width, height)
 	child.SCMWidth = width
 	child.SCMHeight = height
@@ -222,6 +229,7 @@ function SCM:UpdateManagedAnchorChild(child, groupAnchor, startPoint, offsetX, o
 		hooksecurefunc(child, "SetSize", OnChildSetSize)
 		hooksecurefunc(child, "SetWidth", OnChildSetWidth)
 		hooksecurefunc(child, "SetHeight", OnChildSetHeight)
+		hooksecurefunc(child, "SetScale", OnChildSetScale)
 	end
 
 	if not child.SCMPointHook and not child.SCMCustom then
