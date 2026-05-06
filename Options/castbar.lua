@@ -72,7 +72,7 @@ local function AddAnchorControls(parent, title, anchors, refreshFn, relativeFram
 	local xOffset = AceGUI:Create("Slider")
 	xOffset:SetRelativeWidth(0.5)
 	xOffset:SetLabel("X Offset")
-	xOffset:SetSliderValues(-500, 500, 1)
+	xOffset:SetSliderValues(-500, 500, 0.1)
 	xOffset:SetValue(anchors[4] or 0)
 	xOffset:SetCallback("OnValueChanged", function(_, _, value)
 		anchors[4] = value
@@ -83,7 +83,7 @@ local function AddAnchorControls(parent, title, anchors, refreshFn, relativeFram
 	local yOffset = AceGUI:Create("Slider")
 	yOffset:SetRelativeWidth(0.5)
 	yOffset:SetLabel("Y Offset")
-	yOffset:SetSliderValues(-500, 500, 1)
+	yOffset:SetSliderValues(-500, 500, 0.1)
 	yOffset:SetValue(anchors[5] or 0)
 	yOffset:SetCallback("OnValueChanged", function(_, _, value)
 		anchors[5] = value
