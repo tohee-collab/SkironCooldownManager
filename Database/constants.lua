@@ -40,11 +40,13 @@ Constants.SecondaryGrowthDirections = {
 }
 
 Constants.TextOutline = {
-	NONE = "None",
+	[""] = "None",
 	OUTLINE = "Outline",
 	THICKOUTLINE = "Thick Outline",
 	MONOCHROME = "Monochrome",
 	["OUTLINE,MONOCHROME"] = "Monochrome Outline",
+	SLUG = "Slug",
+	["OUTLINE SLUG"] = "Outline Slug",
 }
 
 Constants.ResourceBarGrowthDirection = {
