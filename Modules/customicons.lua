@@ -392,15 +392,20 @@ local function GetItemOrSlotSpellID(config)
 	end
 end
 
-local function GetDefaultLoadClasses()
+function CustomIcons.GetDefaultLoadClasses()
 	local loadClasses = {}
-	for classIndex = 1, GetNumClasses() do
-		local classFile = select(2, GetClassInfo(classIndex))
-		if classFile then
-			loadClasses[classFile] = true
-		end
+	for classFile in pairs(SCM.Utils.GetClassList(false)) do
+		loadClasses[classFile] = false
 	end
 	return loadClasses
+end
+
+function CustomIcons.GetDefaultLoadRaces()
+	local loadRaces = {}
+	for raceID in pairs(SCM.Constants.Races) do
+		loadRaces[raceID] = false
+	end
+	return loadRaces
 end
 
 local function MatchesLoadFilter(loadFilter, value)
@@ -418,9 +423,9 @@ end
 local function ShouldLoadCustomIcon(config)
 	if config.alwaysShow then return true end
 
-	if not MatchesLoadFilter(config.loadRoles, SCM.currentRole) then return false end
-	if not MatchesLoadFilter(config.loadClasses, SCM.currentClass) then return false end
-	if not MatchesLoadFilter(config.loadRaces, SCM.currentRace) then return false end
+	if config.useLoadRole and not MatchesLoadFilter(config.loadRoles, SCM.currentRole) then return false end
+	if config.useLoadClass and not MatchesLoadFilter(config.loadClasses, SCM.currentClass) then return false end
+	if config.useLoadRace and not MatchesLoadFilter(config.loadRaces, SCM.currentRace) then return false end
 
 	return true
 end
@@ -854,9 +859,12 @@ function SCM:AddCustomIcon(anchorGroup, iconType, configID, order, uniqueID, isG
 		slotID = iconType == "slot" and configID or nil,
 		anchorGroup = anchorGroup,
 		order = order,
-		loadClasses = GetDefaultLoadClasses(),
-		loadRaces = SCM.Constants.Races,
-		loadRoles = { ["TANK"] = true, ["HEALER"] = true, ["DAMAGER"] = true },
+		useLoadClass = false,
+		loadClasses = CustomIcons.GetDefaultLoadClasses(),
+		useLoadRace = false,
+		loadRaces = CustomIcons.GetDefaultLoadRaces(),
+		useLoadRole = false,
+		loadRoles = { ["TANK"] = false, ["HEALER"] = false, ["DAMAGER"] = false },
 	}
 
 	self:CreateAllCustomIcons(iconType)

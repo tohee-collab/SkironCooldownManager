@@ -47,25 +47,10 @@ for iconType, options in pairs(iconTypeTabs) do
 	end
 end
 
-local function GetDefaultCustomIconLoadClasses()
-	local loadClasses = {}
-	for classFile in pairs(SCM.Utils.GetClassList(false)) do
-		loadClasses[classFile] = true
-	end
-	return loadClasses
-end
-
-local function GetDefaultCustomIconLoadRaces()
-	local loadRaces = {}
-	for raceID in pairs(SCM.Constants.Races) do
-		loadRaces[raceID] = true
-	end
-	return loadRaces
-end
-
 local function GetDefaultLoadRaceNames()
 	local dualFactionRaces = {}
 	local loadedRaces = {}
+	local raceIDs = {}
 
 	local sortedIDs = {}
 	for raceID in pairs(SCM.Constants.Races) do
@@ -80,10 +65,15 @@ local function GetDefaultLoadRaceNames()
 		if raceInfo and not dualFactionRaces[raceInfo.raceName] then
 			dualFactionRaces[raceInfo.raceName] = true
 			loadedRaces[raceID] = raceInfo.raceName
+			tinsert(raceIDs, raceID)
 		end
 	end
 
-	return loadedRaces
+	table.sort(raceIDs, function(raceIDA, raceIDB)
+		return loadedRaces[raceIDA] < loadedRaces[raceIDB]
+	end) 
+
+	return loadedRaces, raceIDs
 end
 
 local function SortByIndex(a, b)
@@ -1327,11 +1317,18 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 							elseif group == "load" then
 								if buttonData.isCustom then
 									if isGlobal then
+										local useLoadClass = AceGUI:Create("CheckBox")
+										useLoadClass:SetLabel("Class")
+										useLoadClass:SetRelativeWidth(0.5)
+										useLoadClass:SetValue(buttonConfig.useLoadClass)
+										iconSettingsTabs:AddChild(useLoadClass)
+
 										local loadClass = AceGUI:Create("Dropdown")
-										loadClass:SetRelativeWidth(0.33)
+										loadClass:SetRelativeWidth(0.5)
 										loadClass:SetLabel("Classes")
 										loadClass:SetList(SCM.Utils.GetClassList(false))
 										loadClass:SetMultiselect(true)
+										loadClass:SetDisabled(not buttonConfig.useLoadClass)
 										loadClass:SetCallback("OnValueChanged", function(_, _, key, value)
 											buttonConfig.loadClasses = buttonConfig.loadClasses or GetDefaultCustomIconLoadClasses()
 											buttonConfig.loadClasses[key] = value
@@ -1346,13 +1343,26 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 											loadClass:SetItemValue(key, value)
 										end
 
+										useLoadClass:SetCallback("OnValueChanged", function(self, event, value)
+											buttonConfig.useLoadClass = value or nil
+											loadClass:SetDisabled(not value)
+											ApplyIconConfigUpdate()
+										end)
+
 										iconSettingsTabs:AddChild(loadClass)
 
+										local useLoadRole = AceGUI:Create("CheckBox")
+										useLoadRole:SetLabel("Role")
+										useLoadRole:SetRelativeWidth(0.5)
+										useLoadRole:SetValue(buttonConfig.useLoadRole)
+										iconSettingsTabs:AddChild(useLoadRole)
+
 										local loadRole = AceGUI:Create("Dropdown")
-										loadRole:SetRelativeWidth(0.33)
+										loadRole:SetRelativeWidth(0.5)
 										loadRole:SetLabel("Roles")
 										loadRole:SetList(SCM.Constants.Roles)
 										loadRole:SetMultiselect(true)
+										loadRole:SetDisabled(not buttonConfig.useLoadRole)
 										loadRole:SetCallback("OnValueChanged", function(_, _, key, value)
 											buttonConfig.loadRoles = buttonConfig.loadRoles or {}
 											buttonConfig.loadRoles[key] = value
@@ -1360,20 +1370,33 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 										end)
 
 										if not buttonConfig.loadRoles then
-											buttonConfig.loadRoles = { ["TANK"] = true, ["HEALER"] = true, ["DAMAGER"] = true }
+											buttonConfig.loadRoles = { ["TANK"] = false, ["HEALER"] = false, ["DAMAGER"] = false }
 										end
 
 										for key, value in pairs(buttonConfig.loadRoles) do
 											loadRole:SetItemValue(key, value)
 										end
 
+										useLoadRole:SetCallback("OnValueChanged", function(self, event, value)
+											buttonConfig.useLoadRole = value or nil
+											loadRole:SetDisabled(not value)
+											ApplyIconConfigUpdate()
+										end)
+
 										iconSettingsTabs:AddChild(loadRole)
 
+										local useLoadRace = AceGUI:Create("CheckBox")
+										useLoadRace:SetLabel("Race")
+										useLoadRace:SetRelativeWidth(0.5)
+										useLoadRace:SetValue(buttonConfig.useLoadRace)
+										iconSettingsTabs:AddChild(useLoadRace)
+
 										local loadRaces = AceGUI:Create("Dropdown")
-										loadRaces:SetRelativeWidth(0.33)
+										loadRaces:SetRelativeWidth(0.5)
 										loadRaces:SetLabel("Races")
 										loadRaces:SetList(GetDefaultLoadRaceNames())
 										loadRaces:SetMultiselect(true)
+										loadRaces:SetDisabled(not buttonConfig.useLoadRace)
 										loadRaces:SetCallback("OnValueChanged", function(_, _, key, value)
 											buttonConfig.loadRaces = buttonConfig.loadRaces or GetDefaultCustomIconLoadRaces()
 											buttonConfig.loadRaces[key] = value
@@ -1388,7 +1411,16 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 											loadRaces:SetItemValue(key, value)
 										end
 
+										useLoadRace:SetCallback("OnValueChanged", function(self, event, value)
+											buttonConfig.useLoadRace = value or nil
+											loadRaces:SetDisabled(not value)
+											ApplyIconConfigUpdate()
+										end)
+
 										iconSettingsTabs:AddChild(loadRaces)
+
+										iconSettings:DoLayout()
+										scrollFrame:DoLayout()
 										return
 									end
 								end
