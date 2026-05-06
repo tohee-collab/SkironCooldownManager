@@ -159,7 +159,9 @@ function SCM:SkinChild(child, childConfig)
 		child.Icon:ClearAllPoints()
 		child.Icon:SetPoint("TOPLEFT", child, "TOPLEFT", borderSize, -borderSize)
 		child.Icon:SetPoint("BOTTOMRIGHT", child, "BOTTOMRIGHT", -borderSize, borderSize)
-		child.Icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)
+
+		local iconZoom = options.iconZoom
+		child.Icon:SetTexCoord(iconZoom, 1 - iconZoom, iconZoom, 1 - iconZoom)
 
 		local fontPath = LSM:Fetch("font", options.chargeFont)
 		ApplyChargeAndApplicationStyle(child, options, fontPath)
@@ -170,7 +172,8 @@ function SCM:SkinChild(child, childConfig)
 		child.Icon:ClearAllPoints()
 		child.Icon:SetPoint("TOPLEFT", child, "TOPLEFT", borderSize, -borderSize)
 		child.Icon:SetPoint("BOTTOMRIGHT", child, "BOTTOMRIGHT", -borderSize, borderSize)
-		child.Icon:SetTexCoord(0.12, 0.88, 0.12, 0.88)
+		local iconZoom = options.iconZoom
+		child.Icon:SetTexCoord(iconZoom, 1 - iconZoom, iconZoom, 1 - iconZoom)
 
 		child.Cooldown:ClearAllPoints()
 		child.Cooldown:SetAllPoints(child)

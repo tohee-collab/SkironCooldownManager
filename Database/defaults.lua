@@ -40,6 +40,7 @@ SCM.DefaultDB = {
 			enableSkinning = true,
 			enableCustomIcons = true,
 			simulateAuras = true,
+			iconZoom = 0.12,
 			chargeFont = "Expressway",
 			chargeFontSize = 22,
 			chargePoint = "CENTER",
