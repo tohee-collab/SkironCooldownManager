@@ -171,7 +171,7 @@ function SCM:PLAYER_EQUIPED_SPELLS_CHANGED()
 		SCM:CreateAllCustomIcons("slot")
 		SCM:ApplyAllCDManagerConfigs()
 	end)
-	
+
 	eventFrame:UnregisterEvent("PLAYER_EQUIPED_SPELLS_CHANGED")
 end
 

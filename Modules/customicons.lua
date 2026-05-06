@@ -427,11 +427,19 @@ local function MatchesLoadFilter(loadFilter, value)
 end
 
 local function ShouldLoadCustomIcon(config)
-	if config.alwaysShow then return true end
+	if config.alwaysShow then
+		return true
+	end
 
-	if config.useLoadRole and not MatchesLoadFilter(config.loadRoles, SCM.currentRole) then return false end
-	if config.useLoadClass and not MatchesLoadFilter(config.loadClasses, SCM.currentClass) then return false end
-	if config.useLoadRace and not MatchesLoadFilter(config.loadRaces, SCM.currentRace) then return false end
+	if config.useLoadRole and not MatchesLoadFilter(config.loadRoles, SCM.currentRole) then
+		return false
+	end
+	if config.useLoadClass and not MatchesLoadFilter(config.loadClasses, SCM.currentClass) then
+		return false
+	end
+	if config.useLoadRace and not MatchesLoadFilter(config.loadRaces, SCM.currentRace) then
+		return false
+	end
 
 	return true
 end

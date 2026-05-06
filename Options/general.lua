@@ -407,7 +407,13 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		end)
 		hideBuffsWhenInactive:SetCallback("OnEnter", function(self)
 			GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR")
-			GameTooltip:AddLine("This will disable the checkbox \"Hide When Inactive\" in the Blizzard CDM settings. SCM will still hide all buffs that are not tracked but this allows you to show buffs at all times.", 1, 1, 1, true)
+			GameTooltip:AddLine(
+				'This will disable the checkbox "Hide When Inactive" in the Blizzard CDM settings. SCM will still hide all buffs that are not tracked but this allows you to show buffs at all times.',
+				1,
+				1,
+				1,
+				true
+			)
 			GameTooltip:Show()
 		end)
 		hideBuffsWhenInactive:SetCallback("OnLeave", function()
