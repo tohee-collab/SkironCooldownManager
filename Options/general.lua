@@ -478,6 +478,15 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		end)
 		activeSwipeSettings:AddChild(reverseActiveSwipe)
 
+		local disableGCD = AceGUI:Create("CheckBox")
+		disableGCD:SetRelativeWidth(0.5)
+		disableGCD:SetLabel("Disable GCD (Experimental)")
+		disableGCD:SetValue(options.disableGCD)
+		disableGCD:SetCallback("OnValueChanged", function(_, _, value)
+			options.disableGCD = value
+		end)
+		activeSwipeSettings:AddChild(disableGCD)
+
 		local disableRegularIconActiveSwipe = AceGUI:Create("CheckBox")
 		disableRegularIconActiveSwipe:SetRelativeWidth(0.5)
 		disableRegularIconActiveSwipe:SetLabel("Disable On Regular Icons")

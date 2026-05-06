@@ -2,6 +2,7 @@ local SCM = select(2, ...)
 
 local Cooldowns = SCM.Cooldowns
 local Icons = SCM.Icons
+local Cache = SCM.Cache
 
 local function OnBuffCooldownSet(self)
 	local parent = (self.SCMConfig and self) or self:GetParent()
@@ -9,10 +10,12 @@ local function OnBuffCooldownSet(self)
 		return
 	end
 
-	if not parent.SCMHidden then
+	parent.SCMAuraInstanceID = parent.SCMAuraInstanceID or parent.auraInstanceID
+
+	if not parent.SCMHidden or parent.SCMConfig.alwaysShow then
 		Icons.UpdateChildDesaturation(parent, false)
 		Icons.UpdateChildGlow(parent, false)
-	elseif parent.SCMHidden or parent.SCMHidden then
+	elseif parent.SCMHidden then
 		Icons.ShowChild(parent)
 		SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup)
 	end
@@ -22,6 +25,14 @@ local function OnBuffCooldownEnd(self)
 	local parent = (self.SCMConfig and self) or self:GetParent()
 	if not parent or not parent.SCMConfig then
 		return
+	end
+
+	if parent.SCMAuraInstanceID then
+		if not C_UnitAuras.GetAuraDataByAuraInstanceID("player", parent.SCMAuraInstanceID) then
+			parent.SCMAuraInstanceID = nil
+		else
+			return
+		end
 	end
 
 	Icons.UpdateChildGlow(parent, true)
@@ -83,10 +94,10 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 
 	-- Cooldowns
 	hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
+	hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnBuffCooldownEnd)
 	--hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
 	--hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
 	--child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
-	hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnBuffCooldownEnd)
 
 	-- Pandmic Alerts
 	hooksecurefunc(child, "TriggerPandemicAlert", OnBuffTriggerPandemicAlert)
@@ -108,12 +119,7 @@ function Cooldowns.IsChildOnCooldown(child)
 	return hasCooldown
 end
 
-function Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
-	if not options.disableRegularIconActiveSwipe or not parent.SCMSpellID or not self:GetUseAuraDisplayTime() or parent.SCMConfig.forceActiveSwipe then
-		parent.Icon.SCMDesaturated = nil
-		return
-	end
-
+function Cooldowns.SetNormalCooldown(self, parent)
 	local cooldownData = SCM.defaultCooldownViewerConfig.cooldownIDs[parent.SCMCooldownID]
 	self.SCMSettingRegularSpellCooldown = true
 
@@ -123,13 +129,13 @@ function Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
 	if cooldownData.charges then
 		local spellCharges = C_Spell.GetSpellCharges(parent.SCMSpellID)
 		if spellCharges and spellCharges.isActive then
-			durationObject = C_Spell.GetSpellChargeDuration(parent.SCMSpellID)
+			durationObject = C_Spell.GetSpellChargeDuration(parent.SCMSpellID, true)
 		end
 	end
 
 	if not durationObject then
 		desaturate = true
-		durationObject = C_Spell.GetSpellCooldownDuration(parent.SCMSpellID)
+		durationObject = C_Spell.GetSpellCooldownDuration(parent.SCMSpellID, true)
 	end
 
 	if durationObject then
@@ -145,15 +151,55 @@ function Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
 	self.SCMSettingRegularSpellCooldown = nil
 end
 
+function Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
+	if not options.disableRegularIconActiveSwipe or not parent.SCMSpellID or not self:GetUseAuraDisplayTime() or parent.SCMConfig.forceActiveSwipe then
+		parent.Icon.SCMDesaturated = nil
+		return
+	end
+
+	Cooldowns.SetNormalCooldown(self, parent)
+end
+
+local function SetRegularChildCooldown(child, cooldownInfo)
+	local cooldownFrame = child.Cooldown
+	if not (cooldownFrame and child.Icon) then
+		return
+	end
+
+	Cooldowns.SetNormalCooldown(cooldownFrame, child)
+end
+
+local function OverwriteViewerChildCooldown(viewer, spellID, cooldownInfo)
+	local children = Cache.cachedViewerChildren[viewer]
+	if not children then
+		children = { viewer:GetChildren() }
+		Cache.cachedViewerChildren[viewer] = children
+	end
+
+	for i = 1, #children do
+		local child = children[i]
+		if child.SCMConfig and not child.SCMBuffBar and not child.SCMConfig.forceActiveSwipe and child.SCMSpellID == spellID then
+			SetRegularChildCooldown(child, cooldownInfo)
+		end
+	end
+end
+
+function Cooldowns.OverwriteRegularChildCooldownBySpellID(spellID, overrideSpellID, cooldownInfo)
+	OverwriteViewerChildCooldown(EssentialCooldownViewer, spellID, cooldownInfo)
+	OverwriteViewerChildCooldown(UtilityCooldownViewer, spellID, cooldownInfo)
+end
+
 local function OnRegularCooldownChanged(self)
 	local parent = self:GetParent()
-	if not (parent and parent.SCMConfig) or self.SCMSettingRegularSpellCooldown then
+	if not (parent and parent.SCMConfig) or self.SCMSettingRegularSpellCooldown or self.SCMClearingGCD then
 		return
 	end
 
 	local options = SCM.db.profile.options
-	if options.disableRegularIconActiveSwipe and not parent.SCMConfig.forceActiveSwipe then
+	if options.disableRegularIconActiveSwipe and not parent.SCMConfig.forceActiveSwipe and self:GetUseAuraDisplayTime() then
 		Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
+	elseif options.disableGCD then
+		Cooldowns.SetNormalCooldown(self, parent)
 	end
 
 	local config = parent.SCMConfig

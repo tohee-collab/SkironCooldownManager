@@ -218,6 +218,14 @@ function SCM:CVAR_UPDATE(cvarName)
 	end
 end
 
+function SCM:COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED(baseSpellID, overrideSpellID)
+	local options = SCM.db.profile.options
+	local cooldown = C_Spell.GetSpellCooldown(baseSpellID)
+	if cooldown and cooldown.isActive and options.disableRegularIconActiveSwipe then
+		SCM.Cooldowns.OverwriteRegularChildCooldownBySpellID(baseSpellID, overrideSpellID, cooldown)
+	end
+end
+
 function SCM:SPELL_DATA_LOAD_RESULT(spellID, success)
 	if success then
 		SCM.CustomIcons.CreateSpellIcon(spellID)
@@ -275,6 +283,8 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 	eventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
 	eventFrame:RegisterEvent("SPELL_UPDATE_CHARGES")
+	eventFrame:RegisterEvent("SPELL_UPDATE_USABLE")
+	--eventFrame:RegisterEvent("COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED")
 	eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
 	eventFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 	eventFrame:RegisterEvent("ACTIVE_PLAYER_SPECIALIZATION_CHANGED")

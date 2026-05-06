@@ -273,16 +273,22 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 
 	if iconType == "spell" then
 		local spellCooldown = C_Spell.GetSpellCooldown(config.spellID)
-		if config.showGCD and spellCooldown.isOnGCD then
-			frame.GCDCooldown:SetCooldown(spellCooldown.startTime, spellCooldown.duration)
+		local globalCooldown = C_Spell.GetSpellCooldown(61304)
+		if not spellCooldown.isActive and config.showGCD and globalCooldown.isActive then
+			frame.GCDCooldown:Show()
+			frame.GCDCooldown:SetCooldown(globalCooldown.startTime, globalCooldown.duration)
+		else
+			frame.GCDCooldown:Hide()
 		end
 
-		local durationObject = C_Spell.GetSpellChargeDuration(config.spellID)
+		local durationObject = C_Spell.GetSpellChargeDuration(config.spellID, true)
 		if durationObject then
 			frame.Cooldown:SetCooldownFromDurationObject(durationObject)
 
-			if not spellCooldown.isOnGCD then
-				local spellDurationObject = C_Spell.GetSpellCooldownDuration(config.spellID)
+			if spellCooldown.isActive then
+				spellCooldown = C_Spell.GetSpellCharges(config.spellID)
+
+				local spellDurationObject = C_Spell.GetSpellCooldownDuration(config.spellID, true)
 				local desaturation = spellDurationObject:EvaluateRemainingDuration(desaturationCurve)
 				local alpha = spellDurationObject:EvaluateRemainingDuration(alphaCurve)
 				frame.Icon:SetDesaturation(desaturation)
@@ -291,14 +297,14 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 				--frame.Cooldown:SetReverse(frame.Icon:IsDesaturated())
 			end
 		else
-			durationObject = C_Spell.GetSpellCooldownDuration(config.spellID)
-			frame.Cooldown:SetCooldownFromDurationObject(durationObject)
-			if not spellCooldown or not spellCooldown.isOnGCD then
+			durationObject = C_Spell.GetSpellCooldownDuration(config.spellID, true)
+			if durationObject then
+				frame.Cooldown:SetCooldownFromDurationObject(durationObject)
 				frame.Icon:SetDesaturation(C_CurveUtil.EvaluateColorValueFromBoolean(durationObject:IsZero(), 0, 1))
 			end
 		end
 
-		local isOnCooldown = frame.Cooldown:IsShown()
+		local isOnCooldown = durationObject ~= nil
 		UpdateCustomIconGlow(frame, false)
 		return isOnCooldown
 	end
