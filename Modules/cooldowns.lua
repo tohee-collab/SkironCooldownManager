@@ -17,6 +17,8 @@ local function OnBuffCooldownSet(self)
 		Icons.UpdateChildGlow(parent, false)
 	elseif parent.SCMHidden then
 		Icons.ShowChild(parent)
+		Icons.UpdateChildDesaturation(parent, false)
+		Icons.UpdateChildGlow(parent, false)
 		SCM:ApplyAnchorGroupCDManagerConfig(parent.SCMGroup)
 	end
 end
