@@ -274,7 +274,7 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 	if iconType == "spell" then
 		local spellCooldown = C_Spell.GetSpellCharges(config.spellID)
 		local durationObject = C_Spell.GetSpellChargeDuration(config.spellID, true)
-		if spellCooldown.isActive and not spellCooldown.isOnGCD then
+		if spellCooldown and spellCooldown.isActive and not spellCooldown.isOnGCD then
 			frame.Cooldown:SetCooldownFromDurationObject(durationObject)
 
 			local spellDurationObject = C_Spell.GetSpellCooldownDuration(config.spellID, true)
