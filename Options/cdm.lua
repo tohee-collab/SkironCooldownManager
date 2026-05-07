@@ -928,7 +928,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 	local deleteAnchorButton = AceGUI:Create("Button")
 	deleteAnchorButton:SetText("Delete Anchor")
 	deleteAnchorButton:SetRelativeWidth(0.5)
-	deleteAnchorButton:SetDisabled((not isGlobal and anchorIndex <= 3) or ((isGlobal or isBuffBar) and anchorIndex == 1))
+	deleteAnchorButton:SetDisabled(((isGlobal or isBuffBar) and anchorIndex == 1) or (not isGlobal and not isBuffBar and anchorIndex <= 3))
 	deleteAnchorButton:SetCallback("OnClick", function()
 		if isGlobal then
 			SCM:RemoveGlobalAnchor(anchorIndex, anchorTabsTbl)
