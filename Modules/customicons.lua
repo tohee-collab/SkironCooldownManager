@@ -770,6 +770,7 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 							end
 
 							CDM.AddChildToScopedGroup(validChildren, anchorGroup, frame, isGlobal)
+							CDM.AddChildToScopedGroup(Cache.cachedChildrenTbl, anchorGroup, frame, isGlobal)
 						end
 					else
 						Icons.SetChildVisibilityState(frame, false, true)

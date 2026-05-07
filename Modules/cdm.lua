@@ -204,11 +204,11 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 
 	while childIndex <= totalChildren do
 		local currentRowConfig = rowConfig[rowIndex] or lastRowConfig
+		local rowLimit = max(currentRowConfig.limit or 8, 1)
 		if currentRowConfig.hardLimit then
-			totalChildren = min(#visibleChildren, childIndex + currentRowConfig.limit - 1)
+			totalChildren = min(#visibleChildren, #layoutChildren, childIndex + rowLimit - 1)
 		end
 
-		local rowLimit = min(totalChildren, currentRowConfig.limit or 8)
 		local rowIconWidth = currentRowConfig.iconWidth or currentRowConfig.size or 47
 		local rowIconHeight = currentRowConfig.iconHeight or currentRowConfig.size or 47
 
@@ -221,7 +221,7 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 			end
 		end
 
-		local endIndex = min(childIndex + rowLimit - 1, #layoutChildren)
+		local endIndex = min(childIndex + rowLimit - 1, totalChildren)
 		local numInRow = endIndex - childIndex + 1
 		local rowWidth = (numInRow * rowIconWidth) + ((numInRow - 1) * baseSpacing)
 		local fixedWidth = (currentRowConfig.useFixedWidth and currentRowConfig.fixedWidth) or rowWidth
