@@ -399,7 +399,6 @@ function SCM:ApplyOptions()
 end
 
 local function OpenOptions()
-	local options = SCM.db.profile.options
 	SCM.isOptionsOpen = true
 	SCM.simulateBuffs = true
 
@@ -430,12 +429,24 @@ local function OpenOptions()
 	tabs:SetCallback("OnGroupSelected", function(self, event, group)
 		self:ReleaseChildren()
 
-		if group ~= "CDM" and options.showAnchorHighlight then
+		local options = SCM.db.profile.options
+		if options.showAnchorHighlight then
 			for _, anchorFrame in pairs(SCM.anchorFrames) do
-				anchorFrame.isGlowActive = false
-				LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
-				LibCustomGlow.PixelGlow_Start(anchorFrame, nil, nil, nil, nil, nil, nil, nil, nil, "SCM")
-				anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
+				anchorFrame.debugTexture:Show()
+				anchorFrame.debugText:Show()
+
+				if group ~= "CDM" then
+					anchorFrame.isGlowActive = false
+					anchorFrame.SCMHighlightState = "default"
+					LibCustomGlow.PixelGlow_Stop(anchorFrame, "SCM")
+					LibCustomGlow.PixelGlow_Start(anchorFrame, nil, nil, nil, nil, nil, nil, nil, nil, "SCM")
+					anchorFrame.debugText:SetTextColor(0.90, 0.62, 0, 1)
+				end
+			end
+		else
+			for _, anchorFrame in pairs(SCM.anchorFrames) do
+				anchorFrame.debugTexture:Hide()
+				anchorFrame.debugText:Hide()
 			end
 		end
 

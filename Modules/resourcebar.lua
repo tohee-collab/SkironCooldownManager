@@ -821,7 +821,8 @@ function SCMResourceBarControllerMixin:ApplyFrameWidthOptions(bar)
 		if not bar.SCMResourceBarHook then
 			bar.SCMResourceBarHook = true
 			anchor:HookScript("OnSizeChanged", function()
-				if not InCombatLockdown() and specificBarOptions.matchAnchorWidth then
+				local barOptions = bar.barOptions
+				if not InCombatLockdown() and barOptions and barOptions.matchAnchorWidth then
 					SCM:RefreshResourceBarConfig()
 				end
 			end)
