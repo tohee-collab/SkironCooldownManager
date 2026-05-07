@@ -157,6 +157,10 @@ function SCM:SPELL_UPDATE_USABLE()
 	SCM.CustomIcons.UpdateSpellUsability()
 end
 
+function SCM:SPELL_RANGE_CHECK_UPDATE(spellID, isInRange, checksRange)
+	SCM.CustomIcons.UpdateSpellRange(spellID, isInRange, checksRange)
+end
+
 function SCM:SPELL_UPDATE_CHARGES()
 	SCM:ApplyAnchorGroupByIconTypes(false, nil, "spell")
 end
@@ -288,6 +292,7 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
 	eventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
 	eventFrame:RegisterEvent("SPELL_UPDATE_CHARGES")
 	eventFrame:RegisterEvent("SPELL_UPDATE_USABLE")
+	eventFrame:RegisterEvent("SPELL_RANGE_CHECK_UPDATE")
 	--eventFrame:RegisterEvent("COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED")
 	eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
 	eventFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")

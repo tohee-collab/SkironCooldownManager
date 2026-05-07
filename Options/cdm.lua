@@ -71,7 +71,7 @@ local function GetDefaultLoadRaceNames()
 
 	table.sort(raceIDs, function(raceIDA, raceIDB)
 		return loadedRaces[raceIDA] < loadedRaces[raceIDB]
-	end) 
+	end)
 
 	return loadedRaces, raceIDs
 end
@@ -776,7 +776,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, op
 	self:AddChild(limit)
 
 	local advancedRowSettings = AceGUI:Create("TabGroup")
-	local advancedTabs = isBuffBar and { { value = "general", text = "General" } }
+	local advancedTabs = isBuffBar and { { value = "general", text = "General" }, { value = "applications", text = "Stacks" } }
 		or { { value = "general", text = "General" }, { value = "charges", text = "Charges" }, { value = "applications", text = "Stacks" } }
 	advancedRowSettings:SetLayout("flow")
 	advancedRowSettings:SetFullWidth(true)
@@ -1277,6 +1277,27 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 											ApplyIconConfigUpdate()
 										end)
 										iconSettingsTabs:AddChild(showGCD)
+
+										local showNotUsable = AceGUI:Create("CheckBox")
+										showNotUsable:SetLabel("Show Not Usable")
+										showNotUsable:SetRelativeWidth(0.5)
+										showNotUsable:SetValue(buttonConfig.showNotUsable)
+										showNotUsable:SetCallback("OnValueChanged", function(self, event, value)
+											buttonConfig.showNotUsable = value or nil
+											ApplyIconConfigUpdate()
+										end)
+										iconSettingsTabs:AddChild(showNotUsable)
+
+										local showOutOfRange = AceGUI:Create("CheckBox")
+										showOutOfRange:SetLabel("Show Out Of Range")
+										showOutOfRange:SetRelativeWidth(0.5)
+										showOutOfRange:SetValue(buttonConfig.showOutOfRange)
+										showOutOfRange:SetCallback("OnValueChanged", function(self, event, value)
+											buttonConfig.showOutOfRange = value or nil
+											ApplyIconConfigUpdate()
+										end)
+										iconSettingsTabs:AddChild(showOutOfRange)
+
 										if buttonData.iconType == "item" then
 											local showCraftQuality = AceGUI:Create("CheckBox")
 											showCraftQuality:SetLabel("Show Craft Quality")

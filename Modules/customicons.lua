@@ -806,7 +806,9 @@ local function UpdateSpellUsabilityForConfig(configTable)
 		local spellID = config.spellID
 		local frame = spellID and CustomSpellFrames[id]
 		if frame and not frame.SCMReleased then
-			if C_Spell.IsSpellUsable(spellID) then
+			if frame.spellOutOfRange then
+				frame.Icon:SetVertexColor(CooldownViewerConstants.ITEM_NOT_IN_RANGE_COLOR:GetRGBA())
+			elseif not config.showNotUsable or C_Spell.IsSpellUsable(spellID) then
 				frame.Icon:SetVertexColor(1, 1, 1, 1)
 			else
 				frame.Icon:SetVertexColor(CooldownViewerConstants.ITEM_NOT_USABLE_COLOR:GetRGBA())
@@ -818,6 +820,35 @@ end
 function CustomIcons.UpdateSpellUsability()
 	UpdateSpellUsabilityForConfig(SCM.customConfig.spellConfig)
 	UpdateSpellUsabilityForConfig(SCM.globalCustomConfig.spellConfig)
+end
+
+function CustomIcons.UpdateSpellRange(spellID, isInRange, checksRange)
+	local entries = Cache.cachedCustomSpellEntriesBySpellID[spellID]
+	if not entries then
+		return
+	end
+
+	local showOutOfRange = checksRange == true and isInRange == false
+	for _, entry in ipairs(entries) do
+		local frame = CustomSpellFrames[entry.id]
+		if frame and not frame.SCMReleased and not (frame.spellOutOfRange == showOutOfRange) then
+			local config = entry.config
+			if config and config.checkOutOfRange then
+				frame.spellOutOfRange = showOutOfRange
+				frame.OutOfRange:SetShown(showOutOfRange)
+
+				if showOutOfRange then
+					frame.Icon:SetVertexColor(CooldownViewerConstants.ITEM_NOT_IN_RANGE_COLOR:GetRGBA())
+				elseif not config.showNotUsable or C_Spell.IsSpellUsable(spellID) then
+					frame.Icon:SetVertexColor(1, 1, 1, 1)
+				else
+					frame.Icon:SetVertexColor(CooldownViewerConstants.ITEM_NOT_USABLE_COLOR:GetRGBA())
+				end
+			else
+				frame.spellOutOfRange = nil
+			end
+		end
+	end
 end
 
 local function UpdateCountTextForConfigTable(customConfig, spellID)
