@@ -204,7 +204,7 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	if not statusWidth or statusWidth <= 1 then
 		statusWidth = max(outerWidth - borderSize * 2 - iconSize - spacing, 1)
 	end
-	local durationWidth = min(statusWidth, fontSize * 2)
+	local durationWidth = min(statusWidth, fontSize * 3)
 
 	ApplyTextStyle(castBar.SpellNameText, fontPath, fontSize, fontOutline, "LEFT", max(statusWidth - durationWidth, 1))
 	ApplyTextStyle(castBar.CastDurationText, fontPath, fontSize, fontOutline, "RIGHT", durationWidth)
