@@ -22,8 +22,8 @@ local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 		end
 
 		if child.SCMCustom then
-			child.ChargeCount:SetWidth(child.ChargeCount.Current:GetWidth())
-			child.ChargeCount:SetHeight(child.ChargeCount.Current:GetStringHeight() - 10)
+			--child.ChargeCount:SetWidth(child.ChargeCount.Current:GetWidth())
+			--child.ChargeCount:SetHeight(child.ChargeCount.Current:GetStringHeight() - 10)
 		end
 
 		child.ChargeCount.Current:ClearAllPoints()
