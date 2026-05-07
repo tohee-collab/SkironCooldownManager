@@ -776,7 +776,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, op
 	self:AddChild(limit)
 
 	local advancedRowSettings = AceGUI:Create("TabGroup")
-	local advancedTabs = isBuffBar and { { value = "general", text = "General" }, { value = "applications", text = "Stacks" } }
+	local advancedTabs = isBuffBar and { { value = "general", text = "General" }, { value = "applications", text = "Stacks (Alpha)" } }
 		or { { value = "general", text = "General" }, { value = "charges", text = "Charges" }, { value = "applications", text = "Stacks" } }
 	advancedRowSettings:SetLayout("flow")
 	advancedRowSettings:SetFullWidth(true)

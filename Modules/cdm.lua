@@ -315,6 +315,8 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 
 			if not child.SCMBuffBar then
 				SCM:SkinChild(child, child.SCMConfig)
+			else
+				SCM:SkinBuffBar(child, child.SCMConfig)
 			end
 		end
 	end
