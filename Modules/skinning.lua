@@ -100,6 +100,7 @@ local function ApplyCooldownStyle(child, options)
 		cooldownFrame:SetSwipeTexture("Interface\\Buttons\\WHITE8x8")
 
 		hooksecurefunc(cooldownFrame, "SetCooldown", function(self)
+			local options = SCM.db.profile.options
 			local parent = self:GetParent()
 			local forceActiveSwipe = parent.SCMConfig and parent.SCMConfig.forceActiveSwipe
 
