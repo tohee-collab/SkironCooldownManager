@@ -954,7 +954,7 @@ function SCMResourceBarControllerMixin:ConfigureSecondaryBar()
 	local primaryPowerType = UnitPowerType("player")
 	local secondaryResource
 
-	if not UnitInVehicle("player") then
+	if not UnitHasVehicleUI("player") then
 		local className = Utils.GetClass()
 		local specializationID = Utils.GetSpec()
 
