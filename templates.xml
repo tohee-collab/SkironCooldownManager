@@ -185,11 +185,7 @@
 			<Frame parentKey="Text" setAllPoints="true">
 				<Layers>
 					<Layer level="OVERLAY">
-						<FontString parentKey="Value" inherits="GameFontHighlightSmall" justifyH="RIGHT">
-							<Anchors>
-								<Anchor point="CENTER" x="0" y="0"/>
-							</Anchors>
-						</FontString>
+						<FontString parentKey="Value" inherits="GameFontHighlightSmall" justifyH="CENTER" justifyV="MIDDLE" setAllPoints="true"/>
 					</Layer>
 				</Layers>
 			</Frame>
