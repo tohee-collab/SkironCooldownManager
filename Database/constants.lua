@@ -341,3 +341,7 @@ Constants.Races = {
 	[86] = true, -- Haranir
 	[91] = true, -- Haranir
 }
+
+Constants.FakeAuras = {
+	[265187] = 15,
+}

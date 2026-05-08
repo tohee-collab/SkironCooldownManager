@@ -3,6 +3,7 @@ local SCM = select(2, ...)
 local Cooldowns = SCM.Cooldowns
 local Icons = SCM.Icons
 local Cache = SCM.Cache
+local Constants = SCM.Constants
 
 local function OnBuffCooldownSet(self)
 	local parent = (self.SCMConfig and self) or self:GetParent()
@@ -10,7 +11,15 @@ local function OnBuffCooldownSet(self)
 		return
 	end
 
-	parent.SCMAuraInstanceID = parent.SCMAuraInstanceID or parent.auraInstanceID
+	if parent.SCMAuraInstanceID and parent.auraInstanceID and parent.auraInstanceID ~= parent.SCMAuraInstanceID then
+		parent.SCMAuraInstanceID = parent.auraInstanceID
+	elseif not parent.auraInstanceID and Constants.FakeAuras[parent.SCMSpellID] then
+		if not parent.SCMFakeAuraInstanceID or GetTime() > parent.SCMFakeAuraInstanceID then
+			parent.SCMFakeAuraInstanceID = GetTime() + Constants.FakeAuras[parent.SCMSpellID]
+		end
+	else
+		parent.SCMAuraInstanceID = parent.SCMAuraInstanceID or parent.auraInstanceID
+	end
 
 	if not parent.SCMHidden or parent.SCMConfig.alwaysShow then
 		Icons.UpdateChildDesaturation(parent, false)
@@ -35,6 +44,13 @@ local function OnBuffCooldownEnd(self)
 		else
 			return
 		end
+	elseif parent.SCMFakeAuraInstanceID then
+		-- Not sure yet if that's needed. Sometimes Blizzard clears for a frame or something but maybe not for these special buffs
+		if GetTime() < parent.SCMFakeAuraInstanceID then
+			return
+		end
+
+		parent.SCMFakeAuraInstanceID = nil
 	end
 
 	Icons.UpdateChildGlow(parent, true)
@@ -95,10 +111,15 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 	child.SCMBuffOptions = options
 
 	-- Cooldowns
-	hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
-	hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnBuffCooldownEnd)
-	--hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
-	--hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
+
+	if Constants.FakeAuras[child.SCMSpellID] then
+		hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
+		hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
+	else
+		hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
+		hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnBuffCooldownEnd)
+	end
+
 	--child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
 
 	-- Pandmic Alerts

@@ -247,7 +247,7 @@ local function ProcessBuffIcon(child, childData, options)
 
 	--local isInactive = not child.Cooldown:IsShown() and not child.auraInstanceID
 
-	local isInactive = not child.auraInstanceID and (FindSpellOverrideByID(child.SCMSpellID) == child.SCMSpellID)
+	local isInactive = not child.auraInstanceID and (FindSpellOverrideByID(child.SCMSpellID) == child.SCMSpellID) and not child.SCMFakeAuraInstanceID
 	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and childData.alwaysShow)
 	local shouldHide = isInactive and not forceShow
 
@@ -263,13 +263,14 @@ end
 local function ProcessRegularIcon(child, childData, options)
 	Icons.SetupRegularIconHooks(child)
 	Icons.SetChildVisibilityState(child, not (childData.hideWhenNotOnCooldown and not Cooldowns.IsChildOnCooldown(child)), false)
+	child.SCMIconOptions = options
 
 	Cooldowns.OverrideRegularAuraCooldown(child.Cooldown, child, options)
 end
 
 local function ProcessBuffBar(child, childData, options)
 	Icons.SetupBuffBarHooks(child)
-	local isInactive = not child.auraInstanceID
+	local isInactive = not child.auraInstanceID and not child.SCMFakeAuraInstanceID
 	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and childData.alwaysShow)
 	local shouldHide = isInactive and not forceShow
 
