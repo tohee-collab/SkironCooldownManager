@@ -710,6 +710,10 @@ local function BarNeedsContinuousRefresh(bar)
 		return
 	end
 
+	if bar.resourceKind == "stagger" then
+		return true
+	end
+
 	if bar.resourceKind == "runes" then
 		local _, maxValue, displayValue = GetRuneValues()
 		local hasRuneValues = type(displayValue) == "number" and type(maxValue) == "number"
