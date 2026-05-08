@@ -56,6 +56,10 @@ local function GetPowerColor(powerToken, powerType, altR, altG, altB)
 end
 
 local function ShouldHideManaForCurrentRole(barOptions)
+	if UnitClassBase("player") == "MAGE" and Utils.GetSpec() == 62 then
+		return false
+	end
+
 	local role = select(5, Utils.GetSpec())
 	return barOptions.hideManaRoles[role]
 end
