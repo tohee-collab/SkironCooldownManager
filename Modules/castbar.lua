@@ -111,7 +111,7 @@ local function GetMatchedCastBarWidth(options)
 	end
 
 	local anchorWidth = anchorFrame:GetWidth()
-	return (anchorWidth and anchorWidth > 0) and anchorWidth or nil
+	return (anchorWidth and anchorWidth > 0) and anchorWidth or nil, anchorFrame
 end
 
 local function UpdateIconTexture(spellTexture)
@@ -139,11 +139,23 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	local borderColor = options.borderColor
 	local backgroundColor = bgColor or options.bgColor
 	local foregroundColor = fillColor or castBar.CurrentFillColor or options.fgColor
-	local width = GetMatchedCastBarWidth(options) or options.width or 270
+	local matchedWidth, anchorFrame = GetMatchedCastBarWidth(options)
+	local width = matchedWidth or options.width or 270
+
+	if options.matchParentWidth and anchorFrame and not anchorFrame.SCMCastBarWidthHook then
+		anchorFrame.SCMCastBarWidthHook = true
+		anchorFrame:HookScript("OnSizeChanged", function()
+			local currentCastBar = SCM.CastBar
+			local currentOptions = SCM.db and SCM.db.profile and SCM.db.profile.options and SCM.db.profile.options.castBar
+			if currentCastBar and currentOptions and currentOptions.matchParentWidth then
+				SCM:RefreshCastBarWidth()
+			end
+		end)
+	end
 
 	castBar.CurrentFillColor = foregroundColor
 	castBar:SetSize(width, options.height)
-	local anchorFrame = SCM.Utils.GetAnchorFrame(options.anchors[2])
+	anchorFrame = anchorFrame or SCM.Utils.GetAnchorFrame(options.anchors[2])
 	castBar:ClearAllPoints()
 	castBar:SetPoint(options.anchors[1], anchorFrame or UIParent, options.anchors[3], options.anchors[4], options.anchors[5])
 
@@ -405,17 +417,23 @@ end
 
 function SCM:RefreshCastBarWidth(delay)
 	local castBar = self.CastBar
-	local options = castBar.barOptions
-	if not castBar or not options.matchParentWidth then
+	local options = castBar and castBar.barOptions
+	if not castBar or not options or not options.matchParentWidth then
 		return
 	end
 
 	C_Timer.After(delay or 0.05, function()
-		local anchorWidth = GetMatchedCastBarWidth(options)
+		local currentCastBar = SCM.CastBar
+		local currentOptions = currentCastBar and (currentCastBar.barOptions or SCM.db.profile.options.castBar)
+		if not currentCastBar or not currentOptions or not currentOptions.matchParentWidth then
+			return
+		end
+
+		local anchorWidth = GetMatchedCastBarWidth(currentOptions)
 		if anchorWidth and anchorWidth > 0 then
-			UpdateStatusBarLook(castBar.CurrentFillColor)
-			if castBar:IsShown() and castBar.CurrentEmpoweredStages and castBar.Status:GetStatusBarTexture() then
-				CreatePips(castBar.CurrentEmpoweredStages)
+			UpdateStatusBarLook(currentCastBar.CurrentFillColor)
+			if currentCastBar:IsShown() and currentCastBar.CurrentEmpoweredStages and currentCastBar.Status:GetStatusBarTexture() then
+				CreatePips(currentCastBar.CurrentEmpoweredStages)
 			end
 		end
 	end)
