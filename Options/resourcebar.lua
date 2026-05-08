@@ -488,7 +488,7 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 	local textXOffset = AceGUI:Create("Slider")
 	textXOffset:SetRelativeWidth(0.33)
 	textXOffset:SetLabel("Text X Offset")
-	textXOffset:SetSliderValues(-100, 100, 0.1)
+	textXOffset:SetSliderValues(-300, 300, 0.1)
 	textXOffset:SetValue(settings.textXOffset)
 	textXOffset:SetCallback("OnValueChanged", function(_, _, value)
 		settings.textXOffset = value
