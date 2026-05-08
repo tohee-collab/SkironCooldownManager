@@ -143,6 +143,8 @@ SCM.DefaultDB = {
 					SOUL_FRAGMENTS = { enabled = false, color = { r = 0.35, g = 0.25, b = 0.73 } },
 					SOUL_FRAGMENTS_VENGEANCE = { enabled = false, color = { r = 0.35, g = 0.25, b = 0.73 } },
 					TIP_OF_THE_SPEAR = { enabled = false, color = { r = 1.00, g = 0.82, b = 0.20 } },
+					ICICLES = { enabled = false, color = { r = 0.50, g = 0.78, b = 1.00 } },
+					SPELL_CHARGES_FIRE_BLAST = { enabled = false, color = { r = 1.00, g = 0.34, b = 0.12 } },
 				},
 				primaryBar = {
 					enabled = true,
