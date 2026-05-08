@@ -67,7 +67,7 @@ local function OnBuffCooldownEnd(self)
 end
 
 local function OnBuffTriggerPandemicAlert(self)
-	local options = self.SCMBuffOptions
+	local options = self.SCMBuffOptions or self.SCMIconOptions
 	if options and options.pandemicGlowOption ~= "keepPandemicGlow" and not self.SCMPandemic then
 		self.SCMPandemic = true
 	end
@@ -78,7 +78,7 @@ local function OnBuffShowPandemicStateFrame(self)
 		return
 	end
 
-	local options = self.SCMBuffOptions
+	local options = self.SCMBuffOptions or self.SCMIconOptions
 	if not options or options.pandemicGlowOption == "keepPandemicGlow" then
 		return
 	end
@@ -91,7 +91,7 @@ local function OnBuffShowPandemicStateFrame(self)
 end
 
 local function OnBuffHidePandemicStateFrame(self)
-	local options = self.SCMBuffOptions
+	local options = self.SCMBuffOptions or self.SCMIconOptions
 	if not options then
 		return
 	end
@@ -252,12 +252,17 @@ function Cooldowns.SetupCooldownHooks(child)
 
 	hooksecurefunc(child.Cooldown, "SetCooldown", OnRegularCooldownChanged)
 	hooksecurefunc(child.Cooldown, "Clear", OnRegularCooldownChanged)
+
 	child.Cooldown:HookScript("OnCooldownDone", function(self, ...)
 		local parent = self:GetParent()
 		parent.Icon.SCMDesaturated = nil
 		OnRegularCooldownChanged(self)
 	end)
 	child.SCMRegularCooldownHook = true
+
+	hooksecurefunc(child, "TriggerPandemicAlert", OnBuffTriggerPandemicAlert)
+	hooksecurefunc(child, "ShowPandemicStateFrame", OnBuffShowPandemicStateFrame)
+	hooksecurefunc(child, "HidePandemicStateFrame", OnBuffHidePandemicStateFrame)
 end
 
 function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)
