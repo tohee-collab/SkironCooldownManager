@@ -383,6 +383,17 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		end)
 		cooldownTextSettings:AddChild(cooldownFontSize)
 
+		local cooldownFontColor = AceGUI:Create("ColorPicker")
+		cooldownFontColor:SetRelativeWidth(0.33)
+		cooldownFontColor:SetLabel("Font Color")
+		cooldownFontColor:SetHasAlpha(true)
+		cooldownFontColor:SetColor(options.cooldownFontColor.r, options.cooldownFontColor.g, options.cooldownFontColor.b, options.cooldownFontColor.a)
+		cooldownFontColor:SetCallback("OnValueChanged", function(_, _, r, g, b, a)
+			options.cooldownFontColor = { r = r, g = g, b = b, a = a }
+			SCM:ApplyAllCDManagerConfigs()
+		end)
+		cooldownTextSettings:AddChild(cooldownFontColor)
+
 		local auraSettings = AceGUI:Create("InlineGroup")
 		auraSettings:SetLayout("flow")
 		auraSettings:SetFullWidth(true)
