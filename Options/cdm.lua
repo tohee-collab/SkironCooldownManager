@@ -1441,6 +1441,30 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 
 										iconSettingsTabs:AddChild(loadRaces)
 
+										local useSpellKnown = AceGUI:Create("CheckBox")
+										useSpellKnown:SetLabel("Race")
+										useSpellKnown:SetRelativeWidth(0.5)
+										useSpellKnown:SetValue(buttonConfig.useSpellKnown)
+										iconSettingsTabs:AddChild(useSpellKnown)
+
+										local loadSpellKnown = AceGUI:Create("EditBox")
+										loadSpellKnown:SetRelativeWidth(0.5)
+										loadSpellKnown:SetLabel("SpellID")
+										loadSpellKnown:SetText(tostring(buttonConfig.spellKnownSpellID) or "")
+										loadSpellKnown:SetDisabled(not buttonConfig.useSpellKnown)
+										loadSpellKnown:SetCallback("OnEnterPressed", function(_, _, value)
+											buttonConfig.spellKnownSpellID = tonumber(value)
+											ApplyIconConfigUpdate()
+										end)
+
+										useSpellKnown:SetCallback("OnValueChanged", function(self, event, value)
+											buttonConfig.useSpellKnown = value
+											loadSpellKnown:SetDisabled(not value)
+											ApplyIconConfigUpdate()
+										end)
+
+										iconSettingsTabs:AddChild(loadSpellKnown)
+
 										iconSettings:DoLayout()
 										scrollFrame:DoLayout()
 										return

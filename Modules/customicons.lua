@@ -451,6 +451,10 @@ local function ShouldLoadCustomIcon(config)
 		return false
 	end
 
+	if config.useSpellKnown and (not config.spellKnownSpellID or type(config.spellKnownSpellID) ~= "number" or not C_SpellBook.IsSpellKnown(config.spellKnownSpellID)) then
+		return false
+	end
+
 	return true
 end
 
@@ -832,6 +836,13 @@ end
 function CustomIcons.UpdateSpellUsability()
 	UpdateSpellUsabilityForConfig(SCM.customConfig.spellConfig)
 	UpdateSpellUsabilityForConfig(SCM.globalCustomConfig.spellConfig)
+end
+
+function CustomIcons.UpdateSpellsKnown()
+	CustomIcons.CreateIcons(SCM.customConfig.spellConfig)
+	CustomIcons.CreateIcons(SCM.globalCustomConfig.spellConfig, true)
+	CustomIcons.ProcessIcons(SCM.customConfig.spellConfig, Cache.cachedCooldownFrameTbl)
+	CustomIcons.ProcessIcons(SCM.globalCustomConfig.spellConfig, Cache.cachedCooldownFrameTbl, true)
 end
 
 function CustomIcons.UpdateSpellRange(spellID, isInRange, checksRange)
