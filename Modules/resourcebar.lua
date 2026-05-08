@@ -284,15 +284,19 @@ local function GetCurrentPowerValue(resourceKind, powerType)
 	return currentValue, maxValue
 end
 
-local function UpdateStaggerBarColor(bar, currentValue, maxValue)
+local function UpdateStaggerBarColor(bar, currentValue, maxValue, resourceBarOptions)
 	local staggerPercent = maxValue > 0 and currentValue / maxValue or 0
+	local staggerColors = resourceBarOptions.staggerColors
+	local color = staggerColors.light
+
 	if staggerPercent >= 0.60 then
-		bar:SetStatusBarColor(1.00, 0.42, 0.42)
+		color = staggerColors.heavy
 	elseif staggerPercent >= 0.30 then
-		bar:SetStatusBarColor(1.00, 0.98, 0.72)
-	else
-		bar:SetStatusBarColor(0.52, 1.00, 0.52)
+		color = staggerColors.moderate
 	end
+
+	bar:SetStatusBarColor(color.r, color.g, color.b)
+	return staggerPercent
 end
 
 local function HideRegions(regionList)
@@ -950,7 +954,7 @@ function SCMResourceBarControllerMixin:ConfigureSecondaryBar()
 	local primaryPowerType = UnitPowerType("player")
 	local secondaryResource
 
-	if not UnitInVehicle("player") then
+	if not UnitHasVehicleUI("player") then
 		local className = Utils.GetClass()
 		local specializationID = Utils.GetSpec()
 
@@ -1006,15 +1010,12 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 		RefreshBarTicks(bar, maxValue)
 	end
 
+	local staggerPercent
 	local overrideColor = bar.SCMIsPrimaryResourceBar and SCM.primaryResourceBarColorOverride
 	if overrideColor then
 		bar:SetStatusBarColor(overrideColor.r, overrideColor.g, overrideColor.b)
 	elseif bar.resourceKind == "stagger" then
-		local colorOverrides = SCM.db.profile.options.resourceBar.powerTypeColorOverrides
-		local hasColorOverride = colorOverrides[bar.powerToken]
-		if not hasColorOverride then
-			UpdateStaggerBarColor(bar, currentValue, maxValue)
-		end
+		staggerPercent = UpdateStaggerBarColor(bar, currentValue, maxValue, self.barOptions)
 	end
 
 	local text = bar.Text
@@ -1033,8 +1034,11 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 		textValue:SetText("")
 		return maxValue
 	end
-
-	if bar.powerType == Enum.PowerType.Mana then
+	
+	if bar.resourceKind == "stagger" and self.barOptions.staggerDisplayAsPercent then
+		staggerPercent = staggerPercent or (maxValue > 0 and currentValue / maxValue or 0)
+		textValue:SetText(floor(staggerPercent * 100 + 0.5) .. "%")
+	elseif bar.powerType == Enum.PowerType.Mana then
 		local manaPercent = UnitPowerPercent("player", bar.powerType, false, CurveConstants.ScaleTo100)
 		textValue:SetText(string.format("%d%%", manaPercent))
 	else

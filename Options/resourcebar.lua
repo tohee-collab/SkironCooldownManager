@@ -181,6 +181,27 @@ local function AddPowerTypeColorSettings(parent, settings)
 		end)
 		powerTypeColors:AddChild(overrideColor)
 	end
+
+	local staggerColors = settings.staggerColors
+	for _, staggerColorInfo in ipairs({
+		{ "light", "Light Stagger" },
+		{ "moderate", "Moderate Stagger" },
+		{ "heavy", "Heavy Stagger" },
+	}) do
+		local key = staggerColorInfo[1]
+		local color = staggerColors[key]
+
+		local colorPicker = AceGUI:Create("ColorPicker")
+		colorPicker:SetRelativeWidth(0.33)
+		colorPicker:SetLabel(staggerColorInfo[2])
+		colorPicker:SetHasAlpha(false)
+		colorPicker:SetColor(color.r, color.g, color.b)
+		colorPicker:SetCallback("OnValueChanged", function(_, _, r, g, b)
+			staggerColors[key] = { r = r, g = g, b = b }
+			RefreshResourceBars()
+		end)
+		powerTypeColors:AddChild(colorPicker)
+	end
 end
 
 local function AddSpecialColorSettings(parent, settings)
@@ -202,7 +223,7 @@ local function AddSpecialColorSettings(parent, settings)
 	specialColors:AddChild(maelstromOverflowColor)
 end
 
-local function AddBarSettings(parent, title, settings, includeManaRoleSettings)
+local function AddBarSettings(parent, title, settings, includeManaRoleSettings, globalSettings)
 	local generalSettings = AceGUI:Create("InlineGroup")
 	generalSettings:SetLayout("flow")
 	generalSettings:SetTitle("General")
@@ -502,6 +523,16 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings)
 			RefreshResourceBars()
 		end)
 		miscSettings:AddChild(disableMaelstromOverflow)
+
+		local staggerDisplayAsPercent = AceGUI:Create("CheckBox")
+		staggerDisplayAsPercent:SetRelativeWidth(0.33)
+		staggerDisplayAsPercent:SetLabel("Stagger Text As Percent")
+		staggerDisplayAsPercent:SetValue(globalSettings.staggerDisplayAsPercent)
+		staggerDisplayAsPercent:SetCallback("OnValueChanged", function(_, _, value)
+			globalSettings.staggerDisplayAsPercent = value
+			RefreshResourceBars()
+		end)
+		miscSettings:AddChild(staggerDisplayAsPercent)
 	end
 end
 
@@ -518,9 +549,9 @@ local function SelectResourceBarTab(tabGroup, group, settings)
 		AddPowerTypeColorSettings(scrollFrame, settings)
 		AddSpecialColorSettings(scrollFrame, settings)
 	elseif group == "Primary" then
-		AddBarSettings(scrollFrame, "Primary", settings.primaryBar, true)
+		AddBarSettings(scrollFrame, "Primary", settings.primaryBar, true, settings)
 	elseif group == "Secondary" then
-		AddBarSettings(scrollFrame, "Secondary", settings.secondaryBar)
+		AddBarSettings(scrollFrame, "Secondary", settings.secondaryBar, nil, settings)
 	end
 end
 

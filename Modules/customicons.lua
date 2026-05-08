@@ -73,7 +73,8 @@ local function OnIconCooldownDone(self)
 	end
 
 	if parent.Icon then
-		parent.Icon:SetDesaturation(0)
+		parent.Icon.SCMDesaturated = nil
+		parent.Icon:SetDesaturated(false)
 	end
 
 	if parent.UpdateCooldown then
@@ -272,39 +273,48 @@ local function UpdateCustomIconCooldown(frame, iconType, config)
 	end
 
 	if iconType == "spell" then
-		local spellCooldown = C_Spell.GetSpellCooldown(config.spellID)
-		local globalCooldown = C_Spell.GetSpellCooldown(61304)
-		if not spellCooldown.isActive and config.showGCD and globalCooldown.isActive then
-			frame.GCDCooldown:Show()
-			frame.GCDCooldown:SetCooldown(globalCooldown.startTime, globalCooldown.duration)
+		local spellCooldown = C_Spell.GetSpellCharges(config.spellID)
+		local durationObject = C_Spell.GetSpellChargeDuration(config.spellID, true)
+		local isOnCooldown = false
+		if spellCooldown and spellCooldown.isActive and not spellCooldown.isOnGCD then
+			frame.Cooldown:SetCooldownFromDurationObject(durationObject)
+			isOnCooldown = true
+
+			local spellDurationObject = C_Spell.GetSpellCooldownDuration(config.spellID, true)
+			local desaturation = spellDurationObject:EvaluateRemainingDuration(desaturationCurve)
+			local alpha = spellDurationObject:EvaluateRemainingDuration(alphaCurve)
+			frame.Icon:SetDesaturation(desaturation)
+			frame.Cooldown:SetEdgeColor(1, 1, 1, desaturation)
+			frame.Cooldown:SetSwipeColor(0, 0, 0, alpha)
+			--frame.Cooldown:SetReverse(frame.Icon:IsDesaturated())
+		else
+			spellCooldown = C_Spell.GetSpellCooldown(config.spellID)
+			durationObject = C_Spell.GetSpellCooldownDuration(config.spellID, true)
+			if spellCooldown.isActive and not spellCooldown.isOnGCD then
+				frame.Cooldown:SetCooldownFromDurationObject(durationObject)
+				frame.Icon:SetDesaturation(C_CurveUtil.EvaluateColorValueFromBoolean(durationObject:IsZero(), 0, 1))
+				isOnCooldown = true
+			end
+		end
+
+		if not isOnCooldown then
+			frame.Cooldown:Clear()
+			frame.Icon.SCMDesaturated = nil
+			frame.Icon:SetDesaturated(false)
+		end
+
+		if (not spellCooldown.isActive or spellCooldown.isOnGCD) and config.showGCD then
+			local globalCooldown = C_Spell.GetSpellCooldown(61304)
+
+			if globalCooldown.isActive then
+				frame.GCDCooldown:Show()
+				frame.GCDCooldown:SetReverse(false)
+				frame.GCDCooldown:SetCooldown(globalCooldown.startTime, globalCooldown.duration)
+			end
 		else
 			frame.GCDCooldown:Hide()
 		end
 
-		local durationObject = C_Spell.GetSpellChargeDuration(config.spellID, true)
-		if durationObject then
-			frame.Cooldown:SetCooldownFromDurationObject(durationObject)
-
-			if spellCooldown.isActive then
-				spellCooldown = C_Spell.GetSpellCharges(config.spellID)
-
-				local spellDurationObject = C_Spell.GetSpellCooldownDuration(config.spellID, true)
-				local desaturation = spellDurationObject:EvaluateRemainingDuration(desaturationCurve)
-				local alpha = spellDurationObject:EvaluateRemainingDuration(alphaCurve)
-				frame.Icon:SetDesaturation(desaturation)
-				frame.Cooldown:SetEdgeColor(1, 1, 1, desaturation)
-				frame.Cooldown:SetSwipeColor(0, 0, 0, alpha)
-				--frame.Cooldown:SetReverse(frame.Icon:IsDesaturated())
-			end
-		else
-			durationObject = C_Spell.GetSpellCooldownDuration(config.spellID, true)
-			if durationObject then
-				frame.Cooldown:SetCooldownFromDurationObject(durationObject)
-				frame.Icon:SetDesaturation(C_CurveUtil.EvaluateColorValueFromBoolean(durationObject:IsZero(), 0, 1))
-			end
-		end
-
-		local isOnCooldown = durationObject ~= nil
 		UpdateCustomIconGlow(frame, false)
 		return isOnCooldown
 	end
@@ -765,10 +775,13 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 
 						if shouldShow then
 							if iconType == "spell" then
+								C_Spell.EnableSpellRangeCheck(config.spellID, config.showOutOfRange or false)
+
 								UpdateCustomIconCharges(frame, config.spellID)
 							end
 
 							CDM.AddChildToScopedGroup(validChildren, anchorGroup, frame, isGlobal)
+							CDM.AddChildToScopedGroup(Cache.cachedChildrenTbl, anchorGroup, frame, isGlobal)
 						end
 					else
 						Icons.SetChildVisibilityState(frame, false, true)
@@ -805,7 +818,9 @@ local function UpdateSpellUsabilityForConfig(configTable)
 		local spellID = config.spellID
 		local frame = spellID and CustomSpellFrames[id]
 		if frame and not frame.SCMReleased then
-			if C_Spell.IsSpellUsable(spellID) then
+			if frame.spellOutOfRange then
+				frame.Icon:SetVertexColor(CooldownViewerConstants.ITEM_NOT_IN_RANGE_COLOR:GetRGBA())
+			elseif not config.showNotUsable or C_Spell.IsSpellUsable(spellID) then
 				frame.Icon:SetVertexColor(1, 1, 1, 1)
 			else
 				frame.Icon:SetVertexColor(CooldownViewerConstants.ITEM_NOT_USABLE_COLOR:GetRGBA())
@@ -817,6 +832,35 @@ end
 function CustomIcons.UpdateSpellUsability()
 	UpdateSpellUsabilityForConfig(SCM.customConfig.spellConfig)
 	UpdateSpellUsabilityForConfig(SCM.globalCustomConfig.spellConfig)
+end
+
+function CustomIcons.UpdateSpellRange(spellID, isInRange, checksRange)
+	local entries = Cache.cachedCustomSpellEntriesBySpellID[spellID]
+	if not entries then
+		return
+	end
+
+	local showOutOfRange = checksRange == true and isInRange == false
+	for _, entry in ipairs(entries) do
+		local frame = CustomSpellFrames[entry.id]
+		if frame and not frame.SCMReleased and not (frame.spellOutOfRange == showOutOfRange) then
+			local config = entry.config
+			if config and config.showOutOfRange then
+				frame.spellOutOfRange = showOutOfRange
+				frame.OutOfRange:SetShown(showOutOfRange)
+
+				if showOutOfRange then
+					frame.Icon:SetVertexColor(CooldownViewerConstants.ITEM_NOT_IN_RANGE_COLOR:GetRGBA())
+				elseif not config.showNotUsable or C_Spell.IsSpellUsable(spellID) then
+					frame.Icon:SetVertexColor(1, 1, 1, 1)
+				else
+					frame.Icon:SetVertexColor(CooldownViewerConstants.ITEM_NOT_USABLE_COLOR:GetRGBA())
+				end
+			else
+				frame.spellOutOfRange = nil
+			end
+		end
+	end
 end
 
 local function UpdateCountTextForConfigTable(customConfig, spellID)

@@ -109,6 +109,12 @@ SCM.DefaultDB = {
 				growDirection = "UP",
 				useFrequentPowerUpdates = false,
 				maelstromOverflowColor = { r = 0.25, g = 0.70, b = 1.00 },
+				staggerDisplayAsPercent = false,
+				staggerColors = {
+					light = { r = 0.52, g = 1.00, b = 0.52 },
+					moderate = { r = 1.00, g = 0.98, b = 0.72 },
+					heavy = { r = 1.00, g = 0.42, b = 0.42 },
+				},
 				minWidth = 200,
 				powerTypeColorOverrides = {
 					MANA = { enabled = false, color = { r = 0.00, g = 0.45, b = 1.00 } },

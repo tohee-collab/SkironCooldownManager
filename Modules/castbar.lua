@@ -164,8 +164,8 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	local iconZoom = min(iconOptions.zoom, 0.49)
 
 	if iconOptions.enable then
-		local configuredIconSize = max(iconOptions.matchBarHeight and options.height or iconOptions.size, 1)
-		iconSize = min(SCM:PixelPerfect(configuredIconSize), outerHeight, max(outerWidth - borderSize - spacing - 1, 0))
+		local configuredIconSize = iconOptions.matchBarHeight and outerHeight or SCM:PixelPerfect(max(iconOptions.size, 1))
+		iconSize = min(configuredIconSize, outerHeight, max(outerWidth - borderSize - spacing - 1, 0))
 	end
 
 	castBar.Status:ClearAllPoints()
@@ -204,7 +204,7 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	if not statusWidth or statusWidth <= 1 then
 		statusWidth = max(outerWidth - borderSize * 2 - iconSize - spacing, 1)
 	end
-	local durationWidth = min(statusWidth, fontSize * 2)
+	local durationWidth = min(statusWidth, fontSize * 3)
 
 	ApplyTextStyle(castBar.SpellNameText, fontPath, fontSize, fontOutline, "LEFT", max(statusWidth - durationWidth, 1))
 	ApplyTextStyle(castBar.CastDurationText, fontPath, fontSize, fontOutline, "RIGHT", durationWidth)
