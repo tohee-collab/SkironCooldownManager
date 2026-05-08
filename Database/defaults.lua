@@ -58,6 +58,7 @@ SCM.DefaultDB = {
 			borderSize = 1,
 			anchorUUF = false,
 			anchorElvUI = false,
+			temporaryPadding = 0,
 			borderColor = { r = 0, g = 0, b = 0, a = 1 },
 			adjustResourceWidth = true,
 			pandemicGlowOption = "keepPandemicGlow",
