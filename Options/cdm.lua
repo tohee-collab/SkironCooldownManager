@@ -1293,7 +1293,8 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 										showOutOfRange:SetRelativeWidth(0.5)
 										showOutOfRange:SetValue(buttonConfig.showOutOfRange)
 										showOutOfRange:SetCallback("OnValueChanged", function(self, event, value)
-											buttonConfig.showOutOfRange = value or nil
+											buttonConfig.showOutOfRange = value
+											C_Spell.EnableSpellRangeCheck(buttonData.spellID, value)
 											ApplyIconConfigUpdate()
 										end)
 										iconSettingsTabs:AddChild(showOutOfRange)

@@ -766,6 +766,8 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 
 						if shouldShow then
 							if iconType == "spell" then
+								C_Spell.EnableSpellRangeCheck(config.spellID, config.showOutOfRange or false)
+
 								UpdateCustomIconCharges(frame, config.spellID)
 							end
 
@@ -834,7 +836,7 @@ function CustomIcons.UpdateSpellRange(spellID, isInRange, checksRange)
 		local frame = CustomSpellFrames[entry.id]
 		if frame and not frame.SCMReleased and not (frame.spellOutOfRange == showOutOfRange) then
 			local config = entry.config
-			if config and config.checkOutOfRange then
+			if config and config.showOutOfRange then
 				frame.spellOutOfRange = showOutOfRange
 				frame.OutOfRange:SetShown(showOutOfRange)
 
