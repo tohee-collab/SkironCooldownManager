@@ -36,6 +36,7 @@ local CHILD_SCM_RESET_FIELDS = {
 	"SCMBaseOffsetX",
 	"SCMBaseOffsetY",
 	"SCMLayoutApplied",
+	"SCMProxyAnchor",
 }
 
 local function CreateDisabledTooltipOverlay(widget)
@@ -191,16 +192,16 @@ function Utils.GetSpellConfigByCooldownID(spellConfig, cooldownID)
 	return configID, configID and spellConfig and spellConfig[configID]
 end
 
-function Utils.ParseAnchorString(anchorRef)
-	if type(anchorRef) ~= "string" then
+function Utils.ParseAnchorString(anchorString)
+	if type(anchorString) ~= "string" then
 		return
 	end
 
-	if anchorRef:sub(1, 7) ~= "ANCHOR:" then
+	if anchorString:sub(1, 7) ~= "ANCHOR:" then
 		return
 	end
 
-	local anchorType, anchorID = anchorRef:match("^ANCHOR:([%a]+):(%d+)$")
+	local anchorType, anchorID = anchorString:match("^ANCHOR:([%a]+):(%d+)$")
 	if anchorType and anchorID then
 		anchorID = tonumber(anchorID)
 		if not anchorID or anchorID <= 0 then
@@ -219,7 +220,7 @@ function Utils.ParseAnchorString(anchorRef)
 		return
 	end
 
-	anchorID = anchorRef:match("^ANCHOR:(%d+)$")
+	anchorID = anchorString:match("^ANCHOR:(%d+)$")
 	anchorID = anchorID and tonumber(anchorID) or nil
 	if not anchorID or anchorID <= 0 or anchorID == GLOBAL_GROUP_OFFSET or anchorID == GLOBAL_BUFF_BAR_OFFSET then
 		return
@@ -228,39 +229,39 @@ function Utils.ParseAnchorString(anchorRef)
 	return anchorID
 end
 
-local function GetSingleAnchorFrame(anchorRef)
-	if anchorRef:sub(1, 7) ~= "ANCHOR:" then
-		return _G[anchorRef] or SCM[anchorRef]
+local function GetSingleAnchorFrame(anchorFrame)
+	if anchorFrame:sub(1, 7) ~= "ANCHOR:" then
+		return _G[anchorFrame] or SCM[anchorFrame]
 	end
 
-	local anchorGroup = Utils.ParseAnchorString(anchorRef)
+	local anchorGroup = Utils.ParseAnchorString(anchorFrame)
 	if anchorGroup then
 		return SCM:GetAnchor(anchorGroup)
 	end
 end
 
-function Utils.GetAnchorFrame(anchorRef)
-	if type(anchorRef) == "table" then
-		return anchorRef, anchorRef
+function Utils.GetAnchorFrame(anchorFrames)
+	if type(anchorFrames) == "table" then
+		return anchorFrames, anchorFrames
 	end
 
-	if type(anchorRef) ~= "string" or anchorRef == "" or anchorRef == "NONE" then
+	if type(anchorFrames) ~= "string" or anchorFrames == "" or anchorFrames == "NONE" then
 		return
 	end
 
-	if anchorRef:find(",", 1, true) then
-		for _, currentRef in ipairs({ strsplit(",", anchorRef) }) do
-			currentRef = strtrim(currentRef)
-			local anchorFrame = currentRef ~= "" and GetSingleAnchorFrame(currentRef)
+	if anchorFrames:find(",", 1, true) then
+		for _, currentFrame in ipairs({ strsplit(",", anchorFrames) }) do
+			currentFrame = strtrim(currentFrame)
+			local anchorFrame = currentFrame ~= "" and GetSingleAnchorFrame(currentFrame)
 			if anchorFrame and anchorFrame:IsVisible() then
-				return anchorFrame, currentRef
+				return anchorFrame, currentFrame
 			end
 		end
 
 		return
 	end
 
-	return GetSingleAnchorFrame(anchorRef), anchorRef
+	return GetSingleAnchorFrame(anchorFrames), anchorFrames
 end
 
 function Utils.GetPairedSource(sourceIndex)

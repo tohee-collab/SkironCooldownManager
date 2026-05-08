@@ -72,6 +72,12 @@ local function ApplyCooldownFont(cooldownFrame, options)
 				cooldownFontString:SetFont(fontPath, fontSize, "OUTLINE")
 				cooldownFontString:SetShadowColor(0, 0, 0, 0)
 				cooldownFontString:SetShadowOffset(0, 0)
+
+				local cooldownFontColor = options.cooldownFontColor
+				cooldownFontString:SetTextColor(cooldownFontColor.r, cooldownFontColor.g, cooldownFontColor.b, cooldownFontColor.a)
+
+				cooldownFontString:ClearAllPoints()
+				cooldownFontString:SetPoint("CENTER", parent, "CENTER", options.cooldownXOffset, options.cooldownYOffset)
 			end
 		end
 	elseif originalCooldownFont then

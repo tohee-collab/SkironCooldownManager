@@ -451,6 +451,10 @@ local function ShouldLoadCustomIcon(config)
 		return false
 	end
 
+	if config.useSpellKnown and (not config.spellKnownSpellID or type(config.spellKnownSpellID) ~= "number" or not C_SpellBook.IsSpellKnown(config.spellKnownSpellID)) then
+		return false
+	end
+
 	return true
 end
 
@@ -752,8 +756,8 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 		local anchorGroup = config.anchorGroup or 1
 		local customFrames = CustomIcons.GetCustomIconFrames(config)
 		if customFrames then
-			if customFrames[id] and DoesItemOrSpellExists(config) and ShouldLoadCustomIcon(config) then
-				if CDM.IsScopedAnchorGroupAllowed(anchorGroup, isGlobal) then
+			if CDM.IsScopedAnchorGroupAllowed(anchorGroup, isGlobal) then
+				if customFrames[id] and DoesItemOrSpellExists(config) and ShouldLoadCustomIcon(config) then
 					local frame = customFrames[id]
 					local iconType = frame.SCMIconType
 					local iconTexture = ResolveCustomIconTexture(config, iconType)
@@ -784,11 +788,11 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 							CDM.AddChildToScopedGroup(Cache.cachedChildrenTbl, anchorGroup, frame, isGlobal)
 						end
 					else
-						Icons.SetChildVisibilityState(frame, false, true)
+						Icons.SetChildVisibilityState(customFrames[id], false, true)
 					end
+				elseif customFrames[id] then
+					Icons.SetChildVisibilityState(customFrames[id], false, true)
 				end
-			elseif customFrames[id] then
-				Icons.SetChildVisibilityState(customFrames[id], false, true)
 			end
 		end
 	end
@@ -832,6 +836,13 @@ end
 function CustomIcons.UpdateSpellUsability()
 	UpdateSpellUsabilityForConfig(SCM.customConfig.spellConfig)
 	UpdateSpellUsabilityForConfig(SCM.globalCustomConfig.spellConfig)
+end
+
+function CustomIcons.UpdateSpellsKnown()
+	CustomIcons.CreateIcons(SCM.customConfig.spellConfig)
+	CustomIcons.CreateIcons(SCM.globalCustomConfig.spellConfig, true)
+	CustomIcons.ProcessIcons(SCM.customConfig.spellConfig, Cache.cachedCooldownFrameTbl)
+	CustomIcons.ProcessIcons(SCM.globalCustomConfig.spellConfig, Cache.cachedCooldownFrameTbl, true)
 end
 
 function CustomIcons.UpdateSpellRange(spellID, isInRange, checksRange)

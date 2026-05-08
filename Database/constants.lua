@@ -50,9 +50,14 @@ Constants.TextOutline = {
 }
 
 Constants.TextOutlineSorted = {
-	"", "OUTLINE", "SLUG", "MONOCHROME", "OUTLINE,MONOCHROME", "OUTLINE SLUG", "THICKOUTLINE",
+	"",
+	"OUTLINE",
+	"SLUG",
+	"MONOCHROME",
+	"OUTLINE,MONOCHROME",
+	"OUTLINE SLUG",
+	"THICKOUTLINE",
 }
-
 
 Constants.ResourceBarGrowthDirection = {
 	UP = "Up",
@@ -248,6 +253,32 @@ Constants.ResourceBarPowerTypes = {
 	{ token = "TIP_OF_THE_SPEAR", label = "Tip of the Spear" },
 }
 
+Constants.DruidPrimaryPowerTypes = {
+	none = "None",
+	[Enum.PowerType.Mana] = "Mana",
+	[Enum.PowerType.Energy] = "Energy",
+	[Enum.PowerType.Rage] = "Rage",
+	[Enum.PowerType.LunarPower] = "Lunar",
+}
+
+Constants.DruidSecondaryPowerTypes = {
+	none = "None",
+	[Enum.PowerType.Mana] = "Mana",
+	[Enum.PowerType.ComboPoints] = "Combo Points",
+}
+
+Constants.DruidSecondaryResourceByPowerType = {
+	[Enum.PowerType.Mana] = {
+		powerType = Enum.PowerType.Mana,
+		powerToken = "MANA",
+	},
+	[Enum.PowerType.ComboPoints] = {
+		powerType = Enum.PowerType.ComboPoints,
+		powerToken = "COMBO_POINTS",
+	},
+}
+
+
 Constants.SegmentTicksByPowerToken = {
 	ARCANE_CHARGES = true,
 	CHI = true,
@@ -299,9 +330,7 @@ Constants.CastBarChannelTicks = {
 	},
 }
 
-Constants.ResourceBarRefreshEvents = {
-
-}
+Constants.ResourceBarRefreshEvents = {}
 
 Constants.Roles = {
 	HEALER = "Healer",
@@ -343,5 +372,8 @@ Constants.Races = {
 }
 
 Constants.FakeAuras = {
-	[265187] = 15,
+	[265187] = 15, -- Summon Tyrant
+	[1288950] = 23, -- Grimoire: Fel Ravager
+	[104316] = 12, -- Call Dreadstalkers
+	[1276672] = 12, -- Summon Doomguard (not even Blizzard shows that)
 }
