@@ -697,6 +697,17 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
 		self:AddChild(fontSize)
+	elseif tabGroup == "cooldowns" then
+		local fonzSize = AceGUI:Create("Slider")
+		fonzSize:SetRelativeWidth(0.5)
+		fonzSize:SetSliderValues(1, 50, 1)
+		fonzSize:SetLabel("Fonz Size")
+		fonzSize:SetValue(rowConfig.cooldownFontSize or ((options.cooldownFontSize or 0.6) * (rowConfig.iconWidth or rowConfig.size)))
+		fonzSize:SetCallback("OnValueChanged", function(self, event, value)
+			rowConfig.cooldownFontSize = value
+			ApplyModeConfigUpdate(anchorIndex, mode)
+		end)
+		self:AddChild(fonzSize)
 	end
 
 	self:DoLayout()
@@ -777,7 +788,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, op
 
 	local advancedRowSettings = AceGUI:Create("TabGroup")
 	local advancedTabs = isBuffBar and { { value = "general", text = "General" }, { value = "applications", text = "Stacks (Alpha)" } }
-		or { { value = "general", text = "General" }, { value = "charges", text = "Charges" }, { value = "applications", text = "Stacks" } }
+		or { { value = "general", text = "General" }, { value = "charges", text = "Charges" }, { value = "applications", text = "Stacks" }, { value = "cooldowns", text = "Cooldowns" }  }
 	advancedRowSettings:SetLayout("flow")
 	advancedRowSettings:SetFullWidth(true)
 	advancedRowSettings:SetTabs(advancedTabs)

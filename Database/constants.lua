@@ -160,6 +160,20 @@ Constants.SpecSecondaryPower = {
 		powerType = Enum.PowerType.ArcaneCharges,
 		powerToken = "ARCANE_CHARGES",
 	},
+	[63] = {
+		resourceKind = "spellCharges",
+		spellID = 108853,
+		powerToken = "SPELL_CHARGES_FIRE_BLAST",
+		segmentCount = 2,
+		segmentCountTalentSpellID = 205029,
+		talentSegmentCount = 3,
+	},
+	[64] = {
+        resourceKind = "icicles",
+        powerToken = "ICICLES",
+        segmentCount = 5,
+        registerUnitAura = true,
+    },
 	[255] = {
 		resourceKind = "tipOfTheSpear",
 		powerToken = "TIP_OF_THE_SPEAR",
@@ -226,6 +240,7 @@ Constants.FallbackPowerColorByToken = {
 	ESSENCE = { r = 0.32, g = 0.84, b = 0.90 },
 	MAELSTROM_WEAPON = { r = 0.00, g = 0.50, b = 1.00 },
 	SOUL_FRAGMENTS = { r = 0.35, g = 0.25, b = 0.73 },
+	SPELL_CHARGES_FIRE_BLAST = { r = 1.00, g = 0.34, b = 0.12 },
 	STAGGER = { r = 0.52, g = 1.00, b = 0.52 },
 }
 
@@ -251,6 +266,8 @@ Constants.ResourceBarPowerTypes = {
 	{ token = "MAELSTROM_WEAPON", label = "Maelstrom Weapon" },
 	{ token = "SOUL_FRAGMENTS", label = "Soul Fragments (Devourer)" },
 	{ token = "TIP_OF_THE_SPEAR", label = "Tip of the Spear" },
+	{ token = "ICICLES", label = "Icicles" },
+	{ token = "SPELL_CHARGES_FIRE_BLAST", label = "Fire Blast Charges" },
 }
 
 Constants.DruidPrimaryPowerTypes = {
@@ -288,6 +305,7 @@ Constants.SegmentTicksByPowerToken = {
 	MAELSTROM_WEAPON = true,
 	RUNES = true,
 	SOUL_SHARDS = true,
+	SPELL_CHARGES_FIRE_BLAST = true,
 	TIP_OF_THE_SPEAR = true,
 }
 

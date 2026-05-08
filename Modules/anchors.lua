@@ -37,10 +37,10 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 			end
 			UUF_Player:ClearAllPoints()
 
-			mainAnchor.SetPoint(UUF_Player, "TOPRIGHT", mainAnchor, "TOPLEFT", offset, 0)
+			mainAnchor.SetPoint(UUF_Player, "TOPRIGHT", mainAnchor, "TOPLEFT", offset - options.temporaryPadding, 0)
 
 			local height = rowConfig[1].iconHeight or rowConfig[1].size
-			UUF_Player.SCMOffset = offset
+			UUF_Player.SCMOffset = offset - options.temporaryPadding
 			UUF_Player.SCMHeight = height
 			UUF_Player.SCMAnchor = mainAnchor
 			UUF_Player.SCMCustomAnchor = true
@@ -97,10 +97,10 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 			end
 
 			UUF_Target:ClearAllPoints()
-			mainAnchor.SetPoint(UUF_Target, "TOPLEFT", mainAnchor, "TOPRIGHT", -offset, 0)
+			mainAnchor.SetPoint(UUF_Target, "TOPLEFT", mainAnchor, "TOPRIGHT", -offset + options.temporaryPadding, 0)
 
 			local height = rowConfig[1].iconHeight or rowConfig[1].size
-			UUF_Target.SCMOffset = -offset
+			UUF_Target.SCMOffset = -offset + options.temporaryPadding
 			UUF_Target.SCMHeight = height
 			UUF_Target.SCMAnchor = mainAnchor
 			UUF_Target.SCMCustomAnchor = true
@@ -148,11 +148,11 @@ function SCM:UpdateUUFValues(options, maxGroupWidth, rowConfig)
 		local E = ElvUI[1]
 		if E.db.movers then
 			OriginalElvUIAnchors["ElvUF_PlayerMover"] = OriginalElvUIAnchors["ElvUF_PlayerMover"] or E.db.movers.ElvUF_PlayerMover
-			E.db.movers.ElvUF_PlayerMover = string.format("TOPRIGHT,%s,TOPLEFT,%d,%d", mainAnchor:GetName(), -offset, 0)
+			E.db.movers.ElvUF_PlayerMover = string.format("TOPRIGHT,%s,TOPLEFT,%d,%d", mainAnchor:GetName(), -offset - options.temporaryPadding, 0)
 			E:SetMoverPoints("ElvUF_PlayerMover")
 
 			OriginalElvUIAnchors["ElvUF_TargetMover"] = OriginalElvUIAnchors["ElvUF_TargetMover"] or E.db.movers.ElvUF_TargetMover
-			E.db.movers.ElvUF_TargetMover = string.format("TOPLEFT,%s,TOPRIGHT,%d,%d", mainAnchor:GetName(), offset, 0)
+			E.db.movers.ElvUF_TargetMover = string.format("TOPLEFT,%s,TOPRIGHT,%d,%d", mainAnchor:GetName(), offset + options.temporaryPadding, 0)
 			E:SetMoverPoints("ElvUF_TargetMover")
 		end
 

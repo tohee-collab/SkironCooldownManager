@@ -75,6 +75,17 @@ local function Temporary(self, frame, group)
 	end
 	uufSettings:AddChild(anchorElvUIRoles)
 
+	local space = AceGUI:Create("Slider")
+	space:SetRelativeWidth(0.5)
+	space:SetValue(options.temporaryPadding)
+	space:SetLabel("Space Offset")
+	space:SetSliderValues(-50, 50, 0.1)
+	space:SetCallback("OnValueChanged", function(_, _, value)
+		options.temporaryPadding = value
+		SCM:ApplyAllCDManagerConfigs()
+	end)
+	uufSettings:AddChild(space)
+
 	local resourceBarSettings = AceGUI:Create("InlineGroup")
 	resourceBarSettings:SetLayout("flow")
 	resourceBarSettings:SetFullWidth(true)
