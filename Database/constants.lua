@@ -343,5 +343,8 @@ Constants.Races = {
 }
 
 Constants.FakeAuras = {
-	[265187] = 15,
+	[265187] = 15, -- Summon Tyrant
+	[1288950] = 23, -- Grimoire: Fel Ravager
+	[104316] = 12, -- Call Dreadstalkers
+	[1276672] = 12, -- Summon Doomguard (not even Blizzard shows that)
 }

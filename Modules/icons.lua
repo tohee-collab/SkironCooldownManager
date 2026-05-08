@@ -3,6 +3,7 @@ local SCM = select(2, ...)
 local Icons = SCM.Icons
 local Cache = SCM.Cache
 local Utils = SCM.Utils
+local Constants = SCM.Constants
 local AddChildToGroup = Utils.AddChildToGroup
 local GetSpellConfigByCooldownID = Utils.GetSpellConfigByCooldownID
 local Cooldowns = SCM.Cooldowns
@@ -129,12 +130,20 @@ end
 local function OnShow(child)
 	UIParent.SetAlpha(child, child.SCMHidden and 0 or 1)
 	if child.SCMGroup and (child.SCMChanged or child.SCMBuffBar) then
+		if child.SCMBuffBar and Constants.FakeAuras[child.SCMSpellID] then
+			child.SCMFakeAuraInstanceID = true
+		end
+
 		SCM:ApplyAnchorGroupCDManagerConfig(child.SCMGroup)
 	end
 end
 
 local function OnHide(child)
 	if child.SCMGroup and (child.SCMChanged or child.SCMBuffBar) then
+		if child.SCMBuffBar and child.SCMFakeAuraInstanceID then
+			child.SCMFakeAuraInstanceID = nil
+		end
+
 		SCM:ApplyAnchorGroupCDManagerConfig(child.SCMGroup)
 	end
 end
@@ -178,7 +187,8 @@ function Icons.SetupBuffBarHooks(child)
 	child.SCMShowHook = true
 
 	child:HookScript("OnShow", OnShow)
-	hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnHide)
+	child:HookScript("OnHide", OnHide)
+	--hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnHide)
 end
 
 local function GetOrCacheChildren(viewer, shouldRefreshCache)

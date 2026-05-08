@@ -46,9 +46,9 @@ local function OnBuffCooldownEnd(self)
 		end
 	elseif parent.SCMFakeAuraInstanceID then
 		-- Not sure yet if that's needed. Sometimes Blizzard clears for a frame or something but maybe not for these special buffs
-		if GetTime() < parent.SCMFakeAuraInstanceID then
-			return
-		end
+		--if GetTime() < parent.SCMFakeAuraInstanceID then
+		--	return
+		--end
 
 		parent.SCMFakeAuraInstanceID = nil
 	end
