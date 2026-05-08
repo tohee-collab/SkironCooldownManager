@@ -272,9 +272,22 @@ local function GetMaelstromWeaponValue()
 	return currentValue, maxValue
 end
 
-local function GetCurrentPowerValue(resourceKind, powerType)
+local function GetCurrentPowerValue(resourceKind, powerType, spellID, segmentCount)
 	if resourceKind == "runes" then
 		return GetRuneValues()
+	end
+
+	if resourceKind == "spellCharges" then
+		if not spellID or not segmentCount then
+			return
+		end
+
+		local chargeInfo = C_Spell.GetSpellCharges(spellID)
+		if not chargeInfo then
+			return
+		end
+
+		return chargeInfo.currentCharges, segmentCount, chargeInfo.currentCharges, chargeInfo
 	end
 
 	if powerType == Enum.PowerType.Essence then
@@ -359,13 +372,90 @@ local function UpdateBarTextPosition(bar, barOptions)
 
 	local anchorRegion = bar.Text or bar
 	text:ClearAllPoints()
-	PixelUtil.SetPoint(text, "CENTER", anchorRegion, "CENTER", barOptions.textXOffset, barOptions.textYOffset, 1, 1)
+	PixelUtil.SetPoint(text, "CENTER", anchorRegion, "CENTER", barOptions.textXOffset, barOptions.textYOffset)
+end
+
+local function HideRechargeSegment(bar)
+	if not bar or not bar.RechargeSegment then
+		return
+	end
+
+	bar.RechargeSegment:Hide()
+	bar.RechargeSegment:SetAlpha(0)
+	bar.RechargeSegment:ClearAllPoints()
+	bar.RechargeSegment:SetMinMaxValues(0, 1)
+	bar.RechargeSegment:SetValue(0)
+end
+
+local function UpdateRechargeSegment(bar)
+	if not bar or not bar.RechargeSegment then
+		return
+	end
+
+	local texturePath = bar.SCMTexturePath or LSM:Fetch("statusbar", bar.barOptions.texture)
+	local r, g, b = GetPowerColor(bar.powerToken, bar.powerType)
+	bar.RechargeSegment:SetStatusBarTexture(texturePath)
+	bar.RechargeSegment:SetStatusBarColor(r, g, b)
+end
+
+local function GetSegmentBarSize(bar, segmentCount)
+	local segmentWidth = bar:GetWidth() / segmentCount
+	local segmentHeight = bar:GetHeight()
+	local borderSize = 0
+	local barOptions = bar.barOptions
+
+	if barOptions and barOptions.showBorder then
+		borderSize = (barOptions.backdropSize or 0) * 2
+	end
+
+	return segmentWidth, max(0, segmentHeight - borderSize)
+end
+
+local function UpdateSpellChargeRecharge(bar, chargeInfo)
+	if bar.resourceKind ~= "spellCharges" or not chargeInfo or not chargeInfo.isActive or not bar.spellID then
+		HideRechargeSegment(bar)
+		return
+	end
+
+	local duration = C_Spell.GetSpellChargeDuration(bar.spellID, true)
+	if not duration then
+		HideRechargeSegment(bar)
+		return
+	end
+
+	local segmentCount = GetNumSegments(bar, bar.segmentCount)
+	if not segmentCount or segmentCount <= 0 then
+		HideRechargeSegment(bar)
+		return
+	end
+
+	local segmentWidth, segmentHeight = GetSegmentBarSize(bar, segmentCount)
+	local segment = bar.RechargeSegment
+	local statusBarTexture = bar:GetStatusBarTexture()
+
+	if not segment then
+		segment = CreateFrame("StatusBar", nil, bar)
+		segment:SetMinMaxValues(0, 1)
+		segment:SetAlpha(0)
+		bar.RechargeSegment = segment
+	end
+
+	segment:SetFrameLevel(bar:GetFrameLevel() + 1)
+	segment:ClearAllPoints()
+	segment:SetPoint("LEFT", statusBarTexture, "RIGHT", 0, 0)
+	segment:SetWidth(segmentWidth)
+	segment:SetHeight(segmentHeight)
+	UpdateRechargeSegment(bar)
+	segment:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate, Enum.StatusBarTimerDirection.ElapsedTime)
+	segment:SetAlpha(C_CurveUtil.EvaluateColorValueFromBoolean(duration:IsZero(), 0, 1))
+	segment:Show()
 end
 
 local function ResetResourceBar(bar)
 	bar.resourceKind = nil
 	bar.powerType = nil
 	bar.powerToken = nil
+	bar.spellID = nil
 	bar.segmentCount = nil
 	bar.SCMRegisterUnitAura = nil
 	bar.Text.Value:SetText("")
@@ -373,6 +463,10 @@ local function ResetResourceBar(bar)
 	HideRegions(bar.SegmentTicks)
 	HideRegions(bar.SegmentFillBars)
 	HideRegions(bar.RuneSegmentBars)
+	HideRechargeSegment(bar)
+	if bar.SegmentTickFrame then
+		bar.SegmentTickFrame:Hide()
+	end
 
 	bar.SCMSegmentedDisplay = nil
 	bar.SCMConfiguredSegmentCount = nil
@@ -386,8 +480,13 @@ local function ConfigureBarForResource(bar, resource, altR, altG, altB)
 	local resourceKind = resource.resourceKind or "power"
 	local powerType = resource.powerType
 	local powerToken = resource.powerToken
+	local spellID = resource.spellID
 	local registerUnitAura = resource.registerUnitAura
 	local segmentCount = resource.segmentCount
+
+	if resource.segmentCountTalentSpellID and resource.talentSegmentCount and IsPlayerSpell(resource.segmentCountTalentSpellID) then
+		segmentCount = resource.talentSegmentCount
+	end
 
 	if bar.SCMUseSegmentedSecondaryDisplay and powerType == Enum.PowerType.Mana then
 		segmentCount = nil
@@ -398,12 +497,14 @@ local function ConfigureBarForResource(bar, resource, altR, altG, altB)
 	local resourceChanged = bar.resourceKind ~= resourceKind
 		or bar.powerType ~= powerType
 		or bar.powerToken ~= powerToken
+		or bar.spellID ~= spellID
 		or bar.SCMRegisterUnitAura ~= registerUnitAura
 		or bar.SCMConfiguredSegmentCount ~= segmentCount
 
 	bar.resourceKind = resourceKind
 	bar.powerType = powerType
 	bar.powerToken = powerToken
+	bar.spellID = spellID
 	bar.segmentCount = segmentCount
 	bar.SCMConfiguredSegmentCount = segmentCount
 	bar.SCMRegisterUnitAura = registerUnitAura
@@ -423,9 +524,27 @@ end
 
 local function CreateTicks(bar, tickCount, tickColor)
 	bar.SegmentTicks = bar.SegmentTicks or {}
+	local tickFrame = bar.SegmentTickFrame
+
+	if not tickFrame then
+		tickFrame = CreateFrame("Frame", nil, bar)
+		tickFrame:EnableMouse(false)
+		bar.SegmentTickFrame = tickFrame
+	end
+
+	tickFrame:ClearAllPoints()
+	tickFrame:SetAllPoints(bar)
+	tickFrame:SetFrameStrata(bar:GetFrameStrata())
+	tickFrame:SetFrameLevel(bar:GetFrameLevel() + 2)
+	tickFrame:Show()
+
+	if bar.SegmentTicks[1] and bar.SegmentTicks[1]:GetParent() ~= tickFrame then
+		HideRegions(bar.SegmentTicks)
+		bar.SegmentTicks = {}
+	end
 
 	for tickIndex = #bar.SegmentTicks + 1, tickCount do
-		local tick = bar.SegmentTicks[tickIndex] or bar:CreateTexture(nil, "OVERLAY")
+		local tick = bar.SegmentTicks[tickIndex] or tickFrame:CreateTexture(nil, "OVERLAY")
 		tick:SetColorTexture(tickColor.r, tickColor.g, tickColor.b, tickColor.a)
 		bar.SegmentTicks[tickIndex] = tick
 	end
@@ -442,12 +561,18 @@ local function UpdateTicks(bar, maxValue)
 
 	if not barOptions or not barOptions.showTicks or not hasSegmentTicks or type(segmentCount) ~= "number" or segmentCount <= 1 then
 		HideRegions(bar.SegmentTicks)
+		if bar.SegmentTickFrame then
+			bar.SegmentTickFrame:Hide()
+		end
 		return
 	end
 
 	local tickWidth = barOptions.tickWidth
 	if not tickWidth or tickWidth <= 0 then
 		HideRegions(bar.SegmentTicks)
+		if bar.SegmentTickFrame then
+			bar.SegmentTickFrame:Hide()
+		end
 		return
 	end
 
@@ -478,7 +603,7 @@ local function RefreshBarTicks(bar, maxValue)
 	end
 
 	if maxValue == nil then
-		local _, currentMaxValue = GetCurrentPowerValue(bar.resourceKind, bar.powerType)
+		local _, currentMaxValue = GetCurrentPowerValue(bar.resourceKind, bar.powerType, bar.spellID, bar.segmentCount)
 		maxValue = currentMaxValue
 	end
 
@@ -626,12 +751,7 @@ local function UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues
 
 	local chargedSegments = GetChargedSegmentMap(bar, segmentCount, currentValue)
 	local segmentProgressValues = GetProgressValues(bar, segmentCount, currentValue, resourceSegmentValues)
-	local segmentWidth = bar:GetWidth() / segmentCount
-	local segmentHeight = bar:GetHeight()
-	local borderSize = 0
-	if barOptions.showBorder then
-		borderSize = (barOptions.backdropSize or 0) * 2
-	end
+	local segmentWidth, segmentHeight = GetSegmentBarSize(bar, segmentCount)
 
 	for segmentIndex = 1, segmentCount do
 		local segmentBar = segmentBars[segmentIndex]
@@ -639,7 +759,7 @@ local function UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues
 		segmentBar:SetStatusBarTexture(texturePath)
 		segmentBar:SetPoint("LEFT", (segmentIndex - 1) * segmentWidth, 0)
 		segmentBar:SetWidth(segmentWidth)
-		segmentBar:SetHeight(segmentHeight - borderSize)
+		segmentBar:SetHeight(segmentHeight)
 
 		local segmentR, segmentG, segmentB = r, g, b
 		if chargedSegments and chargedSegments[segmentIndex] then
@@ -676,6 +796,7 @@ local function ApplyBarAppearance(bar, barOptions)
 			segmentBar:SetStatusBarTexture(texturePath)
 		end
 	end
+	UpdateRechargeSegment(bar)
 
 	local statusBarTexture = bar:GetStatusBarTexture()
 	SetRegionPoint(statusBarTexture, bar)
@@ -700,7 +821,11 @@ local function ApplyBarAppearance(bar, barOptions)
 
 	if bar.Text then
 		bar.Text:SetFrameStrata(bar:GetFrameStrata())
-		bar.Text:SetFrameLevel(bar:GetFrameLevel() + 2)
+		if bar.SegmentTickFrame then
+			bar.SegmentTickFrame:SetFrameStrata(bar:GetFrameStrata())
+			bar.SegmentTickFrame:SetFrameLevel(bar:GetFrameLevel() + 2)
+		end
+		bar.Text:SetFrameLevel(bar:GetFrameLevel() + 3)
 	end
 end
 
@@ -743,6 +868,11 @@ local function BarNeedsContinuousRefresh(bar)
 		return hasRuneValues and displayValue < maxValue
 	end
 
+	if bar.resourceKind == "spellCharges" then
+		local chargeInfo = bar.spellID and C_Spell.GetSpellCharges(bar.spellID)
+		return chargeInfo ~= nil and chargeInfo.isActive
+	end
+
 	if bar.powerType == Enum.PowerType.Essence then
 		local currentValue = UnitPower("player", Enum.PowerType.Essence) or 0
 		local maxValue = UnitPowerMax("player", Enum.PowerType.Essence) or 0
@@ -764,6 +894,11 @@ local function RegisterBarEvents(bar, barOptions)
 
 	if bar.resourceKind == "runes" then
 		bar:RegisterEvent("RUNE_POWER_UPDATE")
+		return
+	end
+
+	if bar.resourceKind == "spellCharges" then
+		bar:RegisterEvent("SPELL_UPDATE_CHARGES")
 		return
 	end
 
@@ -1101,9 +1236,26 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 		return
 	end
 
-	local currentValue, maxValue, displayValue, resourceSegmentValues = GetCurrentPowerValue(bar.resourceKind, bar.powerType)
-	if not (currentValue and maxValue) then
-		UpdateSegments(bar)
+	local currentValue, maxValue, displayValue, resourceSegmentValues = GetCurrentPowerValue(
+		bar.resourceKind,
+		bar.powerType,
+		bar.spellID,
+		bar.segmentCount
+	)
+	local missingValues = maxValue == nil
+	if bar.resourceKind ~= "spellCharges" then
+		missingValues = missingValues or currentValue == nil
+	end
+
+	if missingValues then
+		if bar.resourceKind == "spellCharges" then
+			HideRegions(bar.SegmentFillBars)
+			HideRegions(bar.RuneSegmentBars)
+			HideRechargeSegment(bar)
+			bar:GetStatusBarTexture():SetAlpha(1)
+		else
+			UpdateSegments(bar)
+		end
 		if refreshTicks then
 			RefreshBarTicks(bar)
 		end
@@ -1111,11 +1263,22 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 		return
 	end
 
-	displayValue = displayValue == nil and currentValue or displayValue
+	if bar.resourceKind ~= "spellCharges" and displayValue == nil then
+		displayValue = currentValue
+	end
 	bar:SetMinMaxValues(0, maxValue)
 	bar:SetValue(currentValue)
 	local widthChanged = not skipWidthOptions and self:ApplyFrameWidthOptions(bar)
-	UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues)
+	if bar.resourceKind == "spellCharges" then
+		bar.SCMSegmentedDisplay = nil
+		HideRegions(bar.SegmentFillBars)
+		HideRegions(bar.RuneSegmentBars)
+		bar:GetStatusBarTexture():SetAlpha(1)
+		UpdateSpellChargeRecharge(bar, resourceSegmentValues)
+	else
+		HideRechargeSegment(bar)
+		UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues)
+	end
 	bar:Show()
 	if refreshTicks or widthChanged then
 		RefreshBarTicks(bar, maxValue)
@@ -1138,6 +1301,11 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 	local overrideText = bar.SCMIsPrimaryResourceBar and SCM.primaryResourceBarTextOverride
 	if overrideText ~= nil then
 		textValue:SetText(overrideText)
+		return maxValue
+	end
+
+	if bar.resourceKind == "spellCharges" then
+		textValue:SetText(displayValue)
 		return maxValue
 	end
 
