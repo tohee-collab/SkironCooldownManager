@@ -167,9 +167,6 @@ function SCM:GetAnchorAdjustment(group, point)
 	if not state then
 		return 0, 0
 	end
-	if state.isActive then
-		return 0, 0
-	end
 
 	local pointShiftX, pointShiftY = GetPointShift(state, point)
 	return (state.transformX or 0) + pointShiftX, (state.transformY or 0) + pointShiftY
@@ -279,7 +276,6 @@ local function OnAnchorVisibilityChanged(frame)
 			local selectedAnchorFrame = select(2, Utils.GetAnchorFrame(currentAnchorFrame))
 			if state.currentSelectedAnchorFrame ~= selectedAnchorFrame then
 				state.currentSelectedAnchorFrame = selectedAnchorFrame
-				state.currentProxyRequired = InCombatLockdown()
 				SCM:ApplyAnchorGroupCDManagerConfig(group)
 			end
 		end
@@ -290,8 +286,6 @@ local function HookAnchorVisibility(group, anchor)
 	local state = GetAnchorState(group)
 	if type(anchor) ~= "string" or not anchor:find(",", 1, true) then
 		state.currentAnchorFrame = nil
-		state.currentSelectedAnchorFrame = nil
-		state.currentProxyRequired = nil
 		return
 	end
 
@@ -328,7 +322,7 @@ local function GetProxyFrame(group, anchorFrame, iconSize)
 
 	proxy:SetFrameStrata((anchorFrame and anchorFrame:GetFrameStrata()) or "HIGH")
 	proxy:SetScale((anchorFrame and anchorFrame:GetScale()) or Cache.cachedViewerScale or 1)
-	proxy:SetSize(SCM:PixelPerfect(max(state.effectiveWidth or 0, iconSize or 1, 1)), SCM:PixelPerfect(max(state.effectiveHeight or 0, iconSize or 1, 1)))
+	proxy:SetSize(max((anchorFrame and anchorFrame:GetWidth()) or 0, iconSize or 1, 1), max((anchorFrame and anchorFrame:GetHeight()) or 0, iconSize or 1, 1))
 	return proxy, state
 end
 
@@ -364,36 +358,25 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 	end
 
 	if not (point and anchor) then
-		local state = Cache.cachedAnchorStates[group]
-		if state and state.isActive and state.currentProxyFrame then
-			return state.currentProxyFrame
-		end
-
 		return anchorFrame
 	end
 
 	HookAnchorVisibility(group, anchor)
 
-	local state = Cache.cachedAnchorStates[group]
-	local isCurrentAnchorFrame = state and state.currentAnchorFrame == anchor
-	local isProtectedCombat = InCombatLockdown() and anchorFrame:IsProtected()
-	local useProxy = isCurrentAnchorFrame and isProtectedCombat and (state.currentProxyRequired or state.isActive)
+	local useProxy = InCombatLockdown() and anchorFrame:IsProtected()
 	local target = anchor
 	local selectedAnchorFrame
 	if type(target) == "string" then
 		target, selectedAnchorFrame = Utils.GetAnchorFrame(target)
 
-		if not isProtectedCombat and type(selectedAnchorFrame) == "string" and selectedAnchorFrame:sub(1, 7) == "ANCHOR:" and target then
+		if not useProxy and type(selectedAnchorFrame) == "string" and selectedAnchorFrame:sub(1, 7) == "ANCHOR:" and target then
 			anchorFrame:SetScale(target:GetScale())
 		end
 	end
 
-	if isCurrentAnchorFrame then
+	local state = Cache.cachedAnchorStates[group]
+	if state and state.currentAnchorFrame == anchor then
 		state.currentSelectedAnchorFrame = selectedAnchorFrame
-	end
-
-	if isProtectedCombat and not useProxy then
-		return anchorFrame
 	end
 
 	target = target or UIParent
@@ -414,7 +397,6 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 		proxy:SetPoint(pivot, target, relativePoint, appliedXOffset, appliedYOffset)
 		proxy:Show()
 		state.isActive = true
-		state.currentProxyRequired = nil
 		return proxy
 	end
 
@@ -430,7 +412,6 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 
 	if state then
 		state.isActive = nil
-		state.currentProxyRequired = nil
 		if state.currentProxyFrame then
 			state.currentProxyFrame:Hide()
 		end

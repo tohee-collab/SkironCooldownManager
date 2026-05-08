@@ -262,7 +262,11 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 	local anchorOffsetY = secondaryGrowDir == "UP" and ((pivot:find("TOP") and heightDelta) or (not pivot:find("BOTTOM") and heightDelta / 2) or 0)
 		or ((pivot:find("BOTTOM") and -heightDelta) or (not pivot:find("TOP") and -heightDelta / 2) or 0)
 	local boundsChanged = state.effectiveWidth ~= effectiveWidth or state.effectiveHeight ~= effectiveHeight or state.anchorOffsetY ~= anchorOffsetY
-	local parentChanged = state.parentGroup ~= parentGroup
+	local groupAnchor = SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, growDir, initialWidth, resetSize, anchorOffsetY)
+
+	if state.parentGroup ~= parentGroup then
+		Cache.cachedAnchorLinksDirty = true
+	end
 
 	state.relativePoint = relativePoint
 	state.startPoint = startPoint
@@ -271,12 +275,6 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 	state.effectiveWidth = effectiveWidth
 	state.effectiveHeight = effectiveHeight
 	state.anchorOffsetY = anchorOffsetY
-
-	local groupAnchor = SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, growDir, initialWidth, resetSize, anchorOffsetY)
-
-	if parentChanged then
-		Cache.cachedAnchorLinksDirty = true
-	end
 
 	if state.appliedWidth == nil then
 		state.appliedWidth = effectiveWidth
