@@ -508,57 +508,57 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 	textSettings:AddChild(valueYOffset)
 
 	if title == "Primary" then
-		local druidFormPowerTypesBySpec = settings.druidFormPowerTypes
-		local specList = {}
-		local specOrder = {}
-		local selectedSpecID = druidFormPowerTypesBySpec[SCM.currentSpecID] and SCM.currentSpecID
-
-		for specID, formPowerTypes in pairs(druidFormPowerTypesBySpec) do
-			local _, specName, _, icon = GetSpecializationInfoByID(specID)
-			specList[specID] = specName and (icon and ("|T%s:14:14:0:0|t %s"):format(icon, specName) or specName) or tostring(specID)
-			specOrder[#specOrder + 1] = specID
-		end
-
-		table.sort(specOrder)
-		selectedSpecID = selectedSpecID or specOrder[1]
-
-		local function AddDruidFormDropdown(parentGroup, druidFormPowerTypes, formID, label)
-			local formDropdown = AceGUI:Create("Dropdown")
-			formDropdown:SetRelativeWidth(0.33)
-			formDropdown:SetLabel(label)
-			formDropdown:SetList(Constants.DruidPrimaryPowerTypes)
-			formDropdown:SetValue(druidFormPowerTypes[formID])
-			formDropdown:SetCallback("OnValueChanged", function(_, _, value)
-				druidFormPowerTypes[formID] = value
-				RefreshResourceBars()
-			end)
-			parentGroup:AddChild(formDropdown)
-		end
-
-		local druidFormSettings = AceGUI:Create("DropdownGroup")
-		druidFormSettings:SetLayout("flow")
-		druidFormSettings:SetTitle("Druid Forms")
-		druidFormSettings:SetFullWidth(true)
-		druidFormSettings:SetGroupList(specList, specOrder)
-		druidFormSettings:SetCallback("OnGroupSelected", function(widget, _, specID)
-			widget:ReleaseChildren()
-
-			local druidFormPowerTypes = druidFormPowerTypesBySpec[specID]
-			if not druidFormPowerTypes then
-				return
-			end
-
-			AddDruidFormDropdown(widget, druidFormPowerTypes, 0, "Human Form")
-			AddDruidFormDropdown(widget, druidFormPowerTypes, 1, "Bear Form")
-			AddDruidFormDropdown(widget, druidFormPowerTypes, 2, "Cat Form")
-			AddDruidFormDropdown(widget, druidFormPowerTypes, 3, "Travel Form")
-			AddDruidFormDropdown(widget, druidFormPowerTypes, 4, "Moonkin Form")
-		end)
-		parent:AddChild(druidFormSettings)
-
-		if selectedSpecID then
-			druidFormSettings:SetGroup(selectedSpecID)
-		end
+		-- local druidFormPowerTypesBySpec = settings.druidFormPowerTypes
+		-- local specList = {}
+		-- local specOrder = {}
+		-- local selectedSpecID = druidFormPowerTypesBySpec[SCM.currentSpecID] and SCM.currentSpecID
+-- 
+		-- for specID, formPowerTypes in pairs(druidFormPowerTypesBySpec) do
+		-- 	local _, specName, _, icon = GetSpecializationInfoByID(specID)
+		-- 	specList[specID] = specName and (icon and ("|T%s:14:14:0:0|t %s"):format(icon, specName) or specName) or tostring(specID)
+		-- 	specOrder[#specOrder + 1] = specID
+		-- end
+-- 
+		-- table.sort(specOrder)
+		-- selectedSpecID = selectedSpecID or specOrder[1]
+-- 
+		-- local function AddDruidFormDropdown(parentGroup, druidFormPowerTypes, formID, label)
+		-- 	local formDropdown = AceGUI:Create("Dropdown")
+		-- 	formDropdown:SetRelativeWidth(0.33)
+		-- 	formDropdown:SetLabel(label)
+		-- 	formDropdown:SetList(Constants.DruidPrimaryPowerTypes)
+		-- 	formDropdown:SetValue(druidFormPowerTypes[formID])
+		-- 	formDropdown:SetCallback("OnValueChanged", function(_, _, value)
+		-- 		druidFormPowerTypes[formID] = value
+		-- 		RefreshResourceBars()
+		-- 	end)
+		-- 	parentGroup:AddChild(formDropdown)
+		-- end
+-- 
+		-- local druidFormSettings = AceGUI:Create("DropdownGroup")
+		-- druidFormSettings:SetLayout("flow")
+		-- druidFormSettings:SetTitle("Druid Forms")
+		-- druidFormSettings:SetFullWidth(true)
+		-- druidFormSettings:SetGroupList(specList, specOrder)
+		-- druidFormSettings:SetCallback("OnGroupSelected", function(widget, _, specID)
+		-- 	widget:ReleaseChildren()
+-- 
+		-- 	local druidFormPowerTypes = druidFormPowerTypesBySpec[specID]
+		-- 	if not druidFormPowerTypes then
+		-- 		return
+		-- 	end
+-- 
+		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 0, "Human Form")
+		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 1, "Bear Form")
+		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 2, "Cat Form")
+		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 3, "Travel Form")
+		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 4, "Moonkin Form")
+		-- end)
+		-- parent:AddChild(druidFormSettings)
+-- 
+		-- if selectedSpecID then
+		-- 	druidFormSettings:SetGroup(selectedSpecID)
+		-- end
 
 		parent:DoLayout()
 	elseif title == "Secondary" then
@@ -588,57 +588,57 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 		end)
 		miscSettings:AddChild(staggerDisplayAsPercent)
 
-		local druidFormPowerTypesBySpec = settings.druidFormPowerTypes
-		local specList = {}
-		local specOrder = {}
-		local selectedSpecID = druidFormPowerTypesBySpec[SCM.currentSpecID] and SCM.currentSpecID
-
-		for specID, formPowerTypes in pairs(druidFormPowerTypesBySpec) do
-			local _, specName, _, icon = GetSpecializationInfoByID(specID)
-			specList[specID] = specName and (icon and ("|T%s:14:14:0:0|t %s"):format(icon, specName) or specName) or tostring(specID)
-			specOrder[#specOrder + 1] = specID
-		end
-
-		table.sort(specOrder)
-		selectedSpecID = selectedSpecID or specOrder[1]
-
-		local function AddDruidFormDropdown(parentGroup, druidFormPowerTypes, formID, label)
-			local formDropdown = AceGUI:Create("Dropdown")
-			formDropdown:SetRelativeWidth(0.33)
-			formDropdown:SetLabel(label)
-			formDropdown:SetList(Constants.DruidSecondaryPowerTypes)
-			formDropdown:SetValue(druidFormPowerTypes[formID])
-			formDropdown:SetCallback("OnValueChanged", function(_, _, value)
-				druidFormPowerTypes[formID] = value
-				RefreshResourceBars()
-			end)
-			parentGroup:AddChild(formDropdown)
-		end
-
-		local druidFormSettings = AceGUI:Create("DropdownGroup")
-		druidFormSettings:SetLayout("flow")
-		druidFormSettings:SetTitle("Druid Forms")
-		druidFormSettings:SetFullWidth(true)
-		druidFormSettings:SetGroupList(specList, specOrder)
-		druidFormSettings:SetCallback("OnGroupSelected", function(widget, _, specID)
-			widget:ReleaseChildren()
-
-			local druidFormPowerTypes = druidFormPowerTypesBySpec[specID]
-			if not druidFormPowerTypes then
-				return
-			end
-
-			AddDruidFormDropdown(widget, druidFormPowerTypes, 0, "Human Form")
-			AddDruidFormDropdown(widget, druidFormPowerTypes, 1, "Bear Form")
-			AddDruidFormDropdown(widget, druidFormPowerTypes, 2, "Cat Form")
-			AddDruidFormDropdown(widget, druidFormPowerTypes, 3, "Travel Form")
-			AddDruidFormDropdown(widget, druidFormPowerTypes, 4, "Moonkin Form")
-		end)
-		parent:AddChild(druidFormSettings)
-
-		if selectedSpecID then
-			druidFormSettings:SetGroup(selectedSpecID)
-		end
+		-- local druidFormPowerTypesBySpec = settings.druidFormPowerTypes
+		-- local specList = {}
+		-- local specOrder = {}
+		-- local selectedSpecID = druidFormPowerTypesBySpec[SCM.currentSpecID] and SCM.currentSpecID
+-- 
+		-- for specID, formPowerTypes in pairs(druidFormPowerTypesBySpec) do
+		-- 	local _, specName, _, icon = GetSpecializationInfoByID(specID)
+		-- 	specList[specID] = specName and (icon and ("|T%s:14:14:0:0|t %s"):format(icon, specName) or specName) or tostring(specID)
+		-- 	specOrder[#specOrder + 1] = specID
+		-- end
+-- 
+		-- table.sort(specOrder)
+		-- selectedSpecID = selectedSpecID or specOrder[1]
+-- 
+		-- local function AddDruidFormDropdown(parentGroup, druidFormPowerTypes, formID, label)
+		-- 	local formDropdown = AceGUI:Create("Dropdown")
+		-- 	formDropdown:SetRelativeWidth(0.33)
+		-- 	formDropdown:SetLabel(label)
+		-- 	formDropdown:SetList(Constants.DruidSecondaryPowerTypes)
+		-- 	formDropdown:SetValue(druidFormPowerTypes[formID])
+		-- 	formDropdown:SetCallback("OnValueChanged", function(_, _, value)
+		-- 		druidFormPowerTypes[formID] = value
+		-- 		RefreshResourceBars()
+		-- 	end)
+		-- 	parentGroup:AddChild(formDropdown)
+		-- end
+-- 
+		-- local druidFormSettings = AceGUI:Create("DropdownGroup")
+		-- druidFormSettings:SetLayout("flow")
+		-- druidFormSettings:SetTitle("Druid Forms")
+		-- druidFormSettings:SetFullWidth(true)
+		-- druidFormSettings:SetGroupList(specList, specOrder)
+		-- druidFormSettings:SetCallback("OnGroupSelected", function(widget, _, specID)
+		-- 	widget:ReleaseChildren()
+-- 
+		-- 	local druidFormPowerTypes = druidFormPowerTypesBySpec[specID]
+		-- 	if not druidFormPowerTypes then
+		-- 		return
+		-- 	end
+-- 
+		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 0, "Human Form")
+		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 1, "Bear Form")
+		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 2, "Cat Form")
+		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 3, "Travel Form")
+		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 4, "Moonkin Form")
+		-- end)
+		-- parent:AddChild(druidFormSettings)
+-- 
+		-- if selectedSpecID then
+		-- 	druidFormSettings:SetGroup(selectedSpecID)
+		-- end
 
 		parent:DoLayout()
 	end
