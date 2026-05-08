@@ -304,6 +304,22 @@ local function OnDebugTextureHide(self)
 	end
 end
 
+local function RefreshAnchorVisibilitySelection(group, currentAnchorFrame)
+	local state = Cache.cachedAnchorStates[group]
+	if not (state and state.currentAnchorFrame == currentAnchorFrame) then
+		return
+	end
+
+	local selectedAnchorFrame = select(2, Utils.GetAnchorFrame(currentAnchorFrame))
+	if state.currentSelectedAnchorFrame == selectedAnchorFrame then
+		return
+	end
+
+	state.currentSelectedAnchorFrame = selectedAnchorFrame
+	state.currentProxyRequired = InCombatLockdown() or nil
+	SCM:ApplyAnchorGroupCDManagerConfig(group)
+end
+
 local function OnAnchorVisibilityChanged(frame)
 	local anchorGroups = frame.SCMCurrentAnchorFrames
 	if not anchorGroups then
@@ -311,16 +327,25 @@ local function OnAnchorVisibilityChanged(frame)
 	end
 
 	for group, currentAnchorFrame in pairs(anchorGroups) do
-		local state = Cache.cachedAnchorStates[group]
-		if state and state.currentAnchorFrame == currentAnchorFrame then
-			local selectedAnchorFrame = select(2, Utils.GetAnchorFrame(currentAnchorFrame))
-			if state.currentSelectedAnchorFrame ~= selectedAnchorFrame then
-				state.currentSelectedAnchorFrame = selectedAnchorFrame
-				state.currentProxyRequired = InCombatLockdown() or nil
-				SCM:ApplyAnchorGroupCDManagerConfig(group)
-			end
-		end
+		RefreshAnchorVisibilitySelection(group, currentAnchorFrame)
 	end
+end
+
+local function HookAnchorVisibilityFrame(frame, group, anchor)
+	if not (frame and frame ~= UIParent and frame.HookScript) then
+		return
+	end
+
+	frame.SCMCurrentAnchorFrames = frame.SCMCurrentAnchorFrames or {}
+	frame.SCMCurrentAnchorFrames[group] = anchor
+
+	if frame.SCMCurrentAnchorHook then
+		return
+	end
+
+	frame.SCMCurrentAnchorHook = true
+	frame:HookScript("OnShow", OnAnchorVisibilityChanged)
+	frame:HookScript("OnHide", OnAnchorVisibilityChanged)
 end
 
 local function SetAnchorVisibilityHooks(group, anchor, selectedAnchorFrame)
@@ -348,15 +373,11 @@ local function SetAnchorVisibilityHooks(group, anchor, selectedAnchorFrame)
 		currentFrame = strtrim(currentFrame)
 		if currentFrame ~= "" and currentFrame:sub(1, 7) ~= "ANCHOR:" then
 			local target = _G[currentFrame] or SCM[currentFrame]
-			if target and target ~= UIParent and target.HookScript then
-				target.SCMCurrentAnchorFrames = target.SCMCurrentAnchorFrames or {}
-				target.SCMCurrentAnchorFrames[group] = anchor
+			HookAnchorVisibilityFrame(target, group, anchor)
 
-				if not target.SCMCurrentAnchorHook then
-					target.SCMCurrentAnchorHook = true
-					target:HookScript("OnShow", OnAnchorVisibilityChanged)
-					target:HookScript("OnHide", OnAnchorVisibilityChanged)
-				end
+			local parent = target and target.GetParent and target:GetParent()
+			if parent ~= target then
+				HookAnchorVisibilityFrame(parent, group, anchor)
 			end
 		end
 	end
