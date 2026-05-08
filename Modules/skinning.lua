@@ -104,16 +104,17 @@ local function ApplyCooldownStyle(child, options)
 			local parent = self:GetParent()
 			local forceActiveSwipe = parent.SCMConfig and parent.SCMConfig.forceActiveSwipe
 
-			if options.disableRegularIconActiveSwipe and not forceActiveSwipe then
-				if options.recolorNormalSwipe then
-					self:SetSwipeColor(unpack(options.normalSwipeColor))
-					self:SetReverse(false)
+			if parent.auraInstanceID or parent.SCMFakeAuraInstanceID or parent.SCMBuffOptions then
+				if options.disableRegularIconActiveSwipe and not forceActiveSwipe then
+					if options.recolorNormalSwipe then
+						self:SetSwipeColor(unpack(options.normalSwipeColor))
+					else
+						self:SetSwipeColor(0, 0, 0, 0.7)
+					end
 				else
-					self:SetSwipeColor(0, 0, 0, 0.7)
-				end
-			elseif parent.auraInstanceID or parent.SCMBuffOptions then
-				if options.recolorActiveSwipe then
-					self:SetSwipeColor(unpack(options.activeSwipeColor))
+					if options.recolorActiveSwipe then
+						self:SetSwipeColor(unpack(options.activeSwipeColor))
+					end
 				end
 
 				self:SetReverse(options.reverseActiveSwipe)
