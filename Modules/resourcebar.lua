@@ -206,7 +206,8 @@ local function GetSoulFragmentValues()
 	if C_UnitAuras.GetPlayerAuraBySpellID(SPELL_ID_VOID_METAMORPHOSIS) then
 		local auraData = C_UnitAuras.GetPlayerAuraBySpellID(SPELL_ID_SILENCE_THE_WHISPERS)
 		currentValue = auraData and auraData.applications or 0
-		maxValue = GetCollapsingStarCost() or 0
+		-- maxValue = GetCollapsingStarCost() or 0
+		maxValue = 40
 	else
 		local auraData = C_UnitAuras.GetPlayerAuraBySpellID(SPELL_ID_DARK_HEART)
 		currentValue = auraData and auraData.applications or 0
