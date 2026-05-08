@@ -68,7 +68,15 @@ local function ApplyCooldownFont(cooldownFrame, options)
 			if parent.SCMWidth and parent.SCMHeight then
 				local width, height = parent.SCMWidth, parent.SCMHeight
 				local iconSize = min(width, height)
-				local fontSize = max(1, floor(iconSize * GetCooldownFontScale(options) + 0.5))
+				local rowConfig = parent.SCMRowConfig
+				local fontSize
+
+				if rowConfig and rowConfig.cooldownFontSize then
+					fontSize = rowConfig.cooldownFontSize
+				else
+					fontSize = max(1, floor(iconSize * GetCooldownFontScale(options) + 0.5))
+				end
+
 				cooldownFontString:SetFont(fontPath, fontSize, "OUTLINE")
 				cooldownFontString:SetShadowColor(0, 0, 0, 0)
 				cooldownFontString:SetShadowOffset(0, 0)
