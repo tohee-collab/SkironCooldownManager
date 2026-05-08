@@ -160,6 +160,12 @@ Constants.SpecSecondaryPower = {
 		powerType = Enum.PowerType.ArcaneCharges,
 		powerToken = "ARCANE_CHARGES",
 	},
+	[64] = {
+        resourceKind = "icicles",
+        powerToken = "ICICLES",
+        segmentCount = 5,
+        registerUnitAura = true,
+    },
 	[255] = {
 		resourceKind = "tipOfTheSpear",
 		powerToken = "TIP_OF_THE_SPEAR",
@@ -251,6 +257,7 @@ Constants.ResourceBarPowerTypes = {
 	{ token = "MAELSTROM_WEAPON", label = "Maelstrom Weapon" },
 	{ token = "SOUL_FRAGMENTS", label = "Soul Fragments (Devourer)" },
 	{ token = "TIP_OF_THE_SPEAR", label = "Tip of the Spear" },
+	{ token = "ICICLES", label = "Icicles" },
 }
 
 Constants.DruidPrimaryPowerTypes = {

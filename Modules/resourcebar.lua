@@ -11,6 +11,7 @@ local SPELL_ID_DARK_HEART = UNIT_POWER_SPELL_IDS.DARK_HEART_SPELL_ID or 1225789
 local SPELL_ID_SILENCE_THE_WHISPERS = UNIT_POWER_SPELL_IDS.SILENCE_THE_WHISPERS_SPELL_ID or 1227702
 local SPELL_ID_MAELSTROM_WEAPON = UNIT_POWER_SPELL_IDS.MAELSTROM_WEAPON or 344179
 local SPELL_ID_TIP_OF_THE_SPEAR = 260286
+local SPELL_ID_ICICLES = 205473
 
 local SCMConstants = SCM.Constants
 local CHARGED_COMBO_POINT_COLOR = SCMConstants.ChargedComboPointColor
@@ -245,6 +246,19 @@ local function GetTipOfTheSpearValue()
 	return currentValue, maxValue
 end
 
+
+local function GetIciclesValue()
+    local currentValue = 0
+    local maxValue = 5
+
+    local auraData = C_UnitAuras.GetPlayerAuraBySpellID(SPELL_ID_ICICLES)
+    if auraData then
+        currentValue = auraData.applications or 0
+    end
+
+    return currentValue, maxValue
+end
+
 local function GetMaelstromWeaponValue()
 	local currentValue = 0
 	local maxValue = 10
@@ -292,6 +306,10 @@ local function GetCurrentPowerValue(resourceKind, powerType)
 	if resourceKind == "tipOfTheSpear" then
 		return GetTipOfTheSpearValue()
 	end
+
+	if resourceKind == "icicles" then
+        return GetIciclesValue()
+    end
 
 	local currentValue = UnitPower("player", powerType)
 	local maxValue = UnitPowerMax("player", powerType)
