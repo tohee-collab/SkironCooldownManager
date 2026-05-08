@@ -51,6 +51,8 @@ SCM.DefaultDB = {
 			cooldownFont = "Expressway",
 			cooldownFontSize = 0.6,
 			cooldownFontColor = { r = 1, g = 1, b = 1, a = 1 },
+			cooldownXOffset = 0,
+			cooldownYOffset = 0,
 			useCustomGlow = false,
 			glowType = "Proc",
 			borderSize = 1,

@@ -75,6 +75,9 @@ local function ApplyCooldownFont(cooldownFrame, options)
 
 				local cooldownFontColor = options.cooldownFontColor
 				cooldownFontString:SetTextColor(cooldownFontColor.r, cooldownFontColor.g, cooldownFontColor.b, cooldownFontColor.a)
+
+				cooldownFontString:ClearAllPoints()
+				cooldownFontString:SetPoint("CENTER", parent, "CENTER", options.cooldownXOffset, options.cooldownYOffset)
 			end
 		end
 	elseif originalCooldownFont then

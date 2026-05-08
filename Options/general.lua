@@ -394,6 +394,26 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		end)
 		cooldownTextSettings:AddChild(cooldownFontColor)
 
+		local cooldownXOffset = AceGUI:Create("Slider")
+		cooldownXOffset:SetRelativeWidth(0.33)
+		cooldownXOffset:SetValue(options.cooldownXOffset)
+		cooldownXOffset:SetLabel("X Offset")
+		cooldownXOffset:SetSliderValues(-30, 30, 0.1)
+		cooldownXOffset:SetCallback("OnValueChanged", function(_, _, value)
+			options.cooldownXOffset = value
+		end)
+		cooldownTextSettings:AddChild(cooldownXOffset)
+
+		local cooldownYOffset = AceGUI:Create("Slider")
+		cooldownYOffset:SetRelativeWidth(0.33)
+		cooldownYOffset:SetValue(options.cooldownYOffset)
+		cooldownYOffset:SetLabel("Y Offset")
+		cooldownYOffset:SetSliderValues(-30, 30, 0.1)
+		cooldownYOffset:SetCallback("OnValueChanged", function(_, _, value)
+			options.cooldownYOffset = value
+		end)
+		cooldownTextSettings:AddChild(cooldownYOffset)
+
 		local auraSettings = AceGUI:Create("InlineGroup")
 		auraSettings:SetLayout("flow")
 		auraSettings:SetFullWidth(true)
