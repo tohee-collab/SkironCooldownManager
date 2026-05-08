@@ -262,11 +262,7 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 	local anchorOffsetY = secondaryGrowDir == "UP" and ((pivot:find("TOP") and heightDelta) or (not pivot:find("BOTTOM") and heightDelta / 2) or 0)
 		or ((pivot:find("BOTTOM") and -heightDelta) or (not pivot:find("TOP") and -heightDelta / 2) or 0)
 	local boundsChanged = state.effectiveWidth ~= effectiveWidth or state.effectiveHeight ~= effectiveHeight or state.anchorOffsetY ~= anchorOffsetY
-	local groupAnchor = SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, growDir, initialWidth, resetSize, anchorOffsetY)
-
-	if state.parentGroup ~= parentGroup then
-		Cache.cachedAnchorLinksDirty = true
-	end
+	local parentChanged = state.parentGroup ~= parentGroup
 
 	state.relativePoint = relativePoint
 	state.startPoint = startPoint
@@ -275,6 +271,12 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 	state.effectiveWidth = effectiveWidth
 	state.effectiveHeight = effectiveHeight
 	state.anchorOffsetY = anchorOffsetY
+
+	local groupAnchor = SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, growDir, initialWidth, resetSize, anchorOffsetY)
+
+	if parentChanged then
+		Cache.cachedAnchorLinksDirty = true
+	end
 
 	if state.appliedWidth == nil then
 		state.appliedWidth = effectiveWidth
@@ -287,6 +289,7 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 	end
 
 	SCM:UpdateAnchorOffset(group, true)
+	local childAnchor, useProxyAnchor = SCM:GetManagedAnchorChildAnchor(group, groupAnchor, point, anchor, relativePoint, xOffset, yOffset, growDir, initialWidth, anchorOffsetY)
 
 	for currentRow = 1, rowCount do
 		local row = rows[currentRow]
@@ -310,7 +313,7 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 			end
 
 			if child.SCMShouldBeVisible then
-				SCM:UpdateManagedAnchorChild(child, groupAnchor, startPoint, offsetX, row.offsetY, row.rowIconWidth, row.rowIconHeight)
+				SCM:UpdateManagedAnchorChild(child, childAnchor, startPoint, offsetX, row.offsetY, row.rowIconWidth, row.rowIconHeight, useProxyAnchor)
 			end
 
 			if not child.SCMBuffBar then

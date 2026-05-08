@@ -36,6 +36,7 @@ local CHILD_SCM_RESET_FIELDS = {
 	"SCMBaseOffsetX",
 	"SCMBaseOffsetY",
 	"SCMLayoutApplied",
+	"SCMProxyAnchor",
 }
 
 local function CreateDisabledTooltipOverlay(widget)
