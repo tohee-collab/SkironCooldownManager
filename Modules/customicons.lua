@@ -756,8 +756,8 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 		local anchorGroup = config.anchorGroup or 1
 		local customFrames = CustomIcons.GetCustomIconFrames(config)
 		if customFrames then
-			if customFrames[id] and DoesItemOrSpellExists(config) and ShouldLoadCustomIcon(config) then
-				if CDM.IsScopedAnchorGroupAllowed(anchorGroup, isGlobal) then
+			if CDM.IsScopedAnchorGroupAllowed(anchorGroup, isGlobal) then
+				if customFrames[id] and DoesItemOrSpellExists(config) and ShouldLoadCustomIcon(config) then
 					local frame = customFrames[id]
 					local iconType = frame.SCMIconType
 					local iconTexture = ResolveCustomIconTexture(config, iconType)
@@ -788,11 +788,11 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 							CDM.AddChildToScopedGroup(Cache.cachedChildrenTbl, anchorGroup, frame, isGlobal)
 						end
 					else
-						Icons.SetChildVisibilityState(frame, false, true)
+						Icons.SetChildVisibilityState(customFrames[id], false, true)
 					end
+				elseif customFrames[id] then
+					Icons.SetChildVisibilityState(customFrames[id], false, true)
 				end
-			elseif customFrames[id] then
-				Icons.SetChildVisibilityState(customFrames[id], false, true)
 			end
 		end
 	end

@@ -200,7 +200,7 @@ end
 
 function SCM:TRAIT_CONFIG_UPDATED()
 	C_Timer.After(0.5, function()
-		RefreshCooldownViewerData()
+		RefreshCooldownViewerData(true)
 		SCM:RefreshResourceBarConfig()
 	end)
 end
