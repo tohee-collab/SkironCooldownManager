@@ -295,16 +295,30 @@ local function HandleCast(durationObject, castType, empoweredStages, isChannelSt
 		spellName, _, spellTexture, _, _, _, notInterruptible, spellID = UnitChannelInfo("player")
 	end
 
-	if notInterruptible then
-		fillColor = options.interruptColor
-	end
+	-- Check if the spell is uninterruptible (standard behavior)
+    if notInterruptible then
+        fillColor = options.interruptColor
+    else
+        -- If interruptible, check for Class Color override
+        if options.useClassColor then
+            local _, class = UnitClass("player")
+            local color = (CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS)[class]
+            fillColor = { r = color.r, g = color.g, b = color.b, a = options.fgColor.a }
+        else
+            -- Fallback to manual foreground color
+            fillColor = options.fgColor
+        end
+    end
 
-	local totalDuration = durationObject:GetTotalDuration()
-	if not totalDuration or totalDuration <= 0 then
-		return
-	end
+    local totalDuration = durationObject:GetTotalDuration()
+    if not totalDuration or totalDuration <= 0 then
+        return
+    end
 
-	castBar.CurrentFillColor = fillColor or options.fgColor
+    -- Store the decided color and update the look
+    castBar.CurrentFillColor = fillColor
+    UpdateStatusBarLook(fillColor)
+	
 	castBar.CurrentEmpoweredStages = empoweredStages
 	UpdateIconTexture(spellTexture)
 
