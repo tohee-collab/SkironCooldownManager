@@ -301,13 +301,18 @@ function SCM:UpdateCooldownInfo(isFirstLoad, dataProvider)
 						self.defaultCooldownViewerConfig[cooldownCategory].spellIDs[linkedSpellID] = data
 						self.defaultCooldownViewerConfig.spellIDs[linkedSpellID] = data
 					end
-					if data and data.category >= 0 and data.category <= 2 then
-						order = order + 1
-						self.currentCooldownViewerConfig[spellID] = self.currentCooldownViewerConfig[spellID] or { source = {}, anchorGroup = {} }
-						self.currentCooldownViewerConfig[spellID].source[data.category] = data.category + 1
-						self.currentCooldownViewerConfig[spellID].anchorGroup[data.category + 1] = {
-							order = order,
-						}
+
+					-- Can probably be removed because I don't use it anymore.
+					if data and data.category then
+						local category = tonumber(data.category)
+						if category and category >= 0 and category <= 2 then
+							order = order + 1
+							self.currentCooldownViewerConfig[spellID] = self.currentCooldownViewerConfig[spellID] or { source = {}, anchorGroup = {} }
+							self.currentCooldownViewerConfig[spellID].source[data.category] = data.category + 1
+							self.currentCooldownViewerConfig[spellID].anchorGroup[data.category + 1] = {
+								order = order,
+							}
+						end
 					end
 				end
 			end
