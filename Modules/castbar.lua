@@ -218,7 +218,7 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	end
 	local durationWidth = min(statusWidth, fontSize * 3)
 
-	ApplyTextStyle(castBar.SpellNameText, fontPath, fontSize, fontOutline, "LEFT", statusWidth)
+	ApplyTextStyle(castBar.SpellNameText, fontPath, fontSize, fontOutline, "LEFT", max(castBar.SpellNameText:GetStringWidth(), 1))
 	ApplyTextStyle(castBar.CastDurationText, fontPath, fontSize, fontOutline, "RIGHT", durationWidth)
 
 	local spellName = options.spellName
@@ -407,6 +407,8 @@ local function HandleCast(durationObject, castType, empoweredStages, isChannelSt
 	castBar.Status:SetValue(isChannel and remaining or totalDuration - remaining)
 
 	castBar.SpellNameText:SetText(spellName or "")
+	castBar.SpellNameText:SetWidth(max(castBar.SpellNameText:GetStringWidth(), 1))
+	ApplyRelativeAnchor(castBar.SpellNameText, options.spellName.anchors, castBar.Status)
 	castBar.CastDurationText:SetText(FormatDurationText(remaining))
 
 	castBar:SetScript("OnUpdate", function()
