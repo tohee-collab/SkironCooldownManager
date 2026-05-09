@@ -395,3 +395,7 @@ Constants.FakeAuras = {
 	[104316] = 12, -- Call Dreadstalkers
 	[1276672] = 12, -- Summon Doomguard (not even Blizzard shows that)
 }
+
+Constants.TargetAuras = {
+	[1160] = true,
+}

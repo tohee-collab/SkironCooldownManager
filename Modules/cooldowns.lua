@@ -115,6 +115,11 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 	if Constants.FakeAuras[child.SCMSpellID] then
 		hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
 		hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
+		child.SCMCheckCooldownFrame = true
+	elseif Constants.TargetAuras[child.SCMSpellID] then
+		hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
+		hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
+		child.SCMCheckCooldownFrame = true
 	else
 		hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
 		hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnBuffCooldownEnd)

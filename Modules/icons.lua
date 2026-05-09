@@ -257,7 +257,7 @@ local function ProcessBuffIcon(child, childData, options)
 
 	--local isInactive = not child.Cooldown:IsShown() and not child.auraInstanceID
 
-	local isInactive = not child.auraInstanceID and (FindSpellOverrideByID(child.SCMSpellID) == child.SCMSpellID) and not child.SCMFakeAuraInstanceID
+	local isInactive = (not child.auraInstanceID and (FindSpellOverrideByID(child.SCMSpellID) == child.SCMSpellID)) or (child.SCMCheckCooldownFrame and not child.Cooldown:IsShown())
 	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and childData.alwaysShow)
 	local shouldHide = isInactive and not forceShow
 
