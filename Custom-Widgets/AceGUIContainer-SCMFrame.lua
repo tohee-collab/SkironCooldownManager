@@ -1,7 +1,7 @@
 --[[-----------------------------------------------------------------------------
 Frame Container
 -------------------------------------------------------------------------------]]
-local Type, Version = "SCMFrame", 30
+local Type, Version = "SCMFrame", 31
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then
 	return
@@ -44,8 +44,8 @@ Methods
 local methods = {
 	["OnAcquire"] = function(self)
 		self.frame:SetParent(UIParent)
-		self.frame:SetFrameStrata("FULLSCREEN_DIALOG")
-		self.frame:SetFrameLevel(100) -- Lots of room to draw under it
+		self.frame:SetFrameStrata("DIALOG")
+		--self.frame:SetFrameLevel(1) -- Lots of room to draw under it
 		self:SetTitle()
 		self:ApplyStatus()
 		self:Show()
@@ -120,7 +120,7 @@ local function Constructor()
 	frame:EnableMouse(true)
 	frame:SetMovable(true)
 	frame:SetResizable(false)
-	frame:SetFrameStrata("BACKGROUND")
+	frame:SetFrameStrata("DIALOG")
 	--frame:SetFrameLevel(100) -- Lots of room to draw under it
 	--frame:SetBackdrop(FrameBackdrop)
 	--frame:SetBackdropColor(0, 0, 0, 1)
