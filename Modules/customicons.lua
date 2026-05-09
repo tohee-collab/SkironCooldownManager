@@ -437,10 +437,6 @@ local function MatchesLoadFilter(loadFilter, value)
 end
 
 local function ShouldLoadCustomIcon(config)
-	if config.alwaysShow then
-		return true
-	end
-
 	if config.useLoadRole and not MatchesLoadFilter(config.loadRoles, SCM.currentRole) then
 		return false
 	end
