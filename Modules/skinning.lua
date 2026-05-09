@@ -125,13 +125,15 @@ local function ApplyCooldownStyle(child, options)
 					else
 						self:SetSwipeColor(0, 0, 0, 0.7)
 					end
+
+					if parent.SCMBuffOptions then
+						self:SetReverse(options.reverseActiveSwipe)
+					end
 				else
 					if options.recolorActiveSwipe then
 						self:SetSwipeColor(unpack(options.activeSwipeColor))
 					end
-				end
 
-				if parent.SCMBuffOptions then
 					self:SetReverse(options.reverseActiveSwipe)
 				end
 			elseif options.recolorNormalSwipe then
