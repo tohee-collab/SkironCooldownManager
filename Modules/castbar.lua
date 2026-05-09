@@ -218,7 +218,7 @@ local function UpdateStatusBarLook(fillColor, bgColor)
 	end
 	local durationWidth = min(statusWidth, fontSize * 3)
 
-	ApplyTextStyle(castBar.SpellNameText, fontPath, fontSize, fontOutline, "LEFT", max(statusWidth - durationWidth, 1))
+	ApplyTextStyle(castBar.SpellNameText, fontPath, fontSize, fontOutline, "LEFT", statusWidth)
 	ApplyTextStyle(castBar.CastDurationText, fontPath, fontSize, fontOutline, "RIGHT", durationWidth)
 
 	local spellName = options.spellName
@@ -447,6 +447,20 @@ function SCM:RefreshCastBarWidth(delay)
 			end
 		end
 	end)
+end
+
+function SCM:RefreshCastBarLayout()
+	local castBar = self.CastBar
+	if not castBar then
+		return
+	end
+
+	castBar.barOptions = self.db.profile.options.castBar
+	UpdateStatusBarLook()
+
+	if castBar:IsShown() and castBar.CurrentEmpoweredStages and castBar.Status:GetStatusBarTexture() then
+		CreatePips(castBar.CurrentEmpoweredStages)
+	end
 end
 
 function SCM:CreateCastBar()
