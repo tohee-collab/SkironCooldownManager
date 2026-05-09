@@ -407,16 +407,6 @@ local function CastBar(self)
 	colorGroup:SetLayout("flow")
 	scrollFrame:AddChild(colorGroup)
 
-	local useClassColor = AceGUI:Create("CheckBox")
-    useClassColor:SetRelativeWidth(1.0)
-    useClassColor:SetLabel("Use Class Color")
-    useClassColor:SetValue(options.useClassColor)
-    useClassColor:SetCallback("OnValueChanged", function(_, _, value)
-        options.useClassColor = value
-        RefreshCastBar()
-    end)
-    colorGroup:AddChild(useClassColor)
-
 	local fillColor = AceGUI:Create("ColorPicker")
 	fillColor:SetRelativeWidth(0.25)
 	fillColor:SetLabel("Foreground Color")
@@ -474,6 +464,16 @@ local function CastBar(self)
 		end)
 		colorGroup:AddChild(stageColor)
 	end
+
+	local useClassColor = AceGUI:Create("CheckBox")
+	useClassColor:SetRelativeWidth(0.33)
+	useClassColor:SetLabel("Use Class Color")
+	useClassColor:SetValue(options.useClassColor)
+	useClassColor:SetCallback("OnValueChanged", function(_, _, value)
+		options.useClassColor = value
+		RefreshCastBar()
+	end)
+	colorGroup:AddChild(useClassColor)
 
 	local anchorsGroup = AceGUI:Create("InlineGroup")
 	anchorsGroup:SetTitle("Anchors")
