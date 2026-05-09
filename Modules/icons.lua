@@ -264,7 +264,7 @@ local function ProcessBuffIcon(child, childData, options)
 
 	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and childData.alwaysShow)
 	local shouldHide = isInactive and not forceShow
-
+	
 	if shouldHide then
 		Icons.SetChildVisibilityState(child, false, true)
 		return
@@ -284,7 +284,7 @@ end
 
 local function ProcessBuffBar(child, childData, options)
 	Icons.SetupBuffBarHooks(child)
-	
+
 	local isInactive = not child.auraInstanceID and not child.SCMFakeAuraInstanceID
 	local forceShow = SCM.simulateBuffs or (not SCM.isHideWhenInactiveEnabled and childData.alwaysShow)
 	local shouldHide = isInactive and not forceShow

@@ -38,7 +38,7 @@ local function OnBuffCooldownEnd(self)
 		return
 	end
 
-	if parent.SCMAuraInstanceID then
+	if parent.SCMAuraInstanceID and not parent.SCMCheckCooldownFrame then
 		if not C_UnitAuras.GetAuraDataByAuraInstanceID("player", parent.SCMAuraInstanceID) then
 			parent.SCMAuraInstanceID = nil
 		else
@@ -117,15 +117,14 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 		hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
 		child.SCMCheckCooldownFrame = true
 	elseif Constants.TargetAuras[child.SCMSpellID] then
-		hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
+		hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
 		hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
+		--child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
 		child.SCMCheckCooldownFrame = true
 	else
 		hooksecurefunc(child, "OnAuraInstanceInfoSet", OnBuffCooldownSet)
 		hooksecurefunc(child, "OnAuraInstanceInfoCleared", OnBuffCooldownEnd)
 	end
-
-	--child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
 
 	-- Pandmic Alerts
 	hooksecurefunc(child, "TriggerPandemicAlert", OnBuffTriggerPandemicAlert)
