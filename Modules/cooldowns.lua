@@ -13,10 +13,6 @@ local function OnBuffCooldownSet(self)
 
 	if parent.SCMAuraInstanceID and parent.auraInstanceID and parent.auraInstanceID ~= parent.SCMAuraInstanceID then
 		parent.SCMAuraInstanceID = parent.auraInstanceID
-	elseif not parent.auraInstanceID and Constants.FakeAuras[parent.SCMSpellID] then
-		if not parent.SCMFakeAuraInstanceID or GetTime() > parent.SCMFakeAuraInstanceID then
-			parent.SCMFakeAuraInstanceID = GetTime() + Constants.FakeAuras[parent.SCMSpellID]
-		end
 	else
 		parent.SCMAuraInstanceID = parent.SCMAuraInstanceID or parent.auraInstanceID
 	end
@@ -37,20 +33,12 @@ local function OnBuffCooldownEnd(self)
 	if not parent or not parent.SCMConfig then
 		return
 	end
-
 	if parent.SCMAuraInstanceID and not parent.SCMCheckCooldownFrame then
 		if not C_UnitAuras.GetAuraDataByAuraInstanceID("player", parent.SCMAuraInstanceID) then
 			parent.SCMAuraInstanceID = nil
 		else
 			return
 		end
-	elseif parent.SCMFakeAuraInstanceID then
-		-- Not sure yet if that's needed. Sometimes Blizzard clears for a frame or something but maybe not for these special buffs
-		--if GetTime() < parent.SCMFakeAuraInstanceID then
-		--	return
-		--end
-
-		parent.SCMFakeAuraInstanceID = nil
 	end
 
 	Icons.UpdateChildGlow(parent, true)
@@ -115,6 +103,7 @@ function Cooldowns.SetupBuffIconHooks(child, options)
 	if Constants.FakeAuras[child.SCMSpellID] then
 		hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
 		hooksecurefunc(child.Cooldown, "Clear", OnBuffCooldownEnd)
+		child.Cooldown:HookScript("OnCooldownDone", OnBuffCooldownEnd)
 		child.SCMCheckCooldownFrame = true
 	elseif Constants.TargetAuras[child.SCMSpellID] then
 		hooksecurefunc(child.Cooldown, "SetCooldown", OnBuffCooldownSet)
