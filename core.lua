@@ -254,6 +254,9 @@ local function OnProfileChanged(_, _, _, skipReset)
 
 	SCM:InvalidateAnchorLinks()
 
+	SCM.appliedOptions = nil
+	SCM:ApplyOptions()
+
 	RefreshCooldownViewerData(true)
 
 	local options = SCM.db.profile.options
