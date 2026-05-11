@@ -514,6 +514,7 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 	self:ReleaseChildren()
 
 	if tabGroup == "general" then
+
 		local keepAspectRatio = AceGUI:Create("CheckBox")
 		keepAspectRatio:SetLabel("Lock Aspect Ratio")
 		keepAspectRatio:SetRelativeWidth(0.5)
@@ -711,12 +712,10 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		end)
 		self:AddChild(fontSize)
 	end
-
-	self:DoLayout()
 end
 
-local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, options, isProfileConfig)
-	self:ReleaseChildren()
+local function SelectRow(widget, rowWidget, parentWidget, scrollFrame, data, anchorIndex, rowIndex, rowTabsTbl, mode, options, isProfileConfig)
+	widget:ReleaseChildren()
 
 	local isGlobal = mode == "global"
 	local isBuffBar = mode == "buffbars"
@@ -735,7 +734,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, op
 	iconWidth:SetLabel(widthLabel)
 	iconWidth:SetValue(rowConfig.iconWidth or rowConfig.size)
 
-	self:AddChild(iconWidth)
+	widget:AddChild(iconWidth)
 
 	local iconHeight = AceGUI:Create("Slider")
 	iconHeight:SetRelativeWidth(0.33)
@@ -776,7 +775,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, op
 
 		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
-	self:AddChild(iconHeight)
+	widget:AddChild(iconHeight)
 
 	local limit = AceGUI:Create("Slider")
 	limit:SetRelativeWidth(0.33)
@@ -787,24 +786,26 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, op
 		rowConfig.limit = value
 		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
-	self:AddChild(limit)
+	widget:AddChild(limit)
 
 	local advancedRowSettings = AceGUI:Create("TabGroup")
 	local advancedTabs = isBuffBar and { { value = "general", text = "General" }, { value = "applications", text = "Stacks (Alpha)" } }
 		or { { value = "general", text = "General" }, { value = "charges", text = "Charges" }, { value = "applications", text = "Stacks" }, { value = "cooldowns", text = "Cooldowns" } }
-	advancedRowSettings:SetLayout("flow")
+	advancedRowSettings:SetAutoAdjustHeight(false)
+	advancedRowSettings:SetHeight(150)
 	advancedRowSettings:SetFullWidth(true)
+	advancedRowSettings:SetLayout("flow")
 	advancedRowSettings:SetTabs(advancedTabs)
 	advancedRowSettings:SetCallback("OnGroupSelected", function(self, event, tabGroup)
 		SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, anchorIndex, mode, options)
 	end)
 	advancedRowSettings:SelectTab("general")
-	self:AddChild(advancedRowSettings)
+	widget:AddChild(advancedRowSettings)
 
 	local buttonGroup = AceGUI:Create("SimpleGroup")
 	buttonGroup:SetFullWidth(true)
 	buttonGroup:SetLayout("flow")
-	self:AddChild(buttonGroup)
+	widget:AddChild(buttonGroup)
 
 	local addRowButton = AceGUI:Create("Button")
 	addRowButton:SetText("Add Row")
@@ -824,8 +825,8 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, op
 		table.sort(rowTabsTbl, function(a, b)
 			return a.value < b.value
 		end)
-		self:SetTabs(rowTabsTbl)
-		self:SelectTab(nextIndex)
+		widget:SetTabs(rowTabsTbl)
+		widget:SelectTab(nextIndex)
 		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	buttonGroup:AddChild(addRowButton)
@@ -855,12 +856,11 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, op
 			rowTabsTbl[i].text = "Row " .. i
 		end
 
-		self:SetTabs(rowTabsTbl)
-		self:SelectTab(#rowTabsTbl)
+		widget:SetTabs(rowTabsTbl)
+		widget:SelectTab(#rowTabsTbl)
 		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	buttonGroup:AddChild(deleteRowButton)
-	self:DoLayout()
 end
 
 local function AddStateOptions(stateType, iconSettingsTabs, iconSettings, scrollFrame, value, options, buttonConfig)
@@ -888,8 +888,8 @@ local function CreateStateDropdown(iconSettingsTabs, iconSettings, scrollFrame, 
 	stateType:SetValue("ready")
 end
 
-local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mode)
-	anchorWidget:ReleaseChildren()
+local function SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTbl, mode)
+	widget:ReleaseChildren()
 
 	SCM.activeAnchorSettings = anchorIndex
 	local options = SCM.db.profile.options
@@ -933,7 +933,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 
 	local scrollFrame = AceGUI:Create("ScrollFrame")
 	scrollFrame:SetLayout("flow")
-	anchorWidget:AddChild(scrollFrame)
+	widget:AddChild(scrollFrame)
 
 	local anchorOptions = AceGUI:Create("InlineGroup")
 	anchorOptions:SetLayout("flow")
@@ -955,8 +955,8 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 	addAnchorButton:SetCallback("OnClick", function()
 		local nextIndex = (isGlobal and SCM:AddGlobalAnchor(anchorTabsTbl)) or (isBuffBar and SCM:AddBuffBarAnchor(anchorTabsTbl)) or SCM:AddAnchor(anchorTabsTbl)
 		ApplyModeConfigUpdate(nextIndex, mode)
-		anchorWidget:SetTabs(anchorTabsTbl)
-		anchorWidget:SelectTab(nextIndex)
+		widget:SetTabs(anchorTabsTbl)
+		widget:SelectTab(nextIndex)
 	end)
 	buttonGroup:AddChild(addAnchorButton)
 
@@ -972,8 +972,8 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 		else
 			SCM:RemoveAnchor(anchorIndex, anchorTabsTbl)
 		end
-		anchorWidget:SetTabs(anchorTabsTbl)
-		anchorWidget:SelectTab(#anchorTabsTbl)
+		widget:SetTabs(anchorTabsTbl)
+		widget:SelectTab(#anchorTabsTbl)
 	end)
 	buttonGroup:AddChild(deleteAnchorButton)
 
@@ -988,7 +988,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 				GetProfileAnchorConfig()
 			end
 			ApplyModeConfigUpdate(anchorIndex, mode)
-			anchorWidget:SelectTab(anchorIndex)
+			widget:SelectTab(anchorIndex)
 		end)
 		useGlobalProfileConfig:SetCallback("OnEnter", function(self)
 			GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR")
@@ -1096,10 +1096,12 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 
 	local rowTabs = AceGUI:Create("TabGroup")
 	rowTabs:SetLayout("flow")
+	rowTabs:SetAutoAdjustHeight(false)
 	rowTabs:SetFullWidth(true)
+	rowTabs:SetHeight(280)
 	rowTabs:SetTabs(rowTabsTbl)
 	rowTabs:SetCallback("OnGroupSelected", function(self, event, rowIndex)
-		SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, options, isProfileConfig)
+		SelectRow(self, widget, parentWidget, scrollFrame, data, anchorIndex, rowIndex, rowTabsTbl, mode, options, isProfileConfig)
 	end)
 	rowTabs:SelectTab(1)
 	anchorOptions:AddChild(rowTabs)
@@ -1697,12 +1699,10 @@ local function CreateAnchorTabGroup(parent, frame, mode)
 
 	anchorTabs:SetTabs(anchorTabsTbl)
 	anchorTabs:SetCallback("OnGroupSelected", function(self, event, anchorIndex)
-		SelectAnchor(self, frame, anchorIndex, anchorTabsTbl, mode)
+		SelectAnchor(self, parent, anchorIndex, anchorTabsTbl, mode)
 	end)
-	anchorTabs:SelectTab(1)
-	--Not sure yet why I have to call this twice
-	SelectAnchor(anchorTabs, frame, 1, anchorTabsTbl, mode)
 	parent:AddChild(anchorTabs)
+	anchorTabs:SelectTab(1)
 end
 
 local function GetCopyClassList()
