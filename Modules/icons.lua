@@ -276,7 +276,10 @@ end
 
 local function ProcessRegularIcon(child, childData, options)
 	Icons.SetupRegularIconHooks(child)
-	Icons.SetChildVisibilityState(child, not (childData.hideWhenNotOnCooldown and not Cooldowns.IsChildOnCooldown(child)), false)
+
+	local shouldShow = not (childData.hideWhenNotOnCooldown and not Cooldowns.IsChildOnCooldown(child))
+	local applyNow = shouldShow and child.SCMHidden and not child.SCMLayoutLimited
+	Icons.SetChildVisibilityState(child, shouldShow, applyNow)
 	child.SCMIconOptions = options
 
 	Cooldowns.OverrideRegularAuraCooldown(child.Cooldown, child, options)
