@@ -108,7 +108,7 @@ local function UpdateAnchorLinks(config)
 	local anchorConfigList = config and config.anchorConfig
 	if anchorConfigList then
 		for group = 1, #anchorConfigList do
-			local anchorConfig = anchorConfigList[group]
+			local anchorConfig = Utils.GetAnchorConfigForGroup(config, group)
 			local parentGroup = Utils.ParseAnchorString(anchorConfig and anchorConfig.anchor and anchorConfig.anchor[2])
 			local state = GetAnchorState(group)
 			state.parentGroup = parentGroup
@@ -438,10 +438,7 @@ local function OrderCDManagerSpells_Actual(updateScope, scopedAnchorGroupsOverri
 
 	UpdateAnchorLinks(config)
 
-	local viewerProcessOrder = (scopedAnchorGroups and updateScope ~= UPDATE_SCOPE.BUFF_BAR)
-			and VIEWER_PROCESS_ORDER
-		or VIEWER_PROCESS_ORDER_BY_SCOPE[updateScope]
-		or VIEWER_PROCESS_ORDER
+	local viewerProcessOrder = (scopedAnchorGroups and updateScope ~= UPDATE_SCOPE.BUFF_BAR) and VIEWER_PROCESS_ORDER or VIEWER_PROCESS_ORDER_BY_SCOPE[updateScope] or VIEWER_PROCESS_ORDER
 	for i = 1, #viewerProcessOrder do
 		local viewerData = viewerProcessOrder[i]
 		Icons.ProcessChildren(_G[viewerData.frameName], Cache.cachedChildrenTbl, viewerData)
@@ -487,7 +484,7 @@ local function OrderCDManagerSpells_Actual(updateScope, scopedAnchorGroupsOverri
 	if updateScope ~= UPDATE_SCOPE.BUFF_BAR then
 		if config.anchorConfig then
 			for group = 1, #config.anchorConfig do
-				local anchorConfig = config.anchorConfig[group]
+				local anchorConfig = Utils.GetAnchorConfigForGroup(config, group)
 				Cache.cachedVisitedAnchorGroups[group] = true
 				LayoutEmptyAnchorGroup(group, anchorConfig, scopedAnchorGroups, changedGroups, options)
 			end

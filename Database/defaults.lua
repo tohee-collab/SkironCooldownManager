@@ -2,6 +2,56 @@ local SCM = select(2, ...)
 
 SCM.Defaults = {}
 
+SCM.DB = {
+	classes = {},
+
+	defaultAnchorConfig = {
+		[1] = {
+			anchor = { "CENTER", "UIParent", "CENTER", 0, -285 },
+			rowConfig = {
+				[1] = {
+					iconHeight = 47,
+					iconWidth = 47,
+					limit = 8,
+				},
+			},
+		},
+		[2] = {
+			anchor = { "TOP", "ANCHOR:1", "BOTTOM", 0, 1 },
+			rowConfig = {
+				[1] = {
+					iconHeight = 41,
+					iconWidth = 41,
+					limit = 8,
+				},
+			},
+		},
+		[3] = {
+			anchor = { "TOP", "ANCHOR:2", "BOTTOM", 0, 1 },
+			rowConfig = {
+				[1] = {
+					iconHeight = 40,
+					iconWidth = 40,
+					limit = 8,
+				},
+			},
+		},
+	},
+
+	defaultBuffBarsAnchorConfig = {
+		[1] = {
+			anchor = { "CENTER", "UIParent", "CENTER", 0, 0 },
+			rowConfig = {
+				[1] = {
+					iconWidth = 150,
+					iconHeight = 40,
+					limit = 8,
+				},
+			},
+		},
+	},
+}
+
 SCM.DefaultDB = {
 	global = {
 		globalAnchorConfig = {
@@ -34,6 +84,7 @@ SCM.DefaultDB = {
 				["DAMAGER"] = true,
 				["TANK"] = true,
 			},
+			anchorConfig = {},
 			showAnchorHighlight = true,
 			hideWhileMounted = false,
 			debug = false,
@@ -309,53 +360,6 @@ SCM.DefaultDB = {
 			},
 			testSetting = {
 				[193063] = false,
-			},
-		},
-	},
-}
-
-SCM.DB = {
-	classes = {},
-
-	defaultAnchorConfig = {
-		[1] = {
-			anchor = { "CENTER", "UIParent", "CENTER", 0, -285 },
-			rowConfig = {
-				[1] = {
-					size = 47,
-					limit = 8,
-				},
-			},
-		},
-		[2] = {
-			anchor = { "TOP", "ANCHOR:1", "BOTTOM", 0, 1 },
-			rowConfig = {
-				[1] = {
-					size = 41,
-					limit = 8,
-				},
-			},
-		},
-		[3] = {
-			anchor = { "TOP", "ANCHOR:2", "BOTTOM", 0, 1 },
-			rowConfig = {
-				[1] = {
-					size = 40,
-					limit = 8,
-				},
-			},
-		},
-	},
-
-	defaultBuffBarsAnchorConfig = {
-		[1] = {
-			anchor = { "CENTER", "UIParent", "CENTER", 0, 0 },
-			rowConfig = {
-				[1] = {
-					iconWidth = 150,
-					iconHeight = 40,
-					limit = 8,
-				},
 			},
 		},
 	},

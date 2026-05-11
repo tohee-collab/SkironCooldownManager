@@ -290,8 +290,14 @@ function Utils.NormalizeBuffBarGroup(group)
 end
 
 function Utils.GetAnchorConfigForGroup(config, group, globalAnchorConfig, buffBarAnchorConfig)
-	if config and config.anchorConfig and config.anchorConfig[group] then
-		return config.anchorConfig[group]
+	local anchorConfig = config and config.anchorConfig and config.anchorConfig[group]
+	if anchorConfig then
+		local profileAnchorConfig = SCM.db.profile.options.anchorConfig
+		if anchorConfig.useGlobalProfileConfig and profileAnchorConfig and profileAnchorConfig[group] then
+			return profileAnchorConfig[group]
+		end
+
+		return anchorConfig
 	end
 
 	if Utils.IsGlobalGroup(group) then

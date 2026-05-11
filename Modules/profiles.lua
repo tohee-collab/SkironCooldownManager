@@ -66,7 +66,7 @@ local function GetProfileExportData(db, exportType, classFileName, specID)
 	if exportType == EXPORT_TYPE_ALL then
 		local profileData = {}
 		for key, value in pairs(db) do
-			if key ~= "options" then
+			if key ~= "options" and key ~= "anchorConfig" then
 				profileData[key] = CopyValue(value)
 			end
 		end
@@ -89,13 +89,13 @@ end
 local function BuildProfileExportPayload(self, exportType, classFileName, specID, exportOptions)
 	exportOptions = exportOptions or {}
 
+	local options = self.db.profile.options
 	local payload = {
 		profileData = GetProfileExportData(self.db.profile, exportType, classFileName, specID),
 	}
-	local options = self.db.profile.options
 
 	if exportOptions.includeResourceBar then
-		payload.resourceBarSettings = options.resourceBar and {resourceBar = CopyValue(options.resourceBar)} or nil
+		payload.resourceBarSettings = options.resourceBar and { resourceBar = CopyValue(options.resourceBar) } or nil
 	end
 
 	if exportOptions.includeCastBar then
@@ -181,72 +181,55 @@ local function MergeConfig(destDB, sourceData, defaultAnchor)
 	destDB.customConfig = sourceData.customConfig or {}
 	destDB.buffBarsAnchorConfig = type(sourceData.buffBarsAnchorConfig) == "table" and sourceData.buffBarsAnchorConfig or {}
 
-	local anchors = sourceData.anchorConfig
-	if not anchors or #anchors == 0 then
+	if type(sourceData.anchorConfig) == "table" and #sourceData.anchorConfig > 0 then
+		destDB.anchorConfig = sourceData.anchorConfig
+	elseif type(destDB.anchorConfig) ~= "table" or #destDB.anchorConfig == 0 then
 		destDB.anchorConfig = defaultAnchor
-	else
-		destDB.anchorConfig = anchors
 	end
 end
 
-local function NormalizeImportedGlobalAnchorData(data)
+local function GetImportedGlobalAnchorData(data)
 	local anchors = type(data) == "table" and data.globalAnchorConfig or nil
-	if type(anchors) ~= "table" or #anchors == 0 then
-		anchors = CopyTable(SCM.DefaultDB.global.globalAnchorConfig)
-	else
+	if type(anchors) == "table" and #anchors > 0 then
 		anchors = CopyTable(anchors)
-	end
 
-	for index, anchorConfig in ipairs(anchors) do
-		if type(anchorConfig) ~= "table" then
-			anchorConfig = {}
+		for index, anchorConfig in ipairs(anchors) do
+			if type(anchorConfig) ~= "table" then
+				anchorConfig = {}
+			end
+
+			if type(anchorConfig.anchor) ~= "table" then
+				anchorConfig.anchor = { "CENTER", "UIParent", "CENTER", 0, 0 }
+			end
+
+			if type(anchorConfig.rowConfig) ~= "table" or #anchorConfig.rowConfig == 0 then
+				anchorConfig.rowConfig = {
+					{
+						iconWidth = 40,
+						iconHeight = 40,
+						limit = 8,
+					},
+				}
+			end
+
+			anchors[index] = anchorConfig
 		end
-
-		if type(anchorConfig.anchor) ~= "table" then
-			anchorConfig.anchor = { "CENTER", "UIParent", "CENTER", 0, 0 }
-		end
-
-		if type(anchorConfig.rowConfig) ~= "table" or #anchorConfig.rowConfig == 0 then
-			anchorConfig.rowConfig = {
-				{
-					size = 40,
-					limit = 8,
-				},
-			}
-		end
-
-		anchors[index] = anchorConfig
+	else
+		anchors = nil
 	end
 
 	local customConfig = type(data) == "table" and data.globalCustomConfig or nil
-	if type(customConfig) ~= "table" then
-		customConfig = CopyTable(SCM.DefaultDB.global.globalCustomConfig)
-	else
-		customConfig = CopyTable(customConfig)
-	end
-
-	local allowedKeys = SCM.DefaultDB.global.globalCustomConfig
-	for key in pairs(customConfig) do
-		if not allowedKeys[key] then
-			customConfig[key] = nil
-		end
-	end
-
-	for _, key in ipairs(GLOBAL_CUSTOM_CONFIG_KEYS) do
-		customConfig[key] = type(customConfig[key]) == "table" and customConfig[key] or {}
-		local iconType = key:gsub("Config$", "")
-
-		for id, config in pairs(customConfig[key]) do
-			if type(config) ~= "table" or type(config.anchorGroup) ~= "number" or config.anchorGroup < 1 or config.anchorGroup > #anchors then
-				customConfig[key][id] = nil
-			else
-				config.id = config.id or id
-				config.iconType = config.iconType or iconType
+	local importedCustomConfig
+	if type(customConfig) == "table" then
+		for _, key in ipairs(GLOBAL_CUSTOM_CONFIG_KEYS) do
+			if type(customConfig[key]) == "table" and next(customConfig[key]) then
+				importedCustomConfig = importedCustomConfig or {}
+				importedCustomConfig[key] = CopyTable(customConfig[key])
 			end
 		end
 	end
 
-	return anchors, customConfig
+	return anchors, importedCustomConfig
 end
 
 -- Public profile/import helpers
@@ -311,6 +294,7 @@ function SCM:ImportProfile(profileName, importString)
 	SCM.db:SetProfile(profileName)
 
 	local db = self.db.profile
+	local options = db.options
 	local defaultAnchor = self.DB.defaultAnchorConfig
 
 	if typeID == EXPORT_TYPE_ALL then -- All classes
@@ -342,7 +326,6 @@ function SCM:ImportProfile(profileName, importString)
 		end
 	end
 
-	local options = self.db.profile.options
 	if importedSections then
 		if importedSections.resourceBarSettings then
 			ApplyResourceBarSettings(options, importedSections.resourceBarSettings)
@@ -355,7 +338,7 @@ function SCM:ImportProfile(profileName, importString)
 		if importedSections.globalSettings then
 			ApplyOptionsData(options, importedSections.globalSettings)
 		end
-		
+
 		if importedSections.globalAnchors then
 			self:ImportGlobalAnchorsFromData(importedSections.globalAnchors)
 		end
@@ -379,11 +362,20 @@ function SCM:ImportGlobalAnchors(importString)
 end
 
 function SCM:ImportGlobalAnchorsFromData(data)
-	local previousAnchorCount = #(self.db.global.globalAnchorConfig or {})
-	local anchors, customConfig = NormalizeImportedGlobalAnchorData(data)
+	local previousAnchorCount = #self.db.global.globalAnchorConfig
+	local anchors, customConfig = GetImportedGlobalAnchorData(data)
 
-	self.db.global.globalAnchorConfig = anchors
-	self.db.global.globalCustomConfig = customConfig
+	if anchors then
+		self.db.global.globalAnchorConfig = anchors
+	end
+
+	if customConfig then
+		for _, key in ipairs(GLOBAL_CUSTOM_CONFIG_KEYS) do
+			if customConfig[key] then
+				self.db.global.globalCustomConfig[key] = customConfig[key]
+			end
+		end
+	end
 
 	local currentAnchorCount = #self.db.global.globalAnchorConfig
 	for index = currentAnchorCount + 1, previousAnchorCount do

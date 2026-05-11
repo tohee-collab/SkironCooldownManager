@@ -698,26 +698,27 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 		end)
 		self:AddChild(fontSize)
 	elseif tabGroup == "cooldowns" then
-		local fonzSize = AceGUI:Create("Slider")
-		fonzSize:SetRelativeWidth(0.5)
-		fonzSize:SetSliderValues(1, 50, 1)
-		fonzSize:SetLabel("Fonz Size")
-		fonzSize:SetValue(rowConfig.cooldownFontSize or ((options.cooldownFontSize or 0.6) * (rowConfig.iconWidth or rowConfig.size)))
-		fonzSize:SetCallback("OnValueChanged", function(self, event, value)
+		local fontSize = AceGUI:Create("Slider")
+		fontSize:SetRelativeWidth(0.5)
+		fontSize:SetSliderValues(1, 50, 1)
+		fontSize:SetLabel("Font Size")
+		fontSize:SetValue(rowConfig.cooldownFontSize or ((options.cooldownFontSize or 0.6) * (rowConfig.iconWidth or rowConfig.size)))
+		fontSize:SetCallback("OnValueChanged", function(self, event, value)
 			rowConfig.cooldownFontSize = value
 			ApplyModeConfigUpdate(anchorIndex, mode)
 		end)
-		self:AddChild(fonzSize)
+		self:AddChild(fontSize)
 	end
 
 	self:DoLayout()
 end
 
-local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, options)
+local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, options, isProfileConfig)
 	self:ReleaseChildren()
 
 	local isGlobal = mode == "global"
 	local isBuffBar = mode == "buffbars"
+	local useDataRowConfig = isGlobal or isBuffBar or isProfileConfig
 
 	if not data.rowConfig[rowIndex] then
 		return
@@ -788,7 +789,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, op
 
 	local advancedRowSettings = AceGUI:Create("TabGroup")
 	local advancedTabs = isBuffBar and { { value = "general", text = "General" }, { value = "applications", text = "Stacks (Alpha)" } }
-		or { { value = "general", text = "General" }, { value = "charges", text = "Charges" }, { value = "applications", text = "Stacks" }, { value = "cooldowns", text = "Cooldowns" }  }
+		or { { value = "general", text = "General" }, { value = "charges", text = "Charges" }, { value = "applications", text = "Stacks" }, { value = "cooldowns", text = "Cooldowns" } }
 	advancedRowSettings:SetLayout("flow")
 	advancedRowSettings:SetFullWidth(true)
 	advancedRowSettings:SetTabs(advancedTabs)
@@ -808,11 +809,13 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, op
 	addRowButton:SetRelativeWidth(0.5)
 	addRowButton:SetDisabled(#rowTabsTbl >= 9)
 	addRowButton:SetCallback("OnClick", function()
-		local nextIndex = ((isGlobal or isBuffBar) and (#data.rowConfig + 1)) or SCM:AddRow(anchorIndex)
+		local nextIndex = (useDataRowConfig and (#data.rowConfig + 1)) or SCM:AddRow(anchorIndex)
 		if isGlobal then
 			data.rowConfig[nextIndex] = { iconHeight = 40, iconWidth = 40, limit = 8 }
 		elseif isBuffBar then
 			data.rowConfig[nextIndex] = { iconHeight = 40, iconWidth = 150, limit = 8 }
+		elseif isProfileConfig then
+			data.rowConfig[nextIndex] = { iconHeight = 40, iconWidth = 40, limit = 8 }
 		end
 
 		tinsert(rowTabsTbl, { value = nextIndex, text = "Row " .. nextIndex })
@@ -830,7 +833,7 @@ local function SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, op
 	deleteRowButton:SetRelativeWidth(0.5)
 	deleteRowButton:SetDisabled(rowIndex == 1)
 	deleteRowButton:SetCallback("OnClick", function()
-		if isGlobal or isBuffBar then
+		if useDataRowConfig then
 			tremove(data.rowConfig, rowIndex)
 		else
 			SCM:RemoveRow(anchorIndex, rowIndex)
@@ -891,6 +894,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 	local isGlobal = mode == "global"
 	local isBuffBar = mode == "buffbars"
 	local currentAnchorIndex = GetEffectiveAnchorGroup(anchorIndex, mode)
+	local isProfileConfig = false
 
 	if options.showAnchorHighlight then
 		for group, anchorFrame in pairs(SCM.anchorFrames) do
@@ -903,9 +907,26 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 		end
 	end
 
-	local data = (isGlobal and SCM.globalAnchorConfig[anchorIndex]) or (isBuffBar and SCM.buffBarsAnchorConfig[anchorIndex]) or SCM.anchorConfig[anchorIndex]
-	if not data then
+	local sourceData = (isGlobal and SCM.globalAnchorConfig[anchorIndex]) or (isBuffBar and SCM.buffBarsAnchorConfig[anchorIndex]) or SCM.anchorConfig[anchorIndex]
+	if not sourceData then
 		return
+	end
+
+	local data = sourceData
+	local function GetProfileAnchorConfig()
+		options.anchorConfig = options.anchorConfig or {}
+		local profileAnchorConfig = options.anchorConfig[anchorIndex]
+		if not profileAnchorConfig then
+			profileAnchorConfig = CopyTable(data)
+			options.anchorConfig[anchorIndex] = profileAnchorConfig
+		end
+
+		return profileAnchorConfig
+	end
+
+	if not isGlobal and not isBuffBar and sourceData.useGlobalProfileConfig then
+		data = GetProfileAnchorConfig()
+		isProfileConfig = true
 	end
 
 	local scrollFrame = AceGUI:Create("ScrollFrame")
@@ -924,9 +945,10 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 	buttonGroup:SetLayout("flow")
 	anchorOptions:AddChild(buttonGroup)
 
+	local anchorButtonWidth = (isGlobal or isBuffBar) and 0.5 or 0.33
 	local addAnchorButton = AceGUI:Create("Button")
 	addAnchorButton:SetText("Add Anchor")
-	addAnchorButton:SetRelativeWidth(0.5)
+	addAnchorButton:SetRelativeWidth(anchorButtonWidth)
 	addAnchorButton:SetDisabled(#anchorTabsTbl >= 15)
 	addAnchorButton:SetCallback("OnClick", function()
 		local nextIndex = (isGlobal and SCM:AddGlobalAnchor(anchorTabsTbl)) or (isBuffBar and SCM:AddBuffBarAnchor(anchorTabsTbl)) or SCM:AddAnchor(anchorTabsTbl)
@@ -938,7 +960,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 
 	local deleteAnchorButton = AceGUI:Create("Button")
 	deleteAnchorButton:SetText("Delete Anchor")
-	deleteAnchorButton:SetRelativeWidth(0.5)
+	deleteAnchorButton:SetRelativeWidth(anchorButtonWidth)
 	deleteAnchorButton:SetDisabled(((isGlobal or isBuffBar) and anchorIndex == 1) or (not isGlobal and not isBuffBar and anchorIndex <= 3))
 	deleteAnchorButton:SetCallback("OnClick", function()
 		if isGlobal then
@@ -952,6 +974,31 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 		anchorWidget:SelectTab(#anchorTabsTbl)
 	end)
 	buttonGroup:AddChild(deleteAnchorButton)
+
+	if not isGlobal and not isBuffBar then
+		local useGlobalProfileConfig = AceGUI:Create("CheckBox")
+		useGlobalProfileConfig:SetLabel("Use Profile Config (EXPERIMENTAL)")
+		useGlobalProfileConfig:SetRelativeWidth(0.33)
+		useGlobalProfileConfig:SetValue(sourceData.useGlobalProfileConfig or false)
+		useGlobalProfileConfig:SetCallback("OnValueChanged", function(_, _, value)
+			sourceData.useGlobalProfileConfig = value
+			if value then
+				GetProfileAnchorConfig()
+			end
+			ApplyModeConfigUpdate(anchorIndex, mode)
+			anchorWidget:SelectTab(anchorIndex)
+		end)
+		useGlobalProfileConfig:SetCallback("OnEnter", function(self)
+			GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR")
+			GameTooltip:SetText("Use Profile Config", nil, nil, nil, nil, true)
+			GameTooltip:AddLine("This will use the anchor config for that anchor that is shared by all specs.", 1, 1, 1, true)
+			GameTooltip:Show()
+		end)
+		useGlobalProfileConfig:SetCallback("OnLeave", function()
+			GameTooltip:Hide()
+		end)
+		buttonGroup:AddChild(useGlobalProfileConfig)
+	end
 
 	local point = AceGUI:Create("Dropdown")
 	point:SetRelativeWidth(0.33)
@@ -1050,7 +1097,7 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 	rowTabs:SetFullWidth(true)
 	rowTabs:SetTabs(rowTabsTbl)
 	rowTabs:SetCallback("OnGroupSelected", function(self, event, rowIndex)
-		SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, options)
+		SelectRow(self, data, anchorIndex, rowIndex, rowTabsTbl, mode, options, isProfileConfig)
 	end)
 	rowTabs:SelectTab(1)
 	anchorOptions:AddChild(rowTabs)
