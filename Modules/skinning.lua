@@ -16,9 +16,10 @@ local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 	local rowConfig = child.SCMRowConfig or {}
 	if child.ChargeCount and child.ChargeCount.Current then
 		local size = rowConfig.chargeFontSize or options.chargeFontSize
+		local outline = rowConfig.chargeFontOutline or options.chargeFontOutline or "OUTLINE"
 
 		if fontPath then
-			child.ChargeCount.Current:SetFont(fontPath, size, "OUTLINE")
+			child.ChargeCount.Current:SetFont(fontPath, size, outline)
 		end
 
 		if child.SCMCustom then
@@ -38,8 +39,9 @@ local function ApplyChargeAndApplicationStyle(child, options, fontPath)
 
 	if child.Applications and child.Applications.Applications then
 		local size = rowConfig.applicationsFontSize or options.chargeFontSize
+		local outline = rowConfig.applicationsFontOutline or options.chargeFontOutline or "OUTLINE"
 		if fontPath then
-			child.Applications.Applications:SetFont(fontPath, size, "OUTLINE")
+			child.Applications.Applications:SetFont(fontPath, size, outline)
 		end
 
 		child.Applications.Applications:ClearAllPoints()
@@ -77,7 +79,8 @@ local function ApplyCooldownFont(cooldownFrame, options)
 					fontSize = max(1, floor(iconSize * GetCooldownFontScale(options) + 0.5))
 				end
 
-				cooldownFontString:SetFont(fontPath, fontSize, "OUTLINE")
+				local fontOutline = rowConfig and rowConfig.cooldownFontOutline or options.cooldownFontOutline or "OUTLINE"
+				cooldownFontString:SetFont(fontPath, fontSize, fontOutline)
 				cooldownFontString:SetShadowColor(0, 0, 0, 0)
 				cooldownFontString:SetShadowOffset(0, 0)
 
@@ -301,8 +304,9 @@ function SCM:SkinBuffBar(child, config)
 		bar.BarBG:SetPoint("BOTTOMLEFT", iconFrame, "BOTTOMRIGHT", -borderSize, 0)
 		bar.BarBG:SetPoint("RIGHT", bar, "RIGHT", 0, 0)
 		bar.BarBG:SetColorTexture(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a)
-		bar.Name:SetFont(LSM:Fetch("font", buffBarOptions.font), buffBarOptions.fontSize, "OUTLINE")
-		bar.Duration:SetFont(LSM:Fetch("font", buffBarOptions.font), buffBarOptions.fontSize, "OUTLINE")
+		local fontOutline = buffBarOptions.fontOutline or "OUTLINE"
+		bar.Name:SetFont(LSM:Fetch("font", buffBarOptions.font), buffBarOptions.fontSize, fontOutline)
+		bar.Duration:SetFont(LSM:Fetch("font", buffBarOptions.font), buffBarOptions.fontSize, fontOutline)
 
 		bar.customBorder = bar.customBorder or CreateFrame("Frame", nil, bar, "BackdropTemplate")
 		bar.customBorder:SetFrameLevel(bar:GetFrameLevel() + 1)
@@ -360,9 +364,10 @@ function SCM:SkinBuffBar(child, config)
 			end
 
 			local size = rowConfig.applicationsFontSize or options.chargeFontSize
+			local outline = rowConfig.applicationsFontOutline or options.chargeFontOutline or "OUTLINE"
 
 			if fontPath then
-				applications:SetFont(fontPath, size, "OUTLINE")
+				applications:SetFont(fontPath, size, outline)
 			end
 
 			applications:SetSize(iconFrame:GetHeight(), iconFrame:GetHeight())

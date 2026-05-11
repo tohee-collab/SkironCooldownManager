@@ -94,6 +94,7 @@ SCM.DefaultDB = {
 			iconZoom = 0.12,
 			chargeFont = "Expressway",
 			chargeFontSize = 22,
+			chargeFontOutline = "OUTLINE",
 			chargePoint = "CENTER",
 			chargeRelativePoint = "BOTTOMRIGHT",
 			chargeXOffset = -8,
@@ -101,6 +102,7 @@ SCM.DefaultDB = {
 			changeCooldownFont = true,
 			cooldownFont = "Expressway",
 			cooldownFontSize = 0.6,
+			cooldownFontOutline = "OUTLINE",
 			cooldownFontColor = { r = 1, g = 1, b = 1, a = 1 },
 			cooldownXOffset = 0,
 			cooldownYOffset = 0,
@@ -147,6 +149,7 @@ SCM.DefaultDB = {
 				foregroundColor = { r = 0.5, g = 0.5, b = 1, a = 1 },
 				font = "Expressway",
 				fontSize = 15,
+				fontOutline = "OUTLINE",
 			},
 			resourceBars = {
 				"PrimaryResourceBar",
