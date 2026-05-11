@@ -144,14 +144,17 @@ function Cooldowns.SetNormalCooldown(self, parent)
 
 	if cooldownData.charges then
 		local spellCharges = C_Spell.GetSpellCharges(parent.SCMSpellID)
-		if spellCharges and spellCharges.isActive then
+		if spellCharges and spellCharges.isActive and not spellCharges.isOnGCD then
 			durationObject = C_Spell.GetSpellChargeDuration(parent.SCMSpellID, true)
 		end
 	end
 
 	if not durationObject then
-		desaturate = true
-		durationObject = C_Spell.GetSpellCooldownDuration(parent.SCMSpellID, true)
+		local spellCooldown = C_Spell.GetSpellCooldown(parent.SCMSpellID)
+		if spellCooldown and spellCooldown.isActive and not spellCooldown.isOnGCD then
+			desaturate = true
+			durationObject = C_Spell.GetSpellCooldownDuration(parent.SCMSpellID, true)
+		end
 	end
 
 	if durationObject then
@@ -216,6 +219,9 @@ local function OnRegularCooldownChanged(self)
 		Cooldowns.OverrideRegularAuraCooldown(self, parent, options)
 	elseif options.disableGCD then
 		Cooldowns.SetNormalCooldown(self, parent)
+	elseif parent.Icon.SCMDesaturated and not self:GetUseAuraDisplayTime() then
+		parent.Icon.SCMDesaturated = nil
+		parent.Icon:SetDesaturated(false)
 	end
 
 	local config = parent.SCMConfig
