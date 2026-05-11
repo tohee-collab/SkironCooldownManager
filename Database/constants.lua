@@ -383,10 +383,10 @@ Constants.Races = {
 	[37] = true, -- Mechagnome
 	[52] = true, -- Dracthyr (Alliance)
 	[70] = true, -- Dracthyr (Horde)
-	[84] = true, -- Earthen (Horde)
-	[85] = true, -- Earthen (Alliance)
-	[86] = true, -- Haranir
-	[91] = true, -- Haranir
+	[84] = 85, -- Earthen (Horde)
+	[85] = 84, -- Earthen (Alliance)
+	[86] = 91, -- Haranir
+	[91] = 86, -- Haranir
 }
 
 Constants.FakeAuras = {

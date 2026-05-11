@@ -427,7 +427,7 @@ end
 local function MatchesLoadFilter(loadFilter, value)
 	if loadFilter then
 		if not next(loadFilter) then
-			return true
+			return false
 		end
 
 		return loadFilter[value]
@@ -440,9 +440,11 @@ local function ShouldLoadCustomIcon(config)
 	if config.useLoadRole and not MatchesLoadFilter(config.loadRoles, SCM.currentRole) then
 		return false
 	end
+
 	if config.useLoadClass and not MatchesLoadFilter(config.loadClasses, SCM.currentClass) then
 		return false
 	end
+
 	if config.useLoadRace and not MatchesLoadFilter(config.loadRaces, SCM.currentRace) then
 		return false
 	end

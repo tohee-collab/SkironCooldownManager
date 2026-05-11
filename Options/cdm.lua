@@ -2,6 +2,8 @@ local SCM = select(2, ...)
 local AceGUI = LibStub("AceGUI-3.0")
 local LibCustomGlow = LibStub("LibCustomGlow-1.0")
 local Utils = SCM.Utils
+local CustomIcons = SCM.CustomIcons
+local Constants = SCM.Constants
 local ToGlobalGroup = Utils.ToGlobalGroup
 local ToBuffBarGroup = Utils.ToBuffBarGroup
 local GetCooldownConfigKey = Utils.GetCooldownConfigKey
@@ -1478,13 +1480,18 @@ local function SelectAnchor(anchorWidget, frame, anchorIndex, anchorTabsTbl, mod
 										loadRaces:SetMultiselect(true)
 										loadRaces:SetDisabled(not buttonConfig.useLoadRace)
 										loadRaces:SetCallback("OnValueChanged", function(_, _, key, value)
-											buttonConfig.loadRaces = buttonConfig.loadRaces or GetDefaultCustomIconLoadRaces()
+											buttonConfig.loadRaces = buttonConfig.loadRaces or CustomIcons.GetDefaultLoadRaces()
 											buttonConfig.loadRaces[key] = value
+
+											if type(Constants.Races[key]) == "number" then
+												buttonConfig.loadRaces[Constants.Races[key]] = value
+											end
+
 											ApplyIconConfigUpdate()
 										end)
 
 										if not buttonConfig.loadRaces then
-											buttonConfig.loadRaces = GetDefaultCustomIconLoadRaces()
+											buttonConfig.loadRaces = CustomIcons.GetDefaultLoadRaces()
 										end
 
 										for key, value in pairs(buttonConfig.loadRaces) do
