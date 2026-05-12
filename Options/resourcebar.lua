@@ -29,7 +29,7 @@ local function AddLayoutSettings(parent, settings)
 	parent:AddChild(generalSettings)
 
 	local enableResourceBars = AceGUI:Create("CheckBox")
-	enableResourceBars:SetRelativeWidth(0.33)
+	enableResourceBars:SetRelativeWidth(0.5)
 	enableResourceBars:SetLabel("Enable Resource Bars")
 	enableResourceBars:SetValue(settings.enabled)
 	enableResourceBars:SetCallback("OnValueChanged", function(_, _, value)
@@ -37,6 +37,22 @@ local function AddLayoutSettings(parent, settings)
 		RefreshResourceBars()
 	end)
 	generalSettings:AddChild(enableResourceBars)
+
+	local useFrequentPowerUpdates = AceGUI:Create("CheckBox")
+	useFrequentPowerUpdates:SetRelativeWidth(0.5)
+	useFrequentPowerUpdates:SetLabel("Frequent Updates")
+	useFrequentPowerUpdates:SetValue(settings.useFrequentPowerUpdates and true or false)
+	useFrequentPowerUpdates:SetCallback("OnValueChanged", function(_, _, value)
+		settings.useFrequentPowerUpdates = value
+		RefreshResourceBars()
+	end)
+	generalSettings:AddChild(useFrequentPowerUpdates)
+
+	local visibilitySettings = AceGUI:Create("InlineGroup")
+	visibilitySettings:SetLayout("flow")
+	visibilitySettings:SetTitle("Visibility")
+	visibilitySettings:SetFullWidth(true)
+	parent:AddChild(visibilitySettings)
 
 	local hideWhileMounted = AceGUI:Create("CheckBox")
 	hideWhileMounted:SetRelativeWidth(0.33)
@@ -46,17 +62,86 @@ local function AddLayoutSettings(parent, settings)
 		settings.hideWhileMounted = value
 		RefreshResourceBars()
 	end)
-	generalSettings:AddChild(hideWhileMounted)
+	visibilitySettings:AddChild(hideWhileMounted)
 
-	local useFrequentPowerUpdates = AceGUI:Create("CheckBox")
-	useFrequentPowerUpdates:SetRelativeWidth(0.33)
-	useFrequentPowerUpdates:SetLabel("Frequent Updates")
-	useFrequentPowerUpdates:SetValue(settings.useFrequentPowerUpdates and true or false)
-	useFrequentPowerUpdates:SetCallback("OnValueChanged", function(_, _, value)
-		settings.useFrequentPowerUpdates = value
+	local hideWhileDead = AceGUI:Create("CheckBox")
+	hideWhileDead:SetRelativeWidth(0.33)
+	hideWhileDead:SetLabel("Hide While Dead")
+	hideWhileDead:SetValue(settings.hideWhileDead)
+	hideWhileDead:SetCallback("OnValueChanged", function(_, _, value)
+		settings.hideWhileDead = value
 		RefreshResourceBars()
 	end)
-	generalSettings:AddChild(useFrequentPowerUpdates)
+	visibilitySettings:AddChild(hideWhileDead)
+
+	local hideWhileInVehicle = AceGUI:Create("CheckBox")
+	hideWhileInVehicle:SetRelativeWidth(0.33)
+	hideWhileInVehicle:SetLabel("Hide While In Vehicle")
+	hideWhileInVehicle:SetValue(settings.hideWhileInVehicle)
+	hideWhileInVehicle:SetCallback("OnValueChanged", function(_, _, value)
+		settings.hideWhileInVehicle = value
+		RefreshResourceBars()
+	end)
+	visibilitySettings:AddChild(hideWhileInVehicle)
+
+	local hideWhileResting = AceGUI:Create("CheckBox")
+	hideWhileResting:SetRelativeWidth(0.33)
+	hideWhileResting:SetLabel("Hide While Resting")
+	hideWhileResting:SetValue(settings.hideWhileResting)
+	hideWhileResting:SetCallback("OnValueChanged", function(_, _, value)
+		settings.hideWhileResting = value
+		RefreshResourceBars()
+	end)
+	visibilitySettings:AddChild(hideWhileResting)
+
+	local hideOutOfCombat = AceGUI:Create("CheckBox")
+	hideOutOfCombat:SetRelativeWidth(0.33)
+	hideOutOfCombat:SetLabel("Hide Outside Of Combat")
+	hideOutOfCombat:SetValue(settings.hideOutOfCombat)
+	hideOutOfCombat:SetCallback("OnValueChanged", function(_, _, value)
+		settings.hideOutOfCombat = value
+		RefreshResourceBars()
+	end)
+	visibilitySettings:AddChild(hideOutOfCombat)
+
+	local customVisibilitySettings = AceGUI:Create("InlineGroup")
+	customVisibilitySettings:SetLayout("flow")
+	customVisibilitySettings:SetFullWidth(true)
+	customVisibilitySettings:SetTitle("Custom")
+	visibilitySettings:AddChild(customVisibilitySettings)
+
+	local useCustomVisibilityCondition = AceGUI:Create("CheckBox")
+	useCustomVisibilityCondition:SetRelativeWidth(0.5)
+	useCustomVisibilityCondition:SetLabel("Use Custom Condition")
+	useCustomVisibilityCondition:SetValue(settings.useCustomVisibilityCondition)
+
+	customVisibilitySettings:AddChild(useCustomVisibilityCondition)
+
+	local customVisibilityCondition = AceGUI:Create("EditBox")
+	customVisibilityCondition:SetRelativeWidth(0.5)
+	customVisibilityCondition:SetLabel("Condition")
+	customVisibilityCondition:SetText(settings.customVisibilityCondition)
+	customVisibilityCondition:SetDisabled(not settings.useCustomVisibilityCondition)
+	customVisibilityCondition:SetCallback("OnEnterPressed", function(_, _, value)
+		settings.customVisibilityCondition = value
+
+		SCM:ApplyAttributeDriver()
+		SCM:CreateAllCustomIcons()
+	end)
+	customVisibilitySettings:AddChild(customVisibilityCondition)
+
+	useCustomVisibilityCondition:SetCallback("OnValueChanged", function(_, _, value)
+		settings.useCustomVisibilityCondition = value
+
+		customVisibilityCondition:SetDisabled(not value)
+		hideWhileMounted:SetDisabled(value)
+		hideWhileDead:SetDisabled(value)
+		hideWhileInVehicle:SetDisabled(value)
+		hideWhileResting:SetDisabled(value)
+		hideOutOfCombat:SetDisabled(value)
+		SCM:ApplyAttributeDriver()
+		SCM:CreateAllCustomIcons()
+	end)
 
 	local layoutSettings = AceGUI:Create("InlineGroup")
 	layoutSettings:SetLayout("flow")
@@ -512,16 +597,16 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 		-- local specList = {}
 		-- local specOrder = {}
 		-- local selectedSpecID = druidFormPowerTypesBySpec[SCM.currentSpecID] and SCM.currentSpecID
--- 
+		--
 		-- for specID, formPowerTypes in pairs(druidFormPowerTypesBySpec) do
 		-- 	local _, specName, _, icon = GetSpecializationInfoByID(specID)
 		-- 	specList[specID] = specName and (icon and ("|T%s:14:14:0:0|t %s"):format(icon, specName) or specName) or tostring(specID)
 		-- 	specOrder[#specOrder + 1] = specID
 		-- end
--- 
+		--
 		-- table.sort(specOrder)
 		-- selectedSpecID = selectedSpecID or specOrder[1]
--- 
+		--
 		-- local function AddDruidFormDropdown(parentGroup, druidFormPowerTypes, formID, label)
 		-- 	local formDropdown = AceGUI:Create("Dropdown")
 		-- 	formDropdown:SetRelativeWidth(0.33)
@@ -534,7 +619,7 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 		-- 	end)
 		-- 	parentGroup:AddChild(formDropdown)
 		-- end
--- 
+		--
 		-- local druidFormSettings = AceGUI:Create("DropdownGroup")
 		-- druidFormSettings:SetLayout("flow")
 		-- druidFormSettings:SetTitle("Druid Forms")
@@ -542,12 +627,12 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 		-- druidFormSettings:SetGroupList(specList, specOrder)
 		-- druidFormSettings:SetCallback("OnGroupSelected", function(widget, _, specID)
 		-- 	widget:ReleaseChildren()
--- 
+		--
 		-- 	local druidFormPowerTypes = druidFormPowerTypesBySpec[specID]
 		-- 	if not druidFormPowerTypes then
 		-- 		return
 		-- 	end
--- 
+		--
 		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 0, "Human Form")
 		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 1, "Bear Form")
 		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 2, "Cat Form")
@@ -555,7 +640,7 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 4, "Moonkin Form")
 		-- end)
 		-- parent:AddChild(druidFormSettings)
--- 
+		--
 		-- if selectedSpecID then
 		-- 	druidFormSettings:SetGroup(selectedSpecID)
 		-- end
@@ -592,16 +677,16 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 		-- local specList = {}
 		-- local specOrder = {}
 		-- local selectedSpecID = druidFormPowerTypesBySpec[SCM.currentSpecID] and SCM.currentSpecID
--- 
+		--
 		-- for specID, formPowerTypes in pairs(druidFormPowerTypesBySpec) do
 		-- 	local _, specName, _, icon = GetSpecializationInfoByID(specID)
 		-- 	specList[specID] = specName and (icon and ("|T%s:14:14:0:0|t %s"):format(icon, specName) or specName) or tostring(specID)
 		-- 	specOrder[#specOrder + 1] = specID
 		-- end
--- 
+		--
 		-- table.sort(specOrder)
 		-- selectedSpecID = selectedSpecID or specOrder[1]
--- 
+		--
 		-- local function AddDruidFormDropdown(parentGroup, druidFormPowerTypes, formID, label)
 		-- 	local formDropdown = AceGUI:Create("Dropdown")
 		-- 	formDropdown:SetRelativeWidth(0.33)
@@ -614,7 +699,7 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 		-- 	end)
 		-- 	parentGroup:AddChild(formDropdown)
 		-- end
--- 
+		--
 		-- local druidFormSettings = AceGUI:Create("DropdownGroup")
 		-- druidFormSettings:SetLayout("flow")
 		-- druidFormSettings:SetTitle("Druid Forms")
@@ -622,12 +707,12 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 		-- druidFormSettings:SetGroupList(specList, specOrder)
 		-- druidFormSettings:SetCallback("OnGroupSelected", function(widget, _, specID)
 		-- 	widget:ReleaseChildren()
--- 
+		--
 		-- 	local druidFormPowerTypes = druidFormPowerTypesBySpec[specID]
 		-- 	if not druidFormPowerTypes then
 		-- 		return
 		-- 	end
--- 
+		--
 		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 0, "Human Form")
 		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 1, "Bear Form")
 		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 2, "Cat Form")
@@ -635,7 +720,7 @@ local function AddBarSettings(parent, title, settings, includeManaRoleSettings, 
 		-- 	AddDruidFormDropdown(widget, druidFormPowerTypes, 4, "Moonkin Form")
 		-- end)
 		-- parent:AddChild(druidFormSettings)
--- 
+		--
 		-- if selectedSpecID then
 		-- 	druidFormSettings:SetGroup(selectedSpecID)
 		-- end

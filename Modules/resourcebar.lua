@@ -3,7 +3,6 @@ local LSM = LibStub("LibSharedMedia-3.0")
 
 local Utils = SCM.Utils
 local RESOURCE_BAR_FRAME_NAME = "SCM_ResourceBarContainer"
-local MOUNTED_VISIBILITY_CONDITION = "[combat]show;[mounted][stance:3]hide;show"
 
 local UNIT_POWER_SPELL_IDS = Constants.UnitPowerSpellIDs
 local SPELL_ID_VOID_METAMORPHOSIS = UNIT_POWER_SPELL_IDS.VOID_METAMORPHOSIS_SPELL_ID or 1217607
@@ -935,18 +934,18 @@ local function OnResourceBarEvent(bar, event)
 end
 
 local SCMResourceBarControllerMixin = {}
-function SCM:ApplyResourceBarHideWhileMountedSettings(value)
+function SCM:ApplyResourceBarAttributeDriver(forceHide)
 	local container = _G[RESOURCE_BAR_FRAME_NAME]
 	if not container or InCombatLockdown() then
 		return
 	end
 
-	if value then
-		RegisterAttributeDriver(container, "state-visibility", MOUNTED_VISIBILITY_CONDITION)
-		return
+	if forceHide then
+		RegisterAttributeDriver(container, "state-visibility", "hide")
+	else
+		RegisterAttributeDriver(container, "state-visibility", SCM:GetVisibilityConditions(self.db.profile.options.resourceBar))
 	end
 
-	UnregisterAttributeDriver(container, "state-visibility")
 	if container.SCMResourceBarInitialized and container.UpdateContainerShownState then
 		container:UpdateContainerShownState()
 	end
@@ -1045,7 +1044,7 @@ function SCMResourceBarControllerMixin:RefreshResourceBars(refreshTicks)
 	local secondaryBarOptions = barOptions.secondaryBar
 
 	if not barOptions.enabled then
-		SCM:ApplyResourceBarHideWhileMountedSettings(false)
+		SCM:ApplyResourceBarAttributeDriver(true)
 		self:UnregisterAllEvents()
 		self.SCMResourceBarEventsRegistered = false
 		self.PrimaryBar:UnregisterAllEvents()
@@ -1101,7 +1100,7 @@ function SCMResourceBarControllerMixin:RefreshResourceBars(refreshTicks)
 		EventRegistry:TriggerEvent("SkironCooldownManager.ResourceBar.LayoutUpdated")
 	end
 
-	SCM:ApplyResourceBarHideWhileMountedSettings(barOptions.hideWhileMounted)
+	SCM:ApplyResourceBarAttributeDriver()
 end
 
 function SCMResourceBarControllerMixin:ConfigurePrimaryBar()

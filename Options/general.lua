@@ -200,18 +200,230 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		end)
 		skinningSettings:AddChild(showAnchorHighlight)
 
+		local visibilitySettings = AceGUI:Create("InlineGroup")
+		visibilitySettings:SetLayout("flow")
+		visibilitySettings:SetFullWidth(true)
+		visibilitySettings:SetTitle("Visibility")
+		tabWidget:AddChild(visibilitySettings)
+
 		local hideWhileMounted = AceGUI:Create("CheckBox")
-		hideWhileMounted:SetRelativeWidth(0.5)
+		hideWhileMounted:SetRelativeWidth(0.33)
 		hideWhileMounted:SetLabel("Hide While Mounted")
 		hideWhileMounted:SetValue(options.hideWhileMounted)
 		hideWhileMounted:SetCallback("OnValueChanged", function(_, _, value)
 			options.hideWhileMounted = value
 
-			SCM:ApplyHideWhileMountedSettings(value)
+			SCM:ApplyAttributeDriver(value)
 			SCM:CreateAllCustomIcons()
 		end)
-		skinningSettings:AddChild(hideWhileMounted)
+		visibilitySettings:AddChild(hideWhileMounted)
 
+		local hideWhileDead = AceGUI:Create("CheckBox")
+		hideWhileDead:SetRelativeWidth(0.33)
+		hideWhileDead:SetLabel("Hide While Dead")
+		hideWhileDead:SetValue(options.hideWhileDead)
+		hideWhileDead:SetCallback("OnValueChanged", function(_, _, value)
+			options.hideWhileDead = value
+
+			SCM:ApplyAttributeDriver()
+			SCM:CreateAllCustomIcons()
+		end)
+		visibilitySettings:AddChild(hideWhileDead)
+
+		local hideWhileInVehicle = AceGUI:Create("CheckBox")
+		hideWhileInVehicle:SetRelativeWidth(0.33)
+		hideWhileInVehicle:SetLabel("Hide While In Vehicle")
+		hideWhileInVehicle:SetValue(options.hideWhileInVehicle)
+		hideWhileInVehicle:SetCallback("OnValueChanged", function(_, _, value)
+			options.hideWhileInVehicle = value
+
+			SCM:ApplyAttributeDriver()
+			SCM:CreateAllCustomIcons()
+		end)
+		visibilitySettings:AddChild(hideWhileInVehicle)
+
+		local hideWhileResting = AceGUI:Create("CheckBox")
+		hideWhileResting:SetRelativeWidth(0.33)
+		hideWhileResting:SetLabel("Hide While Resting")
+		hideWhileResting:SetValue(options.hideWhileResting)
+		hideWhileResting:SetCallback("OnValueChanged", function(_, _, value)
+			options.hideWhileResting = value
+
+			SCM:ApplyAttributeDriver()
+			SCM:CreateAllCustomIcons()
+		end)
+		visibilitySettings:AddChild(hideWhileResting)
+
+		local hideOutOfCombat = AceGUI:Create("CheckBox")
+		hideOutOfCombat:SetRelativeWidth(0.33)
+		hideOutOfCombat:SetLabel("Hide Outside Of Combat")
+		hideOutOfCombat:SetValue(options.hideOutOfCombat)
+		hideOutOfCombat:SetCallback("OnValueChanged", function(_, _, value)
+			options.hideOutOfCombat = value
+
+			SCM:ApplyAttributeDriver()
+			SCM:CreateAllCustomIcons()
+		end)
+		visibilitySettings:AddChild(hideOutOfCombat)
+
+		local customVisibilitySettings = AceGUI:Create("InlineGroup")
+		customVisibilitySettings:SetLayout("flow")
+		customVisibilitySettings:SetFullWidth(true)
+		customVisibilitySettings:SetTitle("Custom")
+		visibilitySettings:AddChild(customVisibilitySettings)
+
+		local useCustomVisibilityCondition = AceGUI:Create("CheckBox")
+		useCustomVisibilityCondition:SetRelativeWidth(0.5)
+		useCustomVisibilityCondition:SetLabel("Use Custom Condition")
+		useCustomVisibilityCondition:SetValue(options.useCustomVisibilityCondition)
+
+		customVisibilitySettings:AddChild(useCustomVisibilityCondition)
+
+		local customVisibilityCondition = AceGUI:Create("EditBox")
+		customVisibilityCondition:SetRelativeWidth(0.5)
+		customVisibilityCondition:SetLabel("Condition")
+		customVisibilityCondition:SetText(options.customVisibilityCondition)
+		customVisibilityCondition:SetDisabled(not options.useCustomVisibilityCondition)
+		customVisibilityCondition:SetCallback("OnEnterPressed", function(_, _, value)
+			options.customVisibilityCondition = value
+
+			SCM:ApplyAttributeDriver()
+			SCM:CreateAllCustomIcons()
+		end)
+		customVisibilitySettings:AddChild(customVisibilityCondition)
+
+		useCustomVisibilityCondition:SetCallback("OnValueChanged", function(_, _, value)
+			options.useCustomVisibilityCondition = value
+
+			customVisibilityCondition:SetDisabled(not value)
+			hideWhileMounted:SetDisabled(value)
+			hideWhileDead:SetDisabled(value)
+			hideWhileInVehicle:SetDisabled(value)
+			hideWhileResting:SetDisabled(value)
+			hideOutOfCombat:SetDisabled(value)
+			SCM:ApplyAttributeDriver()
+			SCM:CreateAllCustomIcons()
+		end)
+
+		local auraSettings = AceGUI:Create("InlineGroup")
+		auraSettings:SetLayout("flow")
+		auraSettings:SetFullWidth(true)
+		auraSettings:SetTitle("Auras")
+		tabWidget:AddChild(auraSettings)
+
+		local hideBuffsWhenInactive = AceGUI:Create("CheckBox")
+		hideBuffsWhenInactive:SetRelativeWidth(0.33)
+		hideBuffsWhenInactive:SetLabel('Disable "Hide When Inactive"')
+		hideBuffsWhenInactive:SetValue(options.hideBuffsWhenInactive)
+		hideBuffsWhenInactive:SetDisabled(not LibEditModeOverride:CanEditActiveLayout())
+		SCM.Utils.SetDisabledTooltip(hideBuffsWhenInactive, "Enable a custom edit mode profile first, then reopen options.")
+		hideBuffsWhenInactive:SetCallback("OnValueChanged", function(self, _, value)
+			if InCombatLockdown() then
+				return
+			end
+
+			options.hideBuffsWhenInactive = value
+
+			SCM:SetHideWhenInactive(value)
+			SCM.RefreshCooldownViewerData(true)
+		end)
+		hideBuffsWhenInactive:SetCallback("OnEnter", function(self)
+			GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR")
+			GameTooltip:AddLine(
+				'This will disable the checkbox "Hide When Inactive" in the Blizzard CDM settings. SCM will still hide all buffs that are not tracked but this allows you to show buffs at all times.',
+				1,
+				1,
+				1,
+				true
+			)
+			GameTooltip:Show()
+		end)
+		hideBuffsWhenInactive:SetCallback("OnLeave", function()
+			GameTooltip:Hide()
+		end)
+		auraSettings:AddChild(hideBuffsWhenInactive)
+
+		if not LibEditModeOverride:CanEditActiveLayout() then
+			AddInfoText(auraSettings, "Enable a custom edit mode profile to use this feature. Reopen the opens once you did")
+		end
+
+		local disableGCD = AceGUI:Create("CheckBox")
+		disableGCD:SetRelativeWidth(0.5)
+		disableGCD:SetLabel("Disable GCD (Experimental)")
+		disableGCD:SetValue(options.disableGCD)
+		disableGCD:SetCallback("OnValueChanged", function(_, _, value)
+			options.disableGCD = value
+		end)
+		auraSettings:AddChild(disableGCD)
+
+		local normalSwipeSettings = AceGUI:Create("InlineGroup")
+		normalSwipeSettings:SetLayout("flow")
+		normalSwipeSettings:SetFullWidth(true)
+		normalSwipeSettings:SetTitle("Cooldown Swipe")
+		auraSettings:AddChild(normalSwipeSettings)
+
+		local recolorNormalSwipe = AceGUI:Create("CheckBox")
+		recolorNormalSwipe:SetRelativeWidth(0.5)
+		recolorNormalSwipe:SetLabel("Recolor Swipe")
+		recolorNormalSwipe:SetValue(options.recolorNormalSwipe)
+		recolorNormalSwipe:SetCallback("OnValueChanged", function(_, _, value)
+			options.recolorNormalSwipe = value
+		end)
+		normalSwipeSettings:AddChild(recolorNormalSwipe)
+
+		local normalSwipeColor = AceGUI:Create("ColorPicker")
+		normalSwipeColor:SetRelativeWidth(0.5)
+		normalSwipeColor:SetLabel("Swipe Color")
+		normalSwipeColor:SetHasAlpha(true)
+		normalSwipeColor:SetColor(unpack(options.normalSwipeColor))
+		normalSwipeColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
+			options.normalSwipeColor = { r, g, b, a }
+		end)
+		normalSwipeSettings:AddChild(normalSwipeColor)
+
+		local activeSwipeSettings = AceGUI:Create("InlineGroup")
+		activeSwipeSettings:SetLayout("flow")
+		activeSwipeSettings:SetFullWidth(true)
+		activeSwipeSettings:SetTitle("Active Swipe")
+		auraSettings:AddChild(activeSwipeSettings)
+
+		local recolorActiveSwipe = AceGUI:Create("CheckBox")
+		recolorActiveSwipe:SetRelativeWidth(0.5)
+		recolorActiveSwipe:SetLabel("Recolor Swipe")
+		recolorActiveSwipe:SetValue(options.recolorActiveSwipe)
+		recolorActiveSwipe:SetCallback("OnValueChanged", function(_, _, value)
+			options.recolorActiveSwipe = value
+		end)
+		activeSwipeSettings:AddChild(recolorActiveSwipe)
+
+		local activeSwipeColor = AceGUI:Create("ColorPicker")
+		activeSwipeColor:SetRelativeWidth(0.5)
+		activeSwipeColor:SetLabel("Swipe Color")
+		activeSwipeColor:SetHasAlpha(true)
+		activeSwipeColor:SetColor(unpack(options.activeSwipeColor))
+		activeSwipeColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
+			options.activeSwipeColor = { r, g, b, a }
+		end)
+		activeSwipeSettings:AddChild(activeSwipeColor)
+
+		local reverseActiveSwipe = AceGUI:Create("CheckBox")
+		reverseActiveSwipe:SetRelativeWidth(0.5)
+		reverseActiveSwipe:SetLabel("Reverse Active Swipe")
+		reverseActiveSwipe:SetValue(options.reverseActiveSwipe)
+		reverseActiveSwipe:SetCallback("OnValueChanged", function(_, _, value)
+			options.reverseActiveSwipe = value
+		end)
+		activeSwipeSettings:AddChild(reverseActiveSwipe)
+
+		local disableRegularIconActiveSwipe = AceGUI:Create("CheckBox")
+		disableRegularIconActiveSwipe:SetRelativeWidth(0.5)
+		disableRegularIconActiveSwipe:SetLabel("Disable On Regular Icons")
+		disableRegularIconActiveSwipe:SetValue(options.disableRegularIconActiveSwipe)
+		disableRegularIconActiveSwipe:SetCallback("OnValueChanged", function(_, _, value)
+			options.disableRegularIconActiveSwipe = value
+		end)
+		activeSwipeSettings:AddChild(disableRegularIconActiveSwipe)
+	elseif group == "Icons" then
 		local iconSettings = AceGUI:Create("InlineGroup")
 		iconSettings:SetLayout("flow")
 		iconSettings:SetFullWidth(true)
@@ -440,125 +652,6 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 			options.cooldownYOffset = value
 		end)
 		cooldownTextSettings:AddChild(cooldownYOffset)
-
-		local auraSettings = AceGUI:Create("InlineGroup")
-		auraSettings:SetLayout("flow")
-		auraSettings:SetFullWidth(true)
-		auraSettings:SetTitle("Auras")
-		tabWidget:AddChild(auraSettings)
-
-		local hideBuffsWhenInactive = AceGUI:Create("CheckBox")
-		hideBuffsWhenInactive:SetRelativeWidth(0.33)
-		hideBuffsWhenInactive:SetLabel('Disable "Hide When Inactive"')
-		hideBuffsWhenInactive:SetValue(options.hideBuffsWhenInactive)
-		hideBuffsWhenInactive:SetDisabled(not LibEditModeOverride:CanEditActiveLayout())
-		SCM.Utils.SetDisabledTooltip(hideBuffsWhenInactive, "Enable a custom edit mode profile first, then reopen options.")
-		hideBuffsWhenInactive:SetCallback("OnValueChanged", function(self, _, value)
-			if InCombatLockdown() then
-				return
-			end
-
-			options.hideBuffsWhenInactive = value
-
-			SCM:SetHideWhenInactive(value)
-			SCM.RefreshCooldownViewerData(true)
-		end)
-		hideBuffsWhenInactive:SetCallback("OnEnter", function(self)
-			GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR")
-			GameTooltip:AddLine(
-				'This will disable the checkbox "Hide When Inactive" in the Blizzard CDM settings. SCM will still hide all buffs that are not tracked but this allows you to show buffs at all times.',
-				1,
-				1,
-				1,
-				true
-			)
-			GameTooltip:Show()
-		end)
-		hideBuffsWhenInactive:SetCallback("OnLeave", function()
-			GameTooltip:Hide()
-		end)
-		auraSettings:AddChild(hideBuffsWhenInactive)
-
-		if not LibEditModeOverride:CanEditActiveLayout() then
-			AddInfoText(auraSettings, "Enable a custom edit mode profile to use this feature. Reopen the opens once you did")
-		end
-
-		local disableGCD = AceGUI:Create("CheckBox")
-		disableGCD:SetRelativeWidth(0.5)
-		disableGCD:SetLabel("Disable GCD (Experimental)")
-		disableGCD:SetValue(options.disableGCD)
-		disableGCD:SetCallback("OnValueChanged", function(_, _, value)
-			options.disableGCD = value
-		end)
-		auraSettings:AddChild(disableGCD)
-
-		local normalSwipeSettings = AceGUI:Create("InlineGroup")
-		normalSwipeSettings:SetLayout("flow")
-		normalSwipeSettings:SetFullWidth(true)
-		normalSwipeSettings:SetTitle("Cooldown Swipe")
-		auraSettings:AddChild(normalSwipeSettings)
-
-		local recolorNormalSwipe = AceGUI:Create("CheckBox")
-		recolorNormalSwipe:SetRelativeWidth(0.5)
-		recolorNormalSwipe:SetLabel("Recolor Swipe")
-		recolorNormalSwipe:SetValue(options.recolorNormalSwipe)
-		recolorNormalSwipe:SetCallback("OnValueChanged", function(_, _, value)
-			options.recolorNormalSwipe = value
-		end)
-		normalSwipeSettings:AddChild(recolorNormalSwipe)
-
-		local normalSwipeColor = AceGUI:Create("ColorPicker")
-		normalSwipeColor:SetRelativeWidth(0.5)
-		normalSwipeColor:SetLabel("Swipe Color")
-		normalSwipeColor:SetHasAlpha(true)
-		normalSwipeColor:SetColor(unpack(options.normalSwipeColor))
-		normalSwipeColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
-			options.normalSwipeColor = { r, g, b, a }
-		end)
-		normalSwipeSettings:AddChild(normalSwipeColor)
-
-		local activeSwipeSettings = AceGUI:Create("InlineGroup")
-		activeSwipeSettings:SetLayout("flow")
-		activeSwipeSettings:SetFullWidth(true)
-		activeSwipeSettings:SetTitle("Active Swipe")
-		auraSettings:AddChild(activeSwipeSettings)
-
-		local recolorActiveSwipe = AceGUI:Create("CheckBox")
-		recolorActiveSwipe:SetRelativeWidth(0.5)
-		recolorActiveSwipe:SetLabel("Recolor Swipe")
-		recolorActiveSwipe:SetValue(options.recolorActiveSwipe)
-		recolorActiveSwipe:SetCallback("OnValueChanged", function(_, _, value)
-			options.recolorActiveSwipe = value
-		end)
-		activeSwipeSettings:AddChild(recolorActiveSwipe)
-
-		local activeSwipeColor = AceGUI:Create("ColorPicker")
-		activeSwipeColor:SetRelativeWidth(0.5)
-		activeSwipeColor:SetLabel("Swipe Color")
-		activeSwipeColor:SetHasAlpha(true)
-		activeSwipeColor:SetColor(unpack(options.activeSwipeColor))
-		activeSwipeColor:SetCallback("OnValueChanged", function(self, event, r, g, b, a)
-			options.activeSwipeColor = { r, g, b, a }
-		end)
-		activeSwipeSettings:AddChild(activeSwipeColor)
-
-		local reverseActiveSwipe = AceGUI:Create("CheckBox")
-		reverseActiveSwipe:SetRelativeWidth(0.5)
-		reverseActiveSwipe:SetLabel("Reverse Active Swipe")
-		reverseActiveSwipe:SetValue(options.reverseActiveSwipe)
-		reverseActiveSwipe:SetCallback("OnValueChanged", function(_, _, value)
-			options.reverseActiveSwipe = value
-		end)
-		activeSwipeSettings:AddChild(reverseActiveSwipe)
-
-		local disableRegularIconActiveSwipe = AceGUI:Create("CheckBox")
-		disableRegularIconActiveSwipe:SetRelativeWidth(0.5)
-		disableRegularIconActiveSwipe:SetLabel("Disable On Regular Icons")
-		disableRegularIconActiveSwipe:SetValue(options.disableRegularIconActiveSwipe)
-		disableRegularIconActiveSwipe:SetCallback("OnValueChanged", function(_, _, value)
-			options.disableRegularIconActiveSwipe = value
-		end)
-		activeSwipeSettings:AddChild(disableRegularIconActiveSwipe)
 	elseif group == "Glow" then
 		local glowSettings = AceGUI:Create("InlineGroup")
 		glowSettings:SetLayout("flow")

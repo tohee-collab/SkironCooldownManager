@@ -87,6 +87,12 @@ SCM.DefaultDB = {
 			anchorConfig = {},
 			showAnchorHighlight = true,
 			hideWhileMounted = false,
+			hideWhileDead = false,
+			hideWhileInVehicle = false,
+			hideWhileResting = false,
+			hideOutOfCombat = false,
+			useCustomVisibilityCondition = false,
+			customVisibilityCondition = "",
 			debug = false,
 			enableSkinning = true,
 			enableCustomIcons = true,
@@ -159,6 +165,12 @@ SCM.DefaultDB = {
 			resourceBar = {
 				enabled = true,
 				hideWhileMounted = false,
+				hideWhileDead = false,
+				hideWhileInVehicle = false,
+				hideWhileResting = false,
+				hideOutOfCombat = false,
+				useCustomVisibilityCondition = false,
+				customVisibilityCondition = "",
 				anchorFrame = "ANCHOR:1",
 				point = "BOTTOM",
 				relativePoint = "TOP",
@@ -379,6 +391,7 @@ SCM.DefaultClassConfig = {
 
 SCM.Defaults.GlobalSettingsTabs = {
 	{ value = "General", text = "General" },
+	{ value = "Icons", text = "Icons" },
 	{ value = "Glow", text = "Glow" },
 	{ value = "BuffBar", text = "Buff Bars" },
 }

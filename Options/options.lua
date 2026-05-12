@@ -373,18 +373,53 @@ function SCM:SetHideWhenInactive(value)
 	end
 end
 
-function SCM:ApplyHideWhileMountedSettings(value)
-	if value then
-		RegisterAttributeDriver(EssentialCooldownViewer, "state-visibility", "[combat]show;[mounted][stance:3]hide;show")
-		RegisterAttributeDriver(UtilityCooldownViewer, "state-visibility", "[combat]show;[mounted][stance:3]hide;show")
-		RegisterAttributeDriver(BuffIconCooldownViewer, "state-visibility", "[combat]show;[mounted][stance:3]hide;show")
+function SCM:GetVisibilityConditions(options)
+	if options.useCustomVisibilityCondition then
+		local currentCondition = SecureCmdOptionParse(options.customVisibilityCondition)
+		if currentCondition == "show" or currentCondition == "hide" then
+			return options.customVisibilityCondition
+		else
+			return "show"
+		end
 	else
-		UnregisterAttributeDriver(EssentialCooldownViewer, "state-visibility")
-		UnregisterAttributeDriver(UtilityCooldownViewer, "state-visibility")
-		UnregisterAttributeDriver(BuffIconCooldownViewer, "state-visibility")
-	end
+		local visibility = {}
+		if options.hideWhileMounted then
+			tinsert(visibility, "[mounted][stance:3]hide")
+		end
 
-	self:ApplyResourceBarHideWhileMountedSettings(value)
+		if options.hideWhileDead then
+			tinsert(visibility, "[@player,dead]hide")
+		end
+
+		if options.hideWhileInVehicle then
+			tinsert(visibility, "[@player,unithasvehicleui]hide")
+		end
+
+		if options.hideWhileResting then
+			tinsert(visibility, "[resting]hide")
+		end
+
+		if options.hideOutOfCombat then
+			tinsert(visibility, "[nocombat]hide")
+		end
+
+		if #visibility > 0 then
+			return "[combat]show;" .. table.concat(visibility, ";") .. ";show"
+		else
+			return "show"
+		end
+	end
+end
+
+function SCM:ApplyAttributeDriver()
+	if not InCombatLockdown() then
+		local conditionals = SCM:GetVisibilityConditions(self.db.profile.options)
+		RegisterAttributeDriver(EssentialCooldownViewer, "state-visibility", conditionals)
+		RegisterAttributeDriver(UtilityCooldownViewer, "state-visibility", conditionals)
+		RegisterAttributeDriver(BuffIconCooldownViewer, "state-visibility", conditionals)
+
+		self:ApplyResourceBarAttributeDriver()
+	end
 end
 
 function SCM:ApplyOptions()
@@ -395,7 +430,7 @@ function SCM:ApplyOptions()
 
 	local options = self.db.profile.options
 	self:SetHideWhenInactive(options.hideBuffsWhenInactive)
-	self:ApplyHideWhileMountedSettings(options.hideWhileMounted)
+	self:ApplyAttributeDriver(options.hideWhileMounted)
 end
 
 local function OpenOptions()

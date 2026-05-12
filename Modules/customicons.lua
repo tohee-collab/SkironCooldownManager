@@ -564,14 +564,8 @@ local function UpdateCustomIconFrameState(frame, config)
 end
 
 local function ApplyGlobalSettings(frame)
-	local options = SCM.db.profile.options
-
 	if not InCombatLockdown() then
-		if options.hideWhileMounted then
-			RegisterAttributeDriver(frame, "state-visibility", "[combat]show;[mounted][stance:3]hide;show")
-		else
-			UnregisterAttributeDriver(frame, "state-visibility")
-		end
+		RegisterAttributeDriver(frame, "state-visibility", SCM:GetVisibilityConditions(SCM.db.profile.options))
 	end
 end
 
