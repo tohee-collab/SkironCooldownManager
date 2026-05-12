@@ -395,6 +395,9 @@ Constants.FakeAuras = {
 	[104316] = 12, -- Call Dreadstalkers
 	[1276672] = 12, -- Summon Doomguard (not even Blizzard shows that)
 	[26573] = 12, -- Consecration
+	-- [373276] = 24, -- Idol of Yogg-Saron
+	[451234] = 6, -- Voidwrath
+	[34433] = 6, -- Shadowfiend
 }
 
 Constants.TargetAuras = {
