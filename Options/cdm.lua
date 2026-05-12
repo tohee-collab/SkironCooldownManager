@@ -514,7 +514,6 @@ local function SelectAdvancedRowSettings(self, tabGroup, rowConfig, rowIndex, an
 	self:ReleaseChildren()
 
 	if tabGroup == "general" then
-
 		local keepAspectRatio = AceGUI:Create("CheckBox")
 		keepAspectRatio:SetLabel("Lock Aspect Ratio")
 		keepAspectRatio:SetRelativeWidth(0.5)
@@ -1340,27 +1339,6 @@ local function SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTbl, mo
 										end)
 										iconSettingsTabs:AddChild(showGCD)
 
-										local showNotUsable = AceGUI:Create("CheckBox")
-										showNotUsable:SetLabel("Show Not Usable")
-										showNotUsable:SetRelativeWidth(0.5)
-										showNotUsable:SetValue(buttonConfig.showNotUsable)
-										showNotUsable:SetCallback("OnValueChanged", function(self, event, value)
-											buttonConfig.showNotUsable = value or nil
-											ApplyIconConfigUpdate()
-										end)
-										iconSettingsTabs:AddChild(showNotUsable)
-
-										local showOutOfRange = AceGUI:Create("CheckBox")
-										showOutOfRange:SetLabel("Show Out Of Range")
-										showOutOfRange:SetRelativeWidth(0.5)
-										showOutOfRange:SetValue(buttonConfig.showOutOfRange)
-										showOutOfRange:SetCallback("OnValueChanged", function(self, event, value)
-											buttonConfig.showOutOfRange = value
-											C_Spell.EnableSpellRangeCheck(buttonData.spellID, value)
-											ApplyIconConfigUpdate()
-										end)
-										iconSettingsTabs:AddChild(showOutOfRange)
-
 										if buttonData.iconType == "item" then
 											local showCraftQuality = AceGUI:Create("CheckBox")
 											showCraftQuality:SetLabel("Show Craft Quality")
@@ -1371,6 +1349,27 @@ local function SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTbl, mo
 												ApplyIconConfigUpdate()
 											end)
 											iconSettingsTabs:AddChild(showCraftQuality)
+										elseif buttonData.iconType == "spell" then
+											local showNotUsable = AceGUI:Create("CheckBox")
+											showNotUsable:SetLabel("Show Not Usable")
+											showNotUsable:SetRelativeWidth(0.5)
+											showNotUsable:SetValue(buttonConfig.showNotUsable)
+											showNotUsable:SetCallback("OnValueChanged", function(self, event, value)
+												buttonConfig.showNotUsable = value or nil
+												ApplyIconConfigUpdate()
+											end)
+											iconSettingsTabs:AddChild(showNotUsable)
+
+											local showOutOfRange = AceGUI:Create("CheckBox")
+											showOutOfRange:SetLabel("Show Out Of Range")
+											showOutOfRange:SetRelativeWidth(0.5)
+											showOutOfRange:SetValue(buttonConfig.showOutOfRange)
+											showOutOfRange:SetCallback("OnValueChanged", function(self, event, value)
+												buttonConfig.showOutOfRange = value
+												C_Spell.EnableSpellRangeCheck(buttonData.spellID, value)
+												ApplyIconConfigUpdate()
+											end)
+											iconSettingsTabs:AddChild(showOutOfRange)
 										end
 									else
 										local forceActiveSwipe = AceGUI:Create("CheckBox")
