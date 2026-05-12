@@ -1036,7 +1036,7 @@ local function SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTbl, mo
 	anchorOptions:AddChild(relativePoint)
 
 	local grow = AceGUI:Create("Dropdown")
-	grow:SetRelativeWidth(0.33)
+	grow:SetRelativeWidth(0.25)
 	grow:SetList(SCM.Constants.GrowthDirections)
 	grow:SetLabel("Primary Growth")
 	grow:SetValue(data.grow or "CENTERED")
@@ -1047,7 +1047,7 @@ local function SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTbl, mo
 	anchorOptions:AddChild(grow)
 
 	local secondaryGrow = AceGUI:Create("Dropdown")
-	secondaryGrow:SetRelativeWidth(0.33)
+	secondaryGrow:SetRelativeWidth(0.25)
 	secondaryGrow:SetList(SCM.Constants.SecondaryGrowthDirections)
 	secondaryGrow:SetLabel("Secondary Growth")
 	secondaryGrow:SetValue(data.secondaryGrow or "DOWN")
@@ -1058,7 +1058,7 @@ local function SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTbl, mo
 	anchorOptions:AddChild(secondaryGrow)
 
 	local spacing = AceGUI:Create("Slider")
-	spacing:SetRelativeWidth(0.33)
+	spacing:SetRelativeWidth(0.25)
 	spacing:SetSliderValues(-10, 50, 0.1)
 	spacing:SetLabel("Spacing")
 	spacing:SetValue(data.spacing or 0)
@@ -1067,6 +1067,17 @@ local function SelectAnchor(widget, parentWidget, anchorIndex, anchorTabsTbl, mo
 		ApplyModeConfigUpdate(anchorIndex, mode)
 	end)
 	anchorOptions:AddChild(spacing)
+
+	local frameStrata = AceGUI:Create("Dropdown")
+	frameStrata:SetRelativeWidth(0.25)
+	frameStrata:SetList(SCM.Constants.FrameStrata, SCM.Constants.FrameStrataSorted)
+	frameStrata:SetLabel("Frame Strata")
+	frameStrata:SetValue(data.frameStrata or "")
+	frameStrata:SetCallback("OnValueChanged", function(self, event, value)
+		data.frameStrata = value ~= "" and value or nil
+		ApplyModeConfigUpdate(anchorIndex, mode)
+	end)
+	anchorOptions:AddChild(frameStrata)
 
 	local xOffset = AceGUI:Create("Slider")
 	xOffset:SetRelativeWidth(0.5)

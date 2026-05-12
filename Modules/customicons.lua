@@ -216,9 +216,7 @@ local function UpdateCustomIconCraftQuality(frame, iconType, config)
 
 	local itemID = frame.SCMItemID
 
-	if Utils.ApplyCraftQuality(craftQuality, itemID) then
-		return
-	end
+	Utils.ApplyCraftQuality(craftQuality, itemID)
 end
 
 local desaturationCurve = C_CurveUtil.CreateCurve()

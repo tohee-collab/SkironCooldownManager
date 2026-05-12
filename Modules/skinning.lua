@@ -160,8 +160,9 @@ end
 
 function SCM:SkinChild(child, childConfig)
 	local options = self.db.profile.options
-	if options.iconFrameStrata and options.iconFrameStrata ~= "" then
-		child:SetFrameStrata(options.iconFrameStrata)
+	local frameStrata = child.SCMAnchorFrameStrata or options.iconFrameStrata
+	if frameStrata and frameStrata ~= "" then
+		child:SetFrameStrata(frameStrata)
 	end
 
 	if C_AddOns.IsAddOnLoaded("ElvUI") and ElvUI[1].private.skins.blizzard.cooldownManager then
@@ -265,6 +266,11 @@ end
 
 function SCM:SkinBuffBar(child, config)
 	local options = SCM.db.profile.options
+	local frameStrata = child.SCMAnchorFrameStrata or options.iconFrameStrata
+	if frameStrata and frameStrata ~= "" then
+		child:SetFrameStrata(frameStrata)
+	end
+
 	local buffBarOptions = options.buffBarOptions
 	local borderSize = SCM:PixelPerfect() * buffBarOptions.borderSize
 	local borderColor = buffBarOptions.borderColor

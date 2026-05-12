@@ -48,7 +48,7 @@ Constants.FrameStrata = {
 	DIALOG = "Dialog",
 	FULLSCREEN = "Fullscreen",
 	FULLSCREEN_DIALOG = "Fullscreen Dialog",
-	TOOLTIP = "Tooltip",
+	-- TOOLTIP = "Tooltip",
 }
 
 Constants.FrameStrataSorted = {
@@ -60,7 +60,7 @@ Constants.FrameStrataSorted = {
 	"DIALOG",
 	"FULLSCREEN",
 	"FULLSCREEN_DIALOG",
-	"TOOLTIP",
+	-- "TOOLTIP",
 }
 
 Constants.TextOutline = {

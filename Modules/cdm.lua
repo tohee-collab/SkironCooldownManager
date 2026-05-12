@@ -299,6 +299,7 @@ local function LayoutAnchorGroup(group, visibleChildren, anchorConfig, options, 
 			local offsetX = 0
 
 			child.SCMRowConfig = row.rowConfig
+			child.SCMAnchorFrameStrata = anchorConfig and anchorConfig.frameStrata or nil
 			if child.SCMLayoutLimited then
 				child.SCMLayoutLimited = nil
 				Icons.SetChildVisibilityState(child, child.SCMShouldBeVisible, true)

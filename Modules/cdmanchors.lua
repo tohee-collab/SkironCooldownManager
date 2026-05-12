@@ -427,6 +427,7 @@ function SCM:GetAnchor(group, point, anchor, relativePoint, xOffset, yOffset, gr
 	if not anchorFrame then
 		anchorFrame = CreateFrame("Frame", "SCM_GroupAnchor_" .. group, UIParent)
 		anchorFrame:SetFrameStrata("HIGH")
+		anchorFrame:SetFrameLevel(1000)
 		anchorFrame.debugTexture = anchorFrame:CreateTexture(nil, "BACKGROUND")
 		anchorFrame:SetScale(Cache.cachedViewerScale or 1)
 
