@@ -814,6 +814,7 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 						local shouldShow = ShouldShowCustomIcon(config, iconType, hasCount, isOnCooldown)
 
 						Icons.SetChildVisibilityState(frame, shouldShow, true)
+						CDM.AddChildToScopedGroup(Cache.cachedChildrenTbl, anchorGroup, frame, isGlobal)
 
 						if shouldShow then
 							if iconType == "spell" then
@@ -823,7 +824,6 @@ function CustomIcons.ProcessIcons(customConfig, validChildren, isGlobal)
 							end
 
 							CDM.AddChildToScopedGroup(validChildren, anchorGroup, frame, isGlobal)
-							CDM.AddChildToScopedGroup(Cache.cachedChildrenTbl, anchorGroup, frame, isGlobal)
 						end
 					else
 						Icons.SetChildVisibilityState(customFrames[id], false, true)
