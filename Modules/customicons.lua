@@ -924,7 +924,7 @@ local function UpdateCountTextForConfigTable(customConfig)
 			local shouldShow = ShouldShowCustomIcon(config, iconType, hasCount, isOnCooldown) and true or false
 
 			if frame.SCMShouldBeVisible ~= shouldShow then
-				frame.SCMShouldBeVisible = shouldShow
+				Icons.SetChildVisibilityState(frame, shouldShow, true)
 				visibilityChanged = true
 			end
 		end
