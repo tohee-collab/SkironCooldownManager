@@ -92,6 +92,7 @@ SCM.DefaultDB = {
 			enableCustomIcons = true,
 			simulateAuras = true,
 			iconZoom = 0.12,
+			iconFrameStrata = "",
 			chargeFont = "Expressway",
 			chargeFontSize = 22,
 			chargeFontOutline = "OUTLINE",

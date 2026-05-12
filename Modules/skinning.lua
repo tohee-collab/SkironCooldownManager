@@ -159,11 +159,15 @@ local function ApplyCooldownStyle(child, options)
 end
 
 function SCM:SkinChild(child, childConfig)
+	local options = self.db.profile.options
+	if options.iconFrameStrata and options.iconFrameStrata ~= "" then
+		child:SetFrameStrata(options.iconFrameStrata)
+	end
+
 	if C_AddOns.IsAddOnLoaded("ElvUI") and ElvUI[1].private.skins.blizzard.cooldownManager then
 		return
 	end
 
-	local options = self.db.profile.options
 	if not options.enableSkinning then
 		return
 	end

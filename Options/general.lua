@@ -230,6 +230,17 @@ local function SelectGlobalSettingsTab(tabWidget, group, options)
 		end)
 		iconSettings:AddChild(iconZoom)
 
+		local iconFrameStrata = AceGUI:Create("Dropdown")
+		iconFrameStrata:SetRelativeWidth(0.33)
+		iconFrameStrata:SetLabel("Frame Strata")
+		iconFrameStrata:SetList(SCM.Constants.FrameStrata, SCM.Constants.FrameStrataSorted)
+		iconFrameStrata:SetValue(options.iconFrameStrata or "")
+		iconFrameStrata:SetCallback("OnValueChanged", function(_, _, value)
+			options.iconFrameStrata = value
+			SCM:ApplyAllCDManagerConfigs()
+		end)
+		iconSettings:AddChild(iconFrameStrata)
+
 		local borderSize = AceGUI:Create("Slider")
 		borderSize:SetRelativeWidth(0.33)
 		borderSize:SetLabel("Border Size")

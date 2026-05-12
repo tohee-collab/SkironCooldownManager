@@ -39,6 +39,30 @@ Constants.SecondaryGrowthDirections = {
 	UP = "Up",
 }
 
+Constants.FrameStrata = {
+	[""] = "Default",
+	BACKGROUND = "Background",
+	LOW = "Low",
+	MEDIUM = "Medium",
+	HIGH = "High",
+	DIALOG = "Dialog",
+	FULLSCREEN = "Fullscreen",
+	FULLSCREEN_DIALOG = "Fullscreen Dialog",
+	TOOLTIP = "Tooltip",
+}
+
+Constants.FrameStrataSorted = {
+	"",
+	"BACKGROUND",
+	"LOW",
+	"MEDIUM",
+	"HIGH",
+	"DIALOG",
+	"FULLSCREEN",
+	"FULLSCREEN_DIALOG",
+	"TOOLTIP",
+}
+
 Constants.TextOutline = {
 	[""] = "None",
 	OUTLINE = "Outline",
