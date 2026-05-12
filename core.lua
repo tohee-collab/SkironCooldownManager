@@ -148,7 +148,6 @@ function SCM:SPELL_UPDATE_COOLDOWN(spellID)
 		return config.spellID == spellID or config.iconType == "item"
 	end
 
-	SCM.CustomIcons.UpdateItemCountText(spellID)
 	SCM:ApplyAnchorGroupByIconTypes(false, predicate, "spell", "item", "slot")
 	SCM:UpdateCustomIconsGCD()
 end
