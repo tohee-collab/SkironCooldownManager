@@ -907,6 +907,8 @@ function CustomIcons.UpdateSpellRange(spellID, isInRange, checksRange)
 end
 
 local function UpdateCountTextForConfigTable(customConfig)
+	local visibilityChanged = false
+
 	for id, config in pairs(customConfig) do
 		local frame = CustomItemFrames[id]
 		if frame and not frame.SCMReleased then
@@ -915,22 +917,35 @@ local function UpdateCountTextForConfigTable(customConfig)
 			if itemID ~= previousItemID then
 				UpdateCustomIconFrameState(frame, config)
 			end
-			SetCustomIconCountText(frame, frame.SCMIconType, config)
-			UpdateCustomIconCooldown(frame, frame.SCMIconType, config)
+
+			local iconType = frame.SCMIconType
+			local hasCount = SetCustomIconCountText(frame, iconType, config)
+			local isOnCooldown = UpdateCustomIconCooldown(frame, iconType, config)
+			local shouldShow = ShouldShowCustomIcon(config, iconType, hasCount, isOnCooldown) and true or false
+
+			if frame.SCMShouldBeVisible ~= shouldShow then
+				frame.SCMShouldBeVisible = shouldShow
+				visibilityChanged = true
+			end
 		end
 	end
+
+	return visibilityChanged
 end
 
 function CustomIcons.UpdateItemCountText()
+	local visibilityChanged = false
 	local customConfig = SCM.customConfig
-	if customConfig then
-		UpdateCountTextForConfigTable(customConfig.itemConfig)
+	if customConfig and UpdateCountTextForConfigTable(customConfig.itemConfig) then
+		visibilityChanged = true
 	end
 
 	local globalCustomConfig = SCM.globalCustomConfig
-	if globalCustomConfig then
-		UpdateCountTextForConfigTable(globalCustomConfig.itemConfig)
+	if globalCustomConfig and UpdateCountTextForConfigTable(globalCustomConfig.itemConfig) then
+		visibilityChanged = true
 	end
+
+	return visibilityChanged
 end
 
 function SCM:CreateAllCustomIcons(iconType)
