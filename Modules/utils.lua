@@ -87,6 +87,25 @@ local function CreateDisabledTooltipOverlay(widget)
 	return overlay
 end
 
+function Utils.GetCustomItemCraftQualityAtlas(itemID)
+	local qualityInfo = C_TradeSkillUI.GetItemCraftedQualityInfo(itemID) or C_TradeSkillUI.GetItemReagentQualityInfo(itemID)
+	return qualityInfo and (qualityInfo.iconSmall or qualityInfo.iconChat or qualityInfo.iconInventory)
+end
+
+function Utils.ApplyCraftQuality(craftQuality, itemID)
+	local qualityAtlas = Utils.GetCustomItemCraftQualityAtlas(itemID)
+	if not qualityAtlas then
+		return
+	end
+
+	craftQuality:ClearAllPoints()
+	craftQuality:SetPoint("TOPLEFT", craftQuality:GetParent().Icon, "TOPLEFT", -10, 10)
+	craftQuality:SetSize(34, 34)
+	craftQuality:SetAtlas(qualityAtlas, false)
+	craftQuality:Show()
+	return true
+end
+
 function Utils.RefreshDisabledTooltip(widget)
 	local overlay = CreateDisabledTooltipOverlay(widget)
 	if not overlay then
