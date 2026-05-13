@@ -414,14 +414,35 @@ Constants.Races = {
 }
 
 Constants.FakeAuras = {
+	-- WARLOCK
 	[265187] = 15, -- Summon Tyrant
 	[1288950] = 23, -- Grimoire: Fel Ravager
 	[104316] = 12, -- Call Dreadstalkers
 	[1276672] = 12, -- Summon Doomguard (not even Blizzard shows that)
+
+	-- PALADIN
 	[26573] = 12, -- Consecration
+
+	-- PRIEST
 	-- [373276] = 24, -- Idol of Yogg-Saron
 	[451234] = 6, -- Voidwrath
 	[34433] = 6, -- Shadowfiend
+
+	-- SHAMAN
+	[5394] = 15, -- Healing Stream Totem
+	[98008] = 6, -- Spirit Link Totem
+	[192077] = 7, -- Wind Rush Totem
+	[355580] = 6, -- Static Field Totem
+	[192058] = 2, -- Capacitor Totem
+	[2484] = 20, -- Earthbind Totem
+	[8143] = 10, -- Tremor Totem
+	[383013] = 6, -- Poison Cleansing Totem
+	[204336] = 3, -- Grounding Totem
+	[204331] = 15, -- Counterstrike Totem
+	[460697] = 15, -- Totem of Wrath
+	[51485] = 20, -- Earthgrab Totem
+	[198103] = 30, -- Earth Elemental
+	--[444995] = 25, -- Surging Totem
 }
 
 Constants.TargetAuras = {
