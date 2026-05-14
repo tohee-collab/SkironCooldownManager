@@ -1445,7 +1445,6 @@ function SCMResourceBarControllerMixin:RegisterResourceBarEvents()
 
 	self:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
-	self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 	self:RegisterUnitEvent("UNIT_DISPLAYPOWER", "player")
 	self:RegisterUnitEvent("UNIT_MAXPOWER", "player")
 	self:RegisterEvent("PLAYER_GAINS_VEHICLE_DATA")
