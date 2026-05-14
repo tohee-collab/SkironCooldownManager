@@ -224,6 +224,12 @@ Constants.SpecSecondaryPower = {
 		powerType = Enum.PowerType.Chi,
 		powerToken = "CHI",
 	},
+	[581] = {
+		resourceKind = "vengeanceSoulFragments",
+		powerToken = "SOUL_FRAGMENTS_VENGEANCE",
+		spellID = 228477,
+		segmentCount = 6,
+	},
 	[1480] = {
 		resourceKind = "soulFragments",
 		powerToken = "SOUL_FRAGMENTS",
@@ -264,6 +270,7 @@ Constants.FallbackPowerColorByToken = {
 	ESSENCE = { r = 0.32, g = 0.84, b = 0.90 },
 	MAELSTROM_WEAPON = { r = 0.00, g = 0.50, b = 1.00 },
 	SOUL_FRAGMENTS = { r = 0.35, g = 0.25, b = 0.73 },
+	SOUL_FRAGMENTS_VENGEANCE = { r = 0.35, g = 0.25, b = 0.73 },
 	SPELL_CHARGES_FIRE_BLAST = { r = 1.00, g = 0.34, b = 0.12 },
 	STAGGER = { r = 0.52, g = 1.00, b = 0.52 },
 }
@@ -289,6 +296,7 @@ Constants.ResourceBarPowerTypes = {
 	{ token = "STAGGER", label = "Stagger" },
 	{ token = "MAELSTROM_WEAPON", label = "Maelstrom Weapon" },
 	{ token = "SOUL_FRAGMENTS", label = "Soul Fragments (Devourer)" },
+	{ token = "SOUL_FRAGMENTS_VENGEANCE", label = "Soul Fragments (Vengeance)" },
 	{ token = "TIP_OF_THE_SPEAR", label = "Tip of the Spear" },
 	{ token = "ICICLES", label = "Icicles" },
 	{ token = "SPELL_CHARGES_FIRE_BLAST", label = "Fire Blast Charges" },
@@ -329,6 +337,7 @@ Constants.SegmentTicksByPowerToken = {
 	MAELSTROM_WEAPON = true,
 	RUNES = true,
 	SOUL_SHARDS = true,
+	SOUL_FRAGMENTS_VENGEANCE = true,
 	SPELL_CHARGES_FIRE_BLAST = true,
 	TIP_OF_THE_SPEAR = true,
 }
