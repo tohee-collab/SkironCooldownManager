@@ -9,6 +9,7 @@ local SPELL_ID_VOID_METAMORPHOSIS = UNIT_POWER_SPELL_IDS.VOID_METAMORPHOSIS_SPEL
 local SPELL_ID_DARK_HEART = UNIT_POWER_SPELL_IDS.DARK_HEART_SPELL_ID or 1225789
 local SPELL_ID_SILENCE_THE_WHISPERS = UNIT_POWER_SPELL_IDS.SILENCE_THE_WHISPERS_SPELL_ID or 1227702
 local SPELL_ID_MAELSTROM_WEAPON = UNIT_POWER_SPELL_IDS.MAELSTROM_WEAPON or 344179
+local SPELL_ID_SOUL_FRAGMENTS = 228477
 local SPELL_ID_TIP_OF_THE_SPEAR = 260286
 local SPELL_ID_ICICLES = 205473
 
@@ -17,6 +18,7 @@ local CHARGED_COMBO_POINT_COLOR = SCMConstants.ChargedComboPointColor
 local DEFAULT_RESOURCE_BAR_ANCHOR = "ANCHOR:1"
 local RESOURCE_BAR_RECONFIGURE_EVENTS = {
 	PLAYER_ENTERING_WORLD = true,
+	PLAYER_SPECIALIZATION_CHANGED = true,
 	PLAYER_GAINS_VEHICLE_DATA = true,
 	PLAYER_LOSES_VEHICLE_DATA = true,
 	UNIT_DISPLAYPOWER = true,
@@ -271,6 +273,13 @@ local function GetMaelstromWeaponValue()
 	return currentValue, maxValue
 end
 
+local function GetVengeanceSoulFragmentValue()
+	local maxValue = 6
+	local currentValue = C_Spell.GetSpellCastCount(SPELL_ID_SOUL_FRAGMENTS) or 0
+
+	return currentValue, maxValue, currentValue
+end
+
 local function GetCurrentPowerValue(resourceKind, powerType, spellID, segmentCount)
 	if resourceKind == "runes" then
 		return GetRuneValues()
@@ -306,6 +315,10 @@ local function GetCurrentPowerValue(resourceKind, powerType, spellID, segmentCou
 	if resourceKind == "soulFragments" then
 		local currentValue, maxValue = GetSoulFragmentValues()
 		return currentValue, maxValue
+	end
+
+	if resourceKind == "vengeanceSoulFragments" then
+		return GetVengeanceSoulFragmentValue()
 	end
 
 	if resourceKind == "destructionSoulShards" then
@@ -901,6 +914,12 @@ local function RegisterBarEvents(bar, barOptions)
 		return
 	end
 
+	if bar.resourceKind == "vengeanceSoulFragments" then
+		bar:RegisterUnitEvent("UNIT_AURA", "player")
+		bar:RegisterUnitEvent("UNIT_POWER_UPDATE", "player")
+		return
+	end
+
 	local powerUpdateEvent = barOptions.useFrequentPowerUpdates and "UNIT_POWER_FREQUENT" or "UNIT_POWER_UPDATE"
 	bar:RegisterUnitEvent(powerUpdateEvent, "player")
 
@@ -1274,6 +1293,10 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 		HideRegions(bar.RuneSegmentBars)
 		bar:GetStatusBarTexture():SetAlpha(1)
 		UpdateSpellChargeRecharge(bar, resourceSegmentValues)
+	elseif bar.resourceKind == "vengeanceSoulFragments" then
+		bar.SCMSegmentedDisplay = nil
+		HideRegions(bar.SegmentFillBars)
+		bar:GetStatusBarTexture():SetAlpha(1)
 	else
 		HideRechargeSegment(bar)
 		UpdateSegments(bar, maxValue, currentValue, resourceSegmentValues)
@@ -1305,6 +1328,11 @@ function SCMResourceBarControllerMixin:RefreshBarDisplay(bar, refreshTicks, skip
 
 	if bar.resourceKind == "spellCharges" then
 		textValue:SetText(displayValue)
+		return maxValue
+	end
+
+	if bar.resourceKind == "vengeanceSoulFragments" then
+		textValue:SetText(tostring(displayValue))
 		return maxValue
 	end
 
@@ -1417,6 +1445,7 @@ function SCMResourceBarControllerMixin:RegisterResourceBarEvents()
 
 	self:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
+	self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 	self:RegisterUnitEvent("UNIT_DISPLAYPOWER", "player")
 	self:RegisterUnitEvent("UNIT_MAXPOWER", "player")
 	self:RegisterEvent("PLAYER_GAINS_VEHICLE_DATA")
